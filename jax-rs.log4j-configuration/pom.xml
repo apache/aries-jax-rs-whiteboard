@@ -1,0 +1,17 @@
+<project 
+    xmlns="http://maven.apache.org/POM/4.0.0" 
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"
+>
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>org.apache.aries.jax.rs</groupId>
+        <artifactId>org.apache.aries.jax.rs</artifactId>
+        <version>0.0.1-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>org.apache.aries.jax.rs.log4j-configuration</artifactId>
+    <description>Apache Aries JAX-RS Log4J Configuration Fragment</description>
+    <name>Apache Aries JAX-RS Log4J Configuration Fragment</name>
+    <version>0.0.1-SNAPSHOT</version>
+</project>

@@ -1,0 +1,78 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<parent>
+	    <groupId>org.apache.aries.jax.rs</groupId>
+	    <artifactId>org.apache.aries.jax.rs</artifactId>
+	    <version>0.0.1-SNAPSHOT</version>
+	</parent>
+
+	<artifactId>org.apache.aries.jax.rs.example-run</artifactId>
+	<description>Apache Aries JAX-RS Example Run Configuration</description>
+	<name>Apache Aries JAX-RS Example Run Configuration</name>
+	<packaging>pom</packaging>
+	<version>0.0.1-SNAPSHOT</version>
+
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>biz.aQute.bnd</groupId>
+				<artifactId>bnd-export-maven-plugin</artifactId>
+				<version>3.4.0-SNAPSHOT</version>
+				<configuration>
+					<failOnChanges>false</failOnChanges>
+					<resolve>false</resolve>
+					<bndruns>
+						<bndrun>example.bndrun</bndrun>
+					</bndruns>
+					<targetDir>.</targetDir>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>export</goal>
+                        </goals>
+                    </execution>
+                </executions>
+			</plugin>
+		</plugins>
+	</build>
+	<dependencies>
+		<dependency>
+			<groupId>org.apache.aries.jax.rs</groupId>
+			<artifactId>org.apache.aries.jax.rs.example</artifactId>
+			<version>0.0.1-SNAPSHOT</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.aries.jax.rs</groupId>
+			<artifactId>org.apache.aries.jax.rs.log4j-configuration</artifactId>
+			<version>0.0.1-SNAPSHOT</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.aries.jax.rs</groupId>
+			<artifactId>org.apache.aries.jax.rs.whiteboard</artifactId>
+			<version>0.0.1-SNAPSHOT</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.felix</groupId>
+			<artifactId>org.apache.felix.http.jetty</artifactId>
+			<version>3.4.0</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.felix</groupId>
+			<artifactId>org.apache.felix.gogo.command</artifactId>
+			<version>1.0.0</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.felix</groupId>
+			<artifactId>org.apache.felix.gogo.jline</artifactId>
+			<version>1.0.0</version>
+		</dependency>
+		<dependency>
+			<groupId>org.osgi</groupId>
+			<artifactId>osgi.enroute.pom.distro</artifactId>
+			<version>2.0.0</version>
+		</dependency>
+	</dependencies>
+</project>
