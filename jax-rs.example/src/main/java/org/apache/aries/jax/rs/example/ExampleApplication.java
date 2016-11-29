@@ -25,25 +25,22 @@ import javax.ws.rs.core.Application;
 import java.util.Collections;
 import java.util.Set;
 
-/**
- * @author Carlos Sierra Andrés
- */
 @Component(
-	immediate = true,
-	property = "osgi.jaxrs.application.base=/example-application",
-	service = Application.class
+    immediate = true,
+    property = "osgi.jaxrs.application.base=/example-application",
+    service = Application.class
 )
 public class ExampleApplication extends Application {
 
-	@Override
-	public Set<Object> getSingletons() {
-		return Collections.<Object>singleton(this);
-	}
+    @Override
+    public Set<Object> getSingletons() {
+        return Collections.<Object>singleton(this);
+    }
 
-	@GET
-	@Produces("text/plain")
-	public String sayHello() {
-		return "Hello world";
-	}
+    @GET
+    @Produces("text/plain")
+    public String sayHello() {
+        return "Hello world";
+    }
 
 }

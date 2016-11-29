@@ -30,132 +30,129 @@ import java.util.Hashtable;
 import java.util.Map;
 import java.util.Set;
 
-/**
- * @author Carlos Sierra Andrés
- */
 class SingletonServiceTrackerCustomizer
-	implements ServiceTrackerCustomizer
-		<Object, SingletonServiceTrackerCustomizer.Tracked> {
+    implements ServiceTrackerCustomizer
+        <Object, SingletonServiceTrackerCustomizer.Tracked> {
 
-	private BundleContext _bundleContext;
-	private Bus _bus;
+    private BundleContext _bundleContext;
+    private Bus _bus;
 
-	public SingletonServiceTrackerCustomizer(
-		BundleContext bundleContext, Bus bus) {
+    public SingletonServiceTrackerCustomizer(
+        BundleContext bundleContext, Bus bus) {
 
-		_bundleContext = bundleContext;
-		_bus = bus;
-	}
+        _bundleContext = bundleContext;
+        _bus = bus;
+    }
 
-	@Override
-	public Tracked addingService(
-		ServiceReference<Object> serviceReference) {
+    @Override
+    public Tracked addingService(
+        ServiceReference<Object> serviceReference) {
 
-		final Object service = _bundleContext.getService(
-			serviceReference);
+        final Object service = _bundleContext.getService(
+            serviceReference);
 
-		try {
-			String[] propertyKeys = serviceReference.getPropertyKeys();
+        try {
+            String[] propertyKeys = serviceReference.getPropertyKeys();
 
-			Map<String, Object> properties = new HashMap<>(
-				propertyKeys.length);
+            Map<String, Object> properties = new HashMap<>(
+                propertyKeys.length);
 
-			for (String propertyKey : propertyKeys) {
-				if (propertyKey.equals("osgi.jaxrs.resource.base")) {
-					continue;
-				}
-				properties.put(
-					propertyKey, serviceReference.getProperty(propertyKey));
-			}
+            for (String propertyKey : propertyKeys) {
+                if (propertyKey.equals("osgi.jaxrs.resource.base")) {
+                    continue;
+                }
+                properties.put(
+                    propertyKey, serviceReference.getProperty(propertyKey));
+            }
 
-			properties.put(
-				"CXF_ENDPOINT_ADDRESS",
-				serviceReference.getProperty("osgi.jaxrs.resource.base").
-					toString());
+            properties.put(
+                "CXF_ENDPOINT_ADDRESS",
+                serviceReference.getProperty("osgi.jaxrs.resource.base").
+                    toString());
 
-			CXFJaxRsServiceRegistrator cxfJaxRsServiceRegistrator =
-				new CXFJaxRsServiceRegistrator(
-					_bus,
-					new Application() {
-						@Override
-						public Set<Object> getSingletons() {
-							return Collections.singleton(service);
-						}
-					},
-					properties);
+            CXFJaxRsServiceRegistrator cxfJaxRsServiceRegistrator =
+                new CXFJaxRsServiceRegistrator(
+                    _bus,
+                    new Application() {
+                        @Override
+                        public Set<Object> getSingletons() {
+                            return Collections.singleton(service);
+                        }
+                    },
+                    properties);
 
-			return new Tracked(
-				cxfJaxRsServiceRegistrator, service,
-				_bundleContext.registerService(
-					CXFJaxRsServiceRegistrator.class,
-					cxfJaxRsServiceRegistrator, new Hashtable<>(properties)));
-		}
-		catch (Exception e) {
-			_bundleContext.ungetService(serviceReference);
+            return new Tracked(
+                cxfJaxRsServiceRegistrator, service,
+                _bundleContext.registerService(
+                    CXFJaxRsServiceRegistrator.class,
+                    cxfJaxRsServiceRegistrator, new Hashtable<>(properties)));
+        }
+        catch (Exception e) {
+            _bundleContext.ungetService(serviceReference);
 
-			throw e;
-		}
-	}
+            throw e;
+        }
+    }
 
-	@Override
-	public void modifiedService(
-		ServiceReference<Object> serviceReference, Tracked tracked) {
+    @Override
+    public void modifiedService(
+        ServiceReference<Object> serviceReference, Tracked tracked) {
 
-		removedService(serviceReference, tracked);
+        removedService(serviceReference, tracked);
 
-		addingService(serviceReference);
-	}
+        addingService(serviceReference);
+    }
 
-	@Override
-	public void removedService(
-		ServiceReference<Object> reference, Tracked tracked) {
+    @Override
+    public void removedService(
+        ServiceReference<Object> reference, Tracked tracked) {
 
-		_bundleContext.ungetService(reference);
+        _bundleContext.ungetService(reference);
 
-		Object service = tracked.getService();
+        Object service = tracked.getService();
 
-		CXFJaxRsServiceRegistrator cxfJaxRsServiceRegistrator =
-			tracked.getCxfJaxRsServiceRegistrator();
+        CXFJaxRsServiceRegistrator cxfJaxRsServiceRegistrator =
+            tracked.getCxfJaxRsServiceRegistrator();
 
-		cxfJaxRsServiceRegistrator.close();
+        cxfJaxRsServiceRegistrator.close();
 
-		tracked.getCxfJaxRsServiceRegistratorServiceRegistration().unregister();
-	}
+        tracked.getCxfJaxRsServiceRegistratorServiceRegistration().unregister();
+    }
 
-	public static class Tracked {
+    public static class Tracked {
 
-		private final CXFJaxRsServiceRegistrator _cxfJaxRsServiceRegistrator;
-		private final Object _service;
-		private final ServiceRegistration<CXFJaxRsServiceRegistrator>
-			_cxfJaxRsServiceRegistratorServiceRegistration;
+        private final CXFJaxRsServiceRegistrator _cxfJaxRsServiceRegistrator;
+        private final Object _service;
+        private final ServiceRegistration<CXFJaxRsServiceRegistrator>
+            _cxfJaxRsServiceRegistratorServiceRegistration;
 
-		public Object getService() {
-			return _service;
-		}
+        public Object getService() {
+            return _service;
+        }
 
-		public CXFJaxRsServiceRegistrator getCxfJaxRsServiceRegistrator() {
-			return _cxfJaxRsServiceRegistrator;
-		}
+        public CXFJaxRsServiceRegistrator getCxfJaxRsServiceRegistrator() {
+            return _cxfJaxRsServiceRegistrator;
+        }
 
-		public ServiceRegistration<CXFJaxRsServiceRegistrator>
-			getCxfJaxRsServiceRegistratorServiceRegistration() {
+        public ServiceRegistration<CXFJaxRsServiceRegistrator>
+            getCxfJaxRsServiceRegistratorServiceRegistration() {
 
-			return _cxfJaxRsServiceRegistratorServiceRegistration;
-		}
+            return _cxfJaxRsServiceRegistratorServiceRegistration;
+        }
 
-		public Tracked(
-			CXFJaxRsServiceRegistrator cxfJaxRsServiceRegistrator,
-			Object service,
-			ServiceRegistration<CXFJaxRsServiceRegistrator>
-				cxfJaxRsServiceRegistratorServiceRegistration) {
+        public Tracked(
+            CXFJaxRsServiceRegistrator cxfJaxRsServiceRegistrator,
+            Object service,
+            ServiceRegistration<CXFJaxRsServiceRegistrator>
+                cxfJaxRsServiceRegistratorServiceRegistration) {
 
-			_cxfJaxRsServiceRegistrator = cxfJaxRsServiceRegistrator;
-			_service = service;
-			_cxfJaxRsServiceRegistratorServiceRegistration =
-				cxfJaxRsServiceRegistratorServiceRegistration;
-		}
+            _cxfJaxRsServiceRegistrator = cxfJaxRsServiceRegistrator;
+            _service = service;
+            _cxfJaxRsServiceRegistratorServiceRegistration =
+                cxfJaxRsServiceRegistratorServiceRegistration;
+        }
 
-	}
+    }
 
 }
 

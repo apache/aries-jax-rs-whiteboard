@@ -34,70 +34,67 @@ import org.osgi.util.tracker.ServiceTracker;
 import org.apache.aries.jax.rs.whiteboard.internal.BusServiceTrackerCustomizer;
 import org.apache.aries.jax.rs.whiteboard.internal.ServicesServiceTrackerCustomizer;
 
-/**
- * @author Carlos Sierra Andrés
- */
 public class CXFJaxRsBundleActivator implements BundleActivator {
 
-	private ServiceTracker<?, ?> _busServiceTracker;
-	private ServiceTracker<?, ?> _singletonsTracker;
-	private ServicesRegistrator _servicesRegistrator;
+    private ServiceTracker<?, ?> _busServiceTracker;
+    private ServiceTracker<?, ?> _singletonsTracker;
+    private ServicesRegistrator _servicesRegistrator;
 
-	@Override
-	public void start(BundleContext bundleContext) throws Exception {
-		Thread thread = Thread.currentThread();
+    @Override
+    public void start(BundleContext bundleContext) throws Exception {
+        Thread thread = Thread.currentThread();
 
-		ClassLoader contextClassLoader = thread.getContextClassLoader();
+        ClassLoader contextClassLoader = thread.getContextClassLoader();
 
-		Bundle bundle = bundleContext.getBundle();
+        Bundle bundle = bundleContext.getBundle();
 
-		BundleWiring bundleWiring = bundle.adapt(BundleWiring.class);
+        BundleWiring bundleWiring = bundle.adapt(BundleWiring.class);
 
-		thread.setContextClassLoader(bundleWiring.getClassLoader());
+        thread.setContextClassLoader(bundleWiring.getClassLoader());
 
-		try {
+        try {
 
-			// Initialize instance so it is never looked up again
+            // Initialize instance so it is never looked up again
 
-			RuntimeDelegate.getInstance();
-		}
-		finally {
-			thread.setContextClassLoader(contextClassLoader);
-		}
+            RuntimeDelegate.getInstance();
+        }
+        finally {
+            thread.setContextClassLoader(contextClassLoader);
+        }
 
-		Dictionary<String, Object> runtimeProperties = new Hashtable<>();
+        Dictionary<String, Object> runtimeProperties = new Hashtable<>();
 
-		runtimeProperties.put("endpoints", new ArrayList<String>());
+        runtimeProperties.put("endpoints", new ArrayList<String>());
 
-		// TODO make the context path of the JAX-RS Whiteboard configurable.
+        // TODO make the context path of the JAX-RS Whiteboard configurable.
 
-		_servicesRegistrator = new ServicesRegistrator(bundleContext);
+        _servicesRegistrator = new ServicesRegistrator(bundleContext);
 
-		_servicesRegistrator.start();
+        _servicesRegistrator.start();
 
-		_busServiceTracker = new ServiceTracker<>(
-			bundleContext, Bus.class,
-			new BusServiceTrackerCustomizer(bundleContext));
+        _busServiceTracker = new ServiceTracker<>(
+            bundleContext, Bus.class,
+            new BusServiceTrackerCustomizer(bundleContext));
 
-		_busServiceTracker.open();
+        _busServiceTracker.open();
 
-		Filter filter = bundleContext.createFilter(
-			"(jaxrs.application.select=*)");
+        Filter filter = bundleContext.createFilter(
+            "(jaxrs.application.select=*)");
 
-		_singletonsTracker = new ServiceTracker<>(
-			bundleContext, filter,
-			new ServicesServiceTrackerCustomizer(bundleContext));
+        _singletonsTracker = new ServiceTracker<>(
+            bundleContext, filter,
+            new ServicesServiceTrackerCustomizer(bundleContext));
 
-		_singletonsTracker.open();
-	}
+        _singletonsTracker.open();
+    }
 
-	@Override
-	public void stop(BundleContext context) throws Exception {
-		_busServiceTracker.close();
+    @Override
+    public void stop(BundleContext context) throws Exception {
+        _busServiceTracker.close();
 
-		_singletonsTracker.close();
+        _singletonsTracker.close();
 
-		_servicesRegistrator.stop();
-	}
+        _servicesRegistrator.stop();
+    }
 
 }

@@ -30,92 +30,89 @@ import org.osgi.framework.ServiceReference;
 import org.osgi.util.tracker.ServiceTracker;
 import org.osgi.util.tracker.ServiceTrackerCustomizer;
 
-/**
- * @author Carlos Sierra Andrés
- */
 public class BusServiceTrackerCustomizer
-	implements ServiceTrackerCustomizer<Bus, Collection<ServiceTracker<?, ?>>> {
+    implements ServiceTrackerCustomizer<Bus, Collection<ServiceTracker<?, ?>>> {
 
-	private BundleContext _bundleContext;
+    private BundleContext _bundleContext;
 
-	public BusServiceTrackerCustomizer(BundleContext bundleContext) {
-		_bundleContext = bundleContext;
-	}
+    public BusServiceTrackerCustomizer(BundleContext bundleContext) {
+        _bundleContext = bundleContext;
+    }
 
-	@Override
-	public Collection<ServiceTracker<?, ?>>
-	addingService(ServiceReference<Bus> serviceReference) {
+    @Override
+    public Collection<ServiceTracker<?, ?>>
+    addingService(ServiceReference<Bus> serviceReference) {
 
-		Bus bus = _bundleContext.getService(serviceReference);
+        Bus bus = _bundleContext.getService(serviceReference);
 
-		try {
-			ServiceTracker<Application,?> applicationTracker =
-				new ServiceTracker<>(_bundleContext, getApplicationFilter(),
-					new ApplicationServiceTrackerCustomizer(
-						_bundleContext, bus));
+        try {
+            ServiceTracker<Application,?> applicationTracker =
+                new ServiceTracker<>(_bundleContext, getApplicationFilter(),
+                    new ApplicationServiceTrackerCustomizer(
+                        _bundleContext, bus));
 
-			applicationTracker.open();
+            applicationTracker.open();
 
-			ServiceTracker<Object, ?> singletonsServiceTracker =
-				new ServiceTracker<>(_bundleContext, getSingletonsFilter(),
-					new SingletonServiceTrackerCustomizer(_bundleContext, bus));
+            ServiceTracker<Object, ?> singletonsServiceTracker =
+                new ServiceTracker<>(_bundleContext, getSingletonsFilter(),
+                    new SingletonServiceTrackerCustomizer(_bundleContext, bus));
 
-			singletonsServiceTracker.open();
+            singletonsServiceTracker.open();
 
-			ServiceTracker<Object, ?> filtersAndInterceptorsServiceTracker =
-				new ServiceTracker<>(_bundleContext, getFiltersFilter(),
-					new FiltersAndInterceptorsServiceTrackerCustomizer(
-						_bundleContext));
+            ServiceTracker<Object, ?> filtersAndInterceptorsServiceTracker =
+                new ServiceTracker<>(_bundleContext, getFiltersFilter(),
+                    new FiltersAndInterceptorsServiceTrackerCustomizer(
+                        _bundleContext));
 
-			filtersAndInterceptorsServiceTracker.open();
+            filtersAndInterceptorsServiceTracker.open();
 
-			return Arrays.asList(applicationTracker, singletonsServiceTracker,
-				filtersAndInterceptorsServiceTracker);
-		}
-		catch (InvalidSyntaxException ise) {
-			throw new RuntimeException(ise);
-		}
-		catch (Exception e) {
-			_bundleContext.ungetService(serviceReference);
+            return Arrays.asList(applicationTracker, singletonsServiceTracker,
+                filtersAndInterceptorsServiceTracker);
+        }
+        catch (InvalidSyntaxException ise) {
+            throw new RuntimeException(ise);
+        }
+        catch (Exception e) {
+            _bundleContext.ungetService(serviceReference);
 
-			throw e;
-		}
-	}
+            throw e;
+        }
+    }
 
-	private Filter getFiltersFilter() throws InvalidSyntaxException {
-		return _bundleContext.createFilter("(osgi.jaxrs.filter.base=*)");
-	}
+    private Filter getFiltersFilter() throws InvalidSyntaxException {
+        return _bundleContext.createFilter("(osgi.jaxrs.filter.base=*)");
+    }
 
-	private Filter getApplicationFilter() throws InvalidSyntaxException {
-		return _bundleContext.createFilter(
-			"(&(objectClass=" + Application.class.getName() + ")" +
-				"(osgi.jaxrs.application.base=*))");
-	}
+    private Filter getApplicationFilter() throws InvalidSyntaxException {
+        return _bundleContext.createFilter(
+            "(&(objectClass=" + Application.class.getName() + ")" +
+                "(osgi.jaxrs.application.base=*))");
+    }
 
-	private Filter getSingletonsFilter() throws InvalidSyntaxException {
-		return _bundleContext.createFilter("(osgi.jaxrs.resource.base=*)");
-	}
+    private Filter getSingletonsFilter() throws InvalidSyntaxException {
+        return _bundleContext.createFilter("(osgi.jaxrs.resource.base=*)");
+    }
 
-	@Override
-	public void modifiedService(
-		ServiceReference<Bus> reference,
-		Collection<ServiceTracker<?, ?>> serviceTrackers) {
+    @Override
+    public void modifiedService(
+        ServiceReference<Bus> reference,
+        Collection<ServiceTracker<?, ?>> serviceTrackers) {
 
-		removedService(reference, serviceTrackers);
+        removedService(reference, serviceTrackers);
 
-		addingService(reference);
-	}
+        addingService(reference);
+    }
 
-	@Override
-	public void removedService(
-		ServiceReference<Bus> serviceReference,
-		Collection<ServiceTracker<?, ?>> serviceTrackers) {
+    @Override
+    public void removedService(
+        ServiceReference<Bus> serviceReference,
+        Collection<ServiceTracker<?, ?>> serviceTrackers) {
 
-		_bundleContext.ungetService(serviceReference);
+        _bundleContext.ungetService(serviceReference);
 
-		for (ServiceTracker<?, ?> serviceTracker : serviceTrackers) {
-			serviceTracker.close();
-		}
-	}
+        for (ServiceTracker<?, ?> serviceTracker : serviceTrackers) {
+            serviceTracker.close();
+        }
+    }
 
 }

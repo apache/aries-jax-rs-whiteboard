@@ -30,122 +30,119 @@ import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
 import org.apache.cxf.jaxrs.provider.json.JSONProvider;
 
-/**
- * @author Carlos Sierra Andrés
- */
 public class CXFJaxRsServiceRegistrator {
 
-	public CXFJaxRsServiceRegistrator(
-		Bus bus, Application application, Map<String, Object> properties) {
+    public CXFJaxRsServiceRegistrator(
+        Bus bus, Application application, Map<String, Object> properties) {
 
-		_bus = bus;
-		_application = application;
-		_properties = properties;
+        _bus = bus;
+        _application = application;
+        _properties = properties;
 
-		rewire();
-	}
+        rewire();
+    }
 
-	public void close() {
-		if (_closed) {
-			return;
-		}
+    public void close() {
+        if (_closed) {
+            return;
+        }
 
-		if (_server != null) {
-			_server.destroy();
-		}
+        if (_server != null) {
+            _server.destroy();
+        }
 
-		_closed = true;
-	}
+        _closed = true;
+    }
 
-	public void addProvider(Object provider) {
-		if (_closed) {
-			return;
-		}
+    public void addProvider(Object provider) {
+        if (_closed) {
+            return;
+        }
 
-		_providers.add(provider);
+        _providers.add(provider);
 
-		rewire();
-	}
+        rewire();
+    }
 
-	public void addService(Object service) {
-		if (_closed) {
-			return;
-		}
+    public void addService(Object service) {
+        if (_closed) {
+            return;
+        }
 
-		_services.add(service);
+        _services.add(service);
 
-		rewire();
-	}
+        rewire();
+    }
 
-	public void removeProvider(Object provider) {
-		if (_closed) {
-			return;
-		}
+    public void removeProvider(Object provider) {
+        if (_closed) {
+            return;
+        }
 
-		_providers.remove(provider);
+        _providers.remove(provider);
 
-		rewire();
-	}
+        rewire();
+    }
 
-	public void removeService(Object service) {
-		if (_closed) {
-			return;
-		}
+    public void removeService(Object service) {
+        if (_closed) {
+            return;
+        }
 
-		_services.remove(service);
+        _services.remove(service);
 
-		rewire();
-	}
+        rewire();
+    }
 
-	protected synchronized void rewire() {
-		if (_server != null) {
-			_server.destroy();
-		}
+    protected synchronized void rewire() {
+        if (_server != null) {
+            _server.destroy();
+        }
 
-		RuntimeDelegate runtimeDelegate = RuntimeDelegate.getInstance();
+        RuntimeDelegate runtimeDelegate = RuntimeDelegate.getInstance();
 
-		JAXRSServerFactoryBean jaxRsServerFactoryBean =
-			runtimeDelegate.createEndpoint(
-				_application, JAXRSServerFactoryBean.class);
+        JAXRSServerFactoryBean jaxRsServerFactoryBean =
+            runtimeDelegate.createEndpoint(
+                _application, JAXRSServerFactoryBean.class);
 
-		jaxRsServerFactoryBean.setBus(_bus);
-		jaxRsServerFactoryBean.setProperties(_properties);
+        jaxRsServerFactoryBean.setBus(_bus);
+        jaxRsServerFactoryBean.setProperties(_properties);
 
-		JSONProvider<Object> jsonProvider = new JSONProvider<>();
+        JSONProvider<Object> jsonProvider = new JSONProvider<>();
 
-		jsonProvider.setDropCollectionWrapperElement(true);
-		jsonProvider.setDropRootElement(true);
-		jsonProvider.setSerializeAsArray(true);
-		jsonProvider.setSupportUnwrapped(true);
+        jsonProvider.setDropCollectionWrapperElement(true);
+        jsonProvider.setDropRootElement(true);
+        jsonProvider.setSerializeAsArray(true);
+        jsonProvider.setSupportUnwrapped(true);
 
-		jaxRsServerFactoryBean.setProvider(jsonProvider);
+        jaxRsServerFactoryBean.setProvider(jsonProvider);
 
-		for (Object provider : _providers) {
-			jaxRsServerFactoryBean.setProvider(provider);
-		}
+        for (Object provider : _providers) {
+            jaxRsServerFactoryBean.setProvider(provider);
+        }
 
-		for (Object service : _services) {
-			jaxRsServerFactoryBean.setResourceProvider(
-				new SingletonResourceProvider(service, true));
-		}
+        for (Object service : _services) {
+            jaxRsServerFactoryBean.setResourceProvider(
+                new SingletonResourceProvider(service, true));
+        }
 
-		String address = _properties.get("CXF_ENDPOINT_ADDRESS").toString();
+        String address = _properties.get("CXF_ENDPOINT_ADDRESS").toString();
 
-		if (address != null) {
-			jaxRsServerFactoryBean.setAddress(address);
-		}
+        if (address != null) {
+            jaxRsServerFactoryBean.setAddress(address);
+        }
 
-		_server = jaxRsServerFactoryBean.create();
+        _server = jaxRsServerFactoryBean.create();
 
-		_server.start();
-	}
+        _server.start();
+    }
 
-	private volatile boolean _closed = false;
-	private final Application _application;
-	private final Bus _bus;
-	private final Map<String, Object> _properties;
-	private final Collection<Object> _providers = new ArrayList<>();
-	private Server _server;
-	private final Collection<Object> _services = new ArrayList<>();
+    private volatile boolean _closed = false;
+    private final Application _application;
+    private final Bus _bus;
+    private final Map<String, Object> _properties;
+    private final Collection<Object> _providers = new ArrayList<>();
+    private Server _server;
+    private final Collection<Object> _services = new ArrayList<>();
 
 }

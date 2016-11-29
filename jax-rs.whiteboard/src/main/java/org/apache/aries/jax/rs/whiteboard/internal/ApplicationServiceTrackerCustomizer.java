@@ -29,107 +29,104 @@ import org.osgi.framework.ServiceReference;
 import org.osgi.framework.ServiceRegistration;
 import org.osgi.util.tracker.ServiceTrackerCustomizer;
 
-/**
- * @author Carlos Sierra Andrés
- */
 class ApplicationServiceTrackerCustomizer
-	implements ServiceTrackerCustomizer
-		<Application, ApplicationServiceTrackerCustomizer.Tracked> {
+    implements ServiceTrackerCustomizer
+        <Application, ApplicationServiceTrackerCustomizer.Tracked> {
 
-	private BundleContext _bundleContext;
-	private Bus _bus;
+    private BundleContext _bundleContext;
+    private Bus _bus;
 
-	public ApplicationServiceTrackerCustomizer(
-		BundleContext bundleContext, Bus bus) {
+    public ApplicationServiceTrackerCustomizer(
+        BundleContext bundleContext, Bus bus) {
 
-		_bundleContext = bundleContext;
-		_bus = bus;
-	}
+        _bundleContext = bundleContext;
+        _bus = bus;
+    }
 
-	@Override
-	public Tracked addingService(
-		ServiceReference<Application> serviceReference) {
+    @Override
+    public Tracked addingService(
+        ServiceReference<Application> serviceReference) {
 
-		Application application = _bundleContext.getService(
-			serviceReference);
+        Application application = _bundleContext.getService(
+            serviceReference);
 
-		try {
-			String[] propertyKeys = serviceReference.getPropertyKeys();
+        try {
+            String[] propertyKeys = serviceReference.getPropertyKeys();
 
-			Map<String, Object> properties = new HashMap<>(
-				propertyKeys.length);
+            Map<String, Object> properties = new HashMap<>(
+                propertyKeys.length);
 
-			for (String propertyKey : propertyKeys) {
-				properties.put(
-					propertyKey, serviceReference.getProperty(propertyKey));
-			}
+            for (String propertyKey : propertyKeys) {
+                properties.put(
+                    propertyKey, serviceReference.getProperty(propertyKey));
+            }
 
-			properties.put(
-				"CXF_ENDPOINT_ADDRESS",
-				serviceReference.getProperty("osgi.jaxrs.application.base").
-					toString());
+            properties.put(
+                "CXF_ENDPOINT_ADDRESS",
+                serviceReference.getProperty("osgi.jaxrs.application.base").
+                    toString());
 
-			CXFJaxRsServiceRegistrator cxfJaxRsServiceRegistrator =
-				new CXFJaxRsServiceRegistrator(_bus, application, properties);
+            CXFJaxRsServiceRegistrator cxfJaxRsServiceRegistrator =
+                new CXFJaxRsServiceRegistrator(_bus, application, properties);
 
-			ServiceRegistration<CXFJaxRsServiceRegistrator>
-				cxfJaxRsServiceRegistratorRegistration =
-					_bundleContext.registerService(
-						CXFJaxRsServiceRegistrator.class,
-						cxfJaxRsServiceRegistrator,
-						new Hashtable<>(properties));
+            ServiceRegistration<CXFJaxRsServiceRegistrator>
+                cxfJaxRsServiceRegistratorRegistration =
+                    _bundleContext.registerService(
+                        CXFJaxRsServiceRegistrator.class,
+                        cxfJaxRsServiceRegistrator,
+                        new Hashtable<>(properties));
 
-			return new Tracked(
-				cxfJaxRsServiceRegistrator, application,
-				cxfJaxRsServiceRegistratorRegistration);
-		}
-		catch (Throwable e) {
-			_bundleContext.ungetService(serviceReference);
+            return new Tracked(
+                cxfJaxRsServiceRegistrator, application,
+                cxfJaxRsServiceRegistratorRegistration);
+        }
+        catch (Throwable e) {
+            _bundleContext.ungetService(serviceReference);
 
-			throw e;
-		}
-	}
+            throw e;
+        }
+    }
 
-	@Override
-	public void modifiedService(
-		ServiceReference<Application> serviceReference, Tracked tracked) {
+    @Override
+    public void modifiedService(
+        ServiceReference<Application> serviceReference, Tracked tracked) {
 
-		removedService(serviceReference, tracked);
+        removedService(serviceReference, tracked);
 
-		addingService(serviceReference);
-	}
+        addingService(serviceReference);
+    }
 
-	@Override
-	public void removedService(
-		ServiceReference<Application> reference, Tracked tracked) {
+    @Override
+    public void removedService(
+        ServiceReference<Application> reference, Tracked tracked) {
 
-		_bundleContext.ungetService(reference);
+        _bundleContext.ungetService(reference);
 
-		tracked._cxfJaxRsServiceRegistrator.close();
+        tracked._cxfJaxRsServiceRegistrator.close();
 
-		tracked._cxfJaxRsServiceRegistratorServiceRegistration.unregister();
-	}
+        tracked._cxfJaxRsServiceRegistratorServiceRegistration.unregister();
+    }
 
-	public static class Tracked {
+    public static class Tracked {
 
-		private final CXFJaxRsServiceRegistrator _cxfJaxRsServiceRegistrator;
-		private final Application _application;
-		private final ServiceRegistration<CXFJaxRsServiceRegistrator>
-			_cxfJaxRsServiceRegistratorServiceRegistration;
+        private final CXFJaxRsServiceRegistrator _cxfJaxRsServiceRegistrator;
+        private final Application _application;
+        private final ServiceRegistration<CXFJaxRsServiceRegistrator>
+            _cxfJaxRsServiceRegistratorServiceRegistration;
 
-		public Tracked(
-			CXFJaxRsServiceRegistrator cxfJaxRsServiceRegistrator,
-			Application application,
-			ServiceRegistration<CXFJaxRsServiceRegistrator>
-				cxfJaxRsServiceRegistratorServiceRegistration) {
+        public Tracked(
+            CXFJaxRsServiceRegistrator cxfJaxRsServiceRegistrator,
+            Application application,
+            ServiceRegistration<CXFJaxRsServiceRegistrator>
+                cxfJaxRsServiceRegistratorServiceRegistration) {
 
-			_cxfJaxRsServiceRegistrator = cxfJaxRsServiceRegistrator;
-			_application = application;
-			_cxfJaxRsServiceRegistratorServiceRegistration =
-				cxfJaxRsServiceRegistratorServiceRegistration;
-		}
+            _cxfJaxRsServiceRegistrator = cxfJaxRsServiceRegistrator;
+            _application = application;
+            _cxfJaxRsServiceRegistratorServiceRegistration =
+                cxfJaxRsServiceRegistratorServiceRegistration;
+        }
 
-	}
+    }
 }
 
 

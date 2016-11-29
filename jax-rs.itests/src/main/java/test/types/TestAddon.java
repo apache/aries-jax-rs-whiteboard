@@ -27,18 +27,18 @@ import javax.ws.rs.core.UriInfo;
 //property = "osgi.jaxrs.resource.base=/test-addon",
 public class TestAddon {
 
-	@GET
-	@Path("/{name}")
-	public String sayHello(@PathParam("name") String name) {
-		return "Hello " + name;
-	}
+    @GET
+    @Path("/{name}")
+    public String sayHello(@PathParam("name") String name) {
+        return "Hello " + name;
+    }
 
-	@PostConstruct
-	public void init() {
-		System.out.println("URIINFO: " + _uriInfo);
-	}
+    @PostConstruct
+    public void init() {
+        System.out.println("URIINFO: " + _uriInfo);
+    }
 
-	@Context
-	UriInfo _uriInfo;
+    @Context
+    UriInfo _uriInfo;
 
 }

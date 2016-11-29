@@ -23,18 +23,18 @@ import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ContainerRequestFilter;
 import javax.ws.rs.ext.Provider;
 
-//	property = {
-//		"jaxrs.application.select=(component.name=org.apache.aries.jax.rs.example.ExampleApplication)",
-//		"osgi.jaxrs.filter.base=/examples"
-//	}
+//    property = {
+//        "jaxrs.application.select=(component.name=org.apache.aries.jax.rs.example.ExampleApplication)",
+//        "osgi.jaxrs.filter.base=/examples"
+//    }
 @Provider
 public class TestFilter implements ContainerRequestFilter {
 
-	@Override
-	public void filter(ContainerRequestContext requestContext)
-		throws IOException {
+    @Override
+    public void filter(ContainerRequestContext requestContext)
+        throws IOException {
 
-		System.out.println("FILTERED!");
-	}
+        System.out.println("FILTERED!");
+    }
 
 }

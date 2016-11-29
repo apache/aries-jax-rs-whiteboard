@@ -24,24 +24,21 @@ import javax.ws.rs.container.ContainerRequestFilter;
 import javax.ws.rs.ext.Provider;
 import java.io.IOException;
 
-/**
- * @author Carlos Sierra Andrés
- */
 @Component(
-	immediate = true,
-	property = {
-		"jaxrs.application.select=(component.name=ExampleApplication)",
-		"osgi.jaxrs.filter.base=/examples"
-	}
+    immediate = true,
+    property = {
+        "jaxrs.application.select=(component.name=ExampleApplication)",
+        "osgi.jaxrs.filter.base=/examples"
+    }
 )
 @Provider
 public class ExampleFilter implements ContainerRequestFilter {
 
-	@Override
-	public void filter(ContainerRequestContext requestContext)
-		throws IOException {
+    @Override
+    public void filter(ContainerRequestContext requestContext)
+        throws IOException {
 
-		System.out.println("FILTERED!");
-	}
+        System.out.println("FILTERED!");
+    }
 
 }

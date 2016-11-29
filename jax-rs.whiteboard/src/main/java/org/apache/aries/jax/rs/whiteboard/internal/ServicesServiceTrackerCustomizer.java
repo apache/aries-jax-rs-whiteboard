@@ -26,77 +26,74 @@ import org.osgi.framework.wiring.BundleWiring;
 import org.osgi.util.tracker.ServiceTracker;
 import org.osgi.util.tracker.ServiceTrackerCustomizer;
 
-/**
- * @author Carlos Sierra Andrés
- */
 public class ServicesServiceTrackerCustomizer
-	implements ServiceTrackerCustomizer
-		<Object, ServiceTracker
-			<CXFJaxRsServiceRegistrator, ?>> {
+    implements ServiceTrackerCustomizer
+        <Object, ServiceTracker
+            <CXFJaxRsServiceRegistrator, ?>> {
 
-	private final BundleContext _bundleContext;
+    private final BundleContext _bundleContext;
 
-	public ServicesServiceTrackerCustomizer(BundleContext bundleContext) {
-		_bundleContext = bundleContext;
-	}
+    public ServicesServiceTrackerCustomizer(BundleContext bundleContext) {
+        _bundleContext = bundleContext;
+    }
 
-	@Override
-	public ServiceTracker
-		<CXFJaxRsServiceRegistrator, ?>
-	addingService(ServiceReference<Object> reference) {
+    @Override
+    public ServiceTracker
+        <CXFJaxRsServiceRegistrator, ?>
+    addingService(ServiceReference<Object> reference) {
 
-		String applicationSelector =
-			reference.getProperty("jaxrs.application.select").toString();
+        String applicationSelector =
+            reference.getProperty("jaxrs.application.select").toString();
 
-		Bundle bundle = reference.getBundle();
+        Bundle bundle = reference.getBundle();
 
-		BundleWiring bundleWiring = bundle.adapt(BundleWiring.class);
+        BundleWiring bundleWiring = bundle.adapt(BundleWiring.class);
 
-		ClassLoader classLoader = bundleWiring.getClassLoader();
+        ClassLoader classLoader = bundleWiring.getClassLoader();
 
-		Object service = _bundleContext.getService(reference);
+        Object service = _bundleContext.getService(reference);
 
-		try {
-			Filter filter = _bundleContext.createFilter(
-				"(&(objectClass=" + CXFJaxRsServiceRegistrator.class.getName() +
-					")" + applicationSelector + ")");
+        try {
+            Filter filter = _bundleContext.createFilter(
+                "(&(objectClass=" + CXFJaxRsServiceRegistrator.class.getName() +
+                    ")" + applicationSelector + ")");
 
-			ServiceTracker
-				<CXFJaxRsServiceRegistrator, ?>
-				serviceTracker = new ServiceTracker<>(
-					_bundleContext, filter,
-					new AddonsServiceTrackerCustomizer(
-						_bundleContext, classLoader, service));
+            ServiceTracker
+                <CXFJaxRsServiceRegistrator, ?>
+                serviceTracker = new ServiceTracker<>(
+                    _bundleContext, filter,
+                    new AddonsServiceTrackerCustomizer(
+                        _bundleContext, classLoader, service));
 
-			serviceTracker.open();
+            serviceTracker.open();
 
-			return serviceTracker;
-		}
-		catch (InvalidSyntaxException ise) {
-			_bundleContext.ungetService(reference);
+            return serviceTracker;
+        }
+        catch (InvalidSyntaxException ise) {
+            _bundleContext.ungetService(reference);
 
-			throw new RuntimeException(ise);
-		}
-	}
+            throw new RuntimeException(ise);
+        }
+    }
 
-	@Override
-	public void modifiedService(
-		ServiceReference<Object> reference,
-		ServiceTracker<CXFJaxRsServiceRegistrator, ?> serviceTracker) {
+    @Override
+    public void modifiedService(
+        ServiceReference<Object> reference,
+        ServiceTracker<CXFJaxRsServiceRegistrator, ?> serviceTracker) {
 
-		removedService(reference, serviceTracker);
+        removedService(reference, serviceTracker);
 
-		addingService(reference);
-	}
+        addingService(reference);
+    }
 
-	@Override
-	public void removedService(
-		ServiceReference<Object> reference,
-		ServiceTracker<CXFJaxRsServiceRegistrator, ?> serviceTracker) {
+    @Override
+    public void removedService(
+        ServiceReference<Object> reference,
+        ServiceTracker<CXFJaxRsServiceRegistrator, ?> serviceTracker) {
 
-		serviceTracker.close();
+        serviceTracker.close();
 
-		_bundleContext.ungetService(reference);
-	}
+        _bundleContext.ungetService(reference);
+    }
 
 }

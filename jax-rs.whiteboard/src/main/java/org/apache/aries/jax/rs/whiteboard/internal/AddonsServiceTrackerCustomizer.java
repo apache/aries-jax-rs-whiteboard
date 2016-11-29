@@ -23,85 +23,82 @@ import org.osgi.util.tracker.ServiceTrackerCustomizer;
 
 import javax.ws.rs.ext.Provider;
 
-/**
- * @author Carlos Sierra Andrés
- */
 public class AddonsServiceTrackerCustomizer
-	implements
-		ServiceTrackerCustomizer<CXFJaxRsServiceRegistrator, CXFJaxRsServiceRegistrator> {
+    implements
+        ServiceTrackerCustomizer<CXFJaxRsServiceRegistrator, CXFJaxRsServiceRegistrator> {
 
-	private final BundleContext _bundleContext;
-	private final ClassLoader _classLoader;
-	private final Class<?> _serviceClass;
-	private final Object _service;
+    private final BundleContext _bundleContext;
+    private final ClassLoader _classLoader;
+    private final Class<?> _serviceClass;
+    private final Object _service;
 
-	public AddonsServiceTrackerCustomizer(
-		BundleContext bundleContext, ClassLoader classLoader,
-		Object service) {
+    public AddonsServiceTrackerCustomizer(
+        BundleContext bundleContext, ClassLoader classLoader,
+        Object service) {
 
-		_bundleContext = bundleContext;
-		_classLoader = classLoader;
-		_service = service;
+        _bundleContext = bundleContext;
+        _classLoader = classLoader;
+        _service = service;
 
-		_serviceClass = service.getClass();
-	}
+        _serviceClass = service.getClass();
+    }
 
-	@Override
-	public CXFJaxRsServiceRegistrator addingService(
-		ServiceReference<CXFJaxRsServiceRegistrator> reference) {
+    @Override
+    public CXFJaxRsServiceRegistrator addingService(
+        ServiceReference<CXFJaxRsServiceRegistrator> reference) {
 
-		Thread thread = Thread.currentThread();
+        Thread thread = Thread.currentThread();
 
-		ClassLoader contextClassLoader =
-			thread.getContextClassLoader();
+        ClassLoader contextClassLoader =
+            thread.getContextClassLoader();
 
-		CXFJaxRsServiceRegistrator cxfJaxRsServiceRegistrator =
-			_bundleContext.getService(reference);
+        CXFJaxRsServiceRegistrator cxfJaxRsServiceRegistrator =
+            _bundleContext.getService(reference);
 
-		try {
-			thread.setContextClassLoader(_classLoader);
+        try {
+            thread.setContextClassLoader(_classLoader);
 
-			if (_serviceClass.isAnnotationPresent(Provider.class)) {
-				cxfJaxRsServiceRegistrator.addProvider(_service);
-			} else {
-				cxfJaxRsServiceRegistrator.addService(_service);
-			}
+            if (_serviceClass.isAnnotationPresent(Provider.class)) {
+                cxfJaxRsServiceRegistrator.addProvider(_service);
+            } else {
+                cxfJaxRsServiceRegistrator.addService(_service);
+            }
 
 
-			return cxfJaxRsServiceRegistrator;
-		}
-		catch (Exception e) {
-			_bundleContext.ungetService(reference);
+            return cxfJaxRsServiceRegistrator;
+        }
+        catch (Exception e) {
+            _bundleContext.ungetService(reference);
 
-			throw e;
-		}
-		finally {
-			thread.setContextClassLoader(contextClassLoader);
-		}
-	}
+            throw e;
+        }
+        finally {
+            thread.setContextClassLoader(contextClassLoader);
+        }
+    }
 
-	@Override
-	public void modifiedService(
-		ServiceReference<CXFJaxRsServiceRegistrator> reference,
-		CXFJaxRsServiceRegistrator cxfJaxRsServiceRegistrator) {
+    @Override
+    public void modifiedService(
+        ServiceReference<CXFJaxRsServiceRegistrator> reference,
+        CXFJaxRsServiceRegistrator cxfJaxRsServiceRegistrator) {
 
-		removedService(reference, cxfJaxRsServiceRegistrator);
+        removedService(reference, cxfJaxRsServiceRegistrator);
 
-		addingService(reference);
-	}
+        addingService(reference);
+    }
 
-	@Override
-	public void removedService(
-		ServiceReference<CXFJaxRsServiceRegistrator> reference,
-		CXFJaxRsServiceRegistrator cxfJaxRsServiceRegistrator) {
+    @Override
+    public void removedService(
+        ServiceReference<CXFJaxRsServiceRegistrator> reference,
+        CXFJaxRsServiceRegistrator cxfJaxRsServiceRegistrator) {
 
-		if (_serviceClass.isAnnotationPresent(Provider.class)) {
-			cxfJaxRsServiceRegistrator.removeProvider(_service);
-		} else {
-			cxfJaxRsServiceRegistrator.removeService(_service);
-		}
+        if (_serviceClass.isAnnotationPresent(Provider.class)) {
+            cxfJaxRsServiceRegistrator.removeProvider(_service);
+        } else {
+            cxfJaxRsServiceRegistrator.removeService(_service);
+        }
 
-		_bundleContext.ungetService(reference);
-	}
+        _bundleContext.ungetService(reference);
+    }
 
 }

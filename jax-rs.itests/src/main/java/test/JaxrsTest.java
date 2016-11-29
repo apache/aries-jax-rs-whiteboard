@@ -31,40 +31,40 @@ import test.types.TestAddon;
 
 public class JaxrsTest extends TestCase {
 
-	static BundleContext bundleContext = FrameworkUtil.getBundle(
-		JaxrsTest.class).getBundleContext();
+    static BundleContext bundleContext = FrameworkUtil.getBundle(
+        JaxrsTest.class).getBundleContext();
 
-	public void testEndPoint() throws Exception {
-		ServiceRegistration<?> serviceRegistration = null;
+    public void testEndPoint() throws Exception {
+        ServiceRegistration<?> serviceRegistration = null;
 
-		try {
-			TestAddon testAddon = new TestAddon();
+        try {
+            TestAddon testAddon = new TestAddon();
 
-			Dictionary<String, Object> properties = new Hashtable<>();
-			properties.put("osgi.jaxrs.resource.base", "/test-addon");
+            Dictionary<String, Object> properties = new Hashtable<>();
+            properties.put("osgi.jaxrs.resource.base", "/test-addon");
 
-			serviceRegistration = bundleContext.registerService(
-				Object.class, testAddon, properties);
+            serviceRegistration = bundleContext.registerService(
+                Object.class, testAddon, properties);
 
-			// TODO this availability should be checked through a jaxrs runtime service
+            // TODO this availability should be checked through a jaxrs runtime service
 
-			Filter filter = bundleContext.createFilter("(CXF_ENDPOINT_ADDRESS=/test-addon)");
+            Filter filter = bundleContext.createFilter("(CXF_ENDPOINT_ADDRESS=/test-addon)");
 
-			ServiceTracker<?, ?> st = new ServiceTracker<>(bundleContext, filter, null);
+            ServiceTracker<?, ?> st = new ServiceTracker<>(bundleContext, filter, null);
 
-			st.open();
+            st.open();
 
-			if (st.waitForService(5000) == null) {
-				fail();
-			}
+            if (st.waitForService(5000) == null) {
+                fail();
+            }
 
-			// TODO add http client to connect to the endpoint
-		}
-		finally {
-			if (serviceRegistration != null) {
-				serviceRegistration.unregister();
-			}
-		}
-	}
+            // TODO add http client to connect to the endpoint
+        }
+        finally {
+            if (serviceRegistration != null) {
+                serviceRegistration.unregister();
+            }
+        }
+    }
 
 }

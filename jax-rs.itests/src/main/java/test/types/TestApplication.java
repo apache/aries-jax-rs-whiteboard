@@ -24,18 +24,18 @@ import javax.ws.rs.GET;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Application;
 
-//	property = "osgi.jaxrs.application.base=/example-application",
+//    property = "osgi.jaxrs.application.base=/example-application",
 public class TestApplication extends Application {
 
-	@Override
-	public Set<Object> getSingletons() {
-		return Collections.<Object>singleton(this);
-	}
+    @Override
+    public Set<Object> getSingletons() {
+        return Collections.<Object>singleton(this);
+    }
 
-	@GET
-	@Produces("text/plain")
-	public String sayHello() {
-		return "Hello world";
-	}
+    @GET
+    @Produces("text/plain")
+    public String sayHello() {
+        return "Hello world";
+    }
 
 }
