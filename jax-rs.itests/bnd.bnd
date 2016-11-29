@@ -1,5 +1,5 @@
 Bundle-Description: Integration Test bundle for the JAX-RS extender
 
 Test-Cases: \
-	${classes;CONCRETE;EXTENDS;junit.framework.TestCase},\
-	${classes;CONCRETE;ANNOTATED;org.junit.Test}
+    ${classes;CONCRETE;EXTENDS;junit.framework.TestCase},\
+    ${classes;CONCRETE;ANNOTATED;org.junit.Test}
