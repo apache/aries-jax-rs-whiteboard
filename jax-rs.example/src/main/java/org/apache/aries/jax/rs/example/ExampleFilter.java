@@ -27,7 +27,7 @@ import java.io.IOException;
 @Component(
     immediate = true,
     property = {
-        "jaxrs.application.select=(component.name=ExampleApplication)",
+        "jaxrs.application.select=(component.name=org.apache.aries.jax.rs.example.ExampleApplication)",
         "osgi.jaxrs.filter.base=/examples"
     }
 )
