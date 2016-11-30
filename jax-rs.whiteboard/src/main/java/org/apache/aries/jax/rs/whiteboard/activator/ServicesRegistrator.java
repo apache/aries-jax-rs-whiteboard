@@ -18,6 +18,7 @@
 package org.apache.aries.jax.rs.whiteboard.activator;
 
 import org.apache.cxf.Bus;
+import org.apache.cxf.BusFactory;
 import org.apache.cxf.bus.CXFBusFactory;
 import org.apache.cxf.transport.servlet.CXFNonSpringServlet;
 import org.osgi.framework.BundleContext;
@@ -27,118 +28,94 @@ import org.osgi.framework.InvalidSyntaxException;
 import org.osgi.framework.ServiceReference;
 import org.osgi.framework.ServiceRegistration;
 import org.osgi.service.http.context.ServletContextHelper;
-import org.osgi.service.http.whiteboard.HttpWhiteboardConstants;
 import org.osgi.util.tracker.ServiceTracker;
 import org.osgi.util.tracker.ServiceTrackerCustomizer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.servlet.Servlet;
+
+import static org.osgi.service.http.whiteboard.HttpWhiteboardConstants.HTTP_WHITEBOARD_CONTEXT_NAME;
+import static org.osgi.service.http.whiteboard.HttpWhiteboardConstants.HTTP_WHITEBOARD_CONTEXT_PATH;
+import static org.osgi.service.http.whiteboard.HttpWhiteboardConstants.HTTP_WHITEBOARD_CONTEXT_SELECT;
+import static org.osgi.service.http.whiteboard.HttpWhiteboardConstants.HTTP_WHITEBOARD_DEFAULT_CONTEXT_NAME;
+import static org.osgi.service.http.whiteboard.HttpWhiteboardConstants.HTTP_WHITEBOARD_SERVLET_PATTERN;
+
 import java.util.Dictionary;
 import java.util.Hashtable;
 
 public class ServicesRegistrator
     implements ServiceTrackerCustomizer<ServletContextHelper, Object> {
 
+    private static final Logger _logger = LoggerFactory.getLogger(ServicesRegistrator.class);
+
+    private final BundleContext _bundleContext;
+    private ServiceRegistration<Bus> _busServiceRegistration;
+    private ServiceTracker<ServletContextHelper, Object> _serviceTracker;
+    private ServiceRegistration<Servlet> _servletServiceRegistration;
+
     public ServicesRegistrator(BundleContext bundleContext) {
         _bundleContext = bundleContext;
     }
 
     @Override
-    public Object addingService(
-        ServiceReference<ServletContextHelper> reference) {
-        
-        String contextPath = (String)reference.getProperty(
-            HttpWhiteboardConstants.HTTP_WHITEBOARD_CONTEXT_PATH);
-        
-        CXFNonSpringServlet cxfNonSpringServlet = new CXFNonSpringServlet();
-
-        CXFBusFactory cxfBusFactory =
-            (CXFBusFactory) CXFBusFactory.newInstance(
-                CXFBusFactory.class.getName());
-
-        Bus bus = cxfBusFactory.createBus();
-
-        Dictionary<String, Object> properties = new Hashtable<>();
-
-        properties.put(
-            HttpWhiteboardConstants.HTTP_WHITEBOARD_CONTEXT_SELECT,
-            "(" + HttpWhiteboardConstants.HTTP_WHITEBOARD_CONTEXT_NAME + "=" + 
-                HttpWhiteboardConstants.HTTP_WHITEBOARD_DEFAULT_CONTEXT_NAME + ")");
-        properties.put(
-            HttpWhiteboardConstants.HTTP_WHITEBOARD_SERVLET_PATTERN, "/*");
-        properties.put(Constants.SERVICE_RANKING, -1);
-
-        cxfNonSpringServlet.setBus(bus);
-
-        _servletServiceRegistration = _bundleContext.registerService(
-            Servlet.class, cxfNonSpringServlet, properties);
-
-        properties = new Hashtable<>();
-
-        properties.put(
-            HttpWhiteboardConstants.HTTP_WHITEBOARD_CONTEXT_PATH,
-            contextPath);
-
-        _busServiceRegistration = _bundleContext.registerService(
-            Bus.class, bus, properties);
-
+    public Object addingService(ServiceReference<ServletContextHelper> reference) {
+        Bus bus = BusFactory.newInstance(CXFBusFactory.class.getName()).createBus();
+        _servletServiceRegistration = createCXFServletService(bus);
+        _busServiceRegistration = createBusService(reference, bus);
         return new Object();
     }
 
-    @Override
-    public void modifiedService(
-        ServiceReference<ServletContextHelper> reference, Object object) {        
+    private ServiceRegistration<Servlet> createCXFServletService(Bus bus) {
+        Dictionary<String, Object> properties = new Hashtable<>();
+        properties.put(HTTP_WHITEBOARD_CONTEXT_SELECT,
+            "(" + HTTP_WHITEBOARD_CONTEXT_NAME + "=" + HTTP_WHITEBOARD_DEFAULT_CONTEXT_NAME + ")");
+        properties.put(HTTP_WHITEBOARD_SERVLET_PATTERN, "/*");
+        properties.put(Constants.SERVICE_RANKING, -1);
+        
+        CXFNonSpringServlet cxfNonSpringServlet = new CXFNonSpringServlet();
+        cxfNonSpringServlet.setBus(bus);
+        return _bundleContext.registerService(Servlet.class, cxfNonSpringServlet, properties);
+    }
+
+    private ServiceRegistration<Bus> createBusService(ServiceReference<ServletContextHelper> reference, Bus bus) {
+        Dictionary<String, Object> properties = new Hashtable<>();
+        String contextPath = (String)reference.getProperty(HTTP_WHITEBOARD_CONTEXT_PATH);
+        properties.put(HTTP_WHITEBOARD_CONTEXT_PATH, contextPath);
+        return _bundleContext.registerService(Bus.class, bus, properties);
     }
 
     @Override
-    public void removedService(
-        ServiceReference<ServletContextHelper> reference, Object object) {
+    public void modifiedService(ServiceReference<ServletContextHelper> reference, Object object) {        
+    }
 
+    @Override
+    public void removedService(ServiceReference<ServletContextHelper> reference, Object object) {
+        unregister(_busServiceRegistration);
+        unregister(_servletServiceRegistration);
+    }
+
+    private void unregister(ServiceRegistration<?> reg) {
         try {
-            _busServiceRegistration.unregister();
+            reg.unregister();
         }
         catch (Exception e) {
-            if (_logger.isWarnEnabled()) {
-                _logger.warn(
-                    "Unable to unregister CXF bus service registration " +
-                        _busServiceRegistration);
-            }
-        }
-
-        try {
-            _servletServiceRegistration.unregister();
-        }
-        catch (Exception e) {
-            if (_logger.isWarnEnabled()) {
-                _logger.warn(
-                    "Unable to unregister servlet service registration " +
-                        _servletServiceRegistration);
-            }
+            _logger.warn("Unable to unregister CXF bus service registration " + reg);
         }
     }
 
     public void start() throws InvalidSyntaxException {
-        Filter filter = _bundleContext.createFilter(
-            "(&(objectClass=" + ServletContextHelper.class.getName() + ")(" +
-                HttpWhiteboardConstants.HTTP_WHITEBOARD_CONTEXT_NAME + "=" + 
-                HttpWhiteboardConstants.HTTP_WHITEBOARD_DEFAULT_CONTEXT_NAME +"))");
-
+        String filterS = String.format("(&(objectClass=%s)(%s=%s))",
+                                       ServletContextHelper.class.getName(),
+                                       HTTP_WHITEBOARD_CONTEXT_NAME, 
+                                       HTTP_WHITEBOARD_DEFAULT_CONTEXT_NAME);
+        Filter filter = _bundleContext.createFilter(filterS);
         _serviceTracker = new ServiceTracker<>(_bundleContext, filter, this);
-
         _serviceTracker.open();
     }
 
     public void stop() {
         _serviceTracker.close();
     }
-
-    private static final Logger _logger = LoggerFactory.getLogger(
-        ServicesRegistrator.class);
-
-    private final BundleContext _bundleContext;
-    private ServiceRegistration<Bus> _busServiceRegistration;
-    private ServiceTracker<ServletContextHelper, Object> _serviceTracker;
-    private ServiceRegistration<Servlet> _servletServiceRegistration;
 
 }
