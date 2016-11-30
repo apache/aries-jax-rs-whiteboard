@@ -34,7 +34,7 @@ public class TestApplication extends Application {
     @GET
     @Produces("text/plain")
     public String sayHello() {
-        return "Hello world";
+        return "Hello application";
     }
 
 }
