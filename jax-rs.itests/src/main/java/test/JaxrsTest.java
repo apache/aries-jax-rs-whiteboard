@@ -67,4 +67,21 @@ public class JaxrsTest extends TestCase {
         }
     }
 
+
+    private Client createClient() {
+        Thread thread = Thread.currentThread();
+
+        ClassLoader contextClassLoader = thread.getContextClassLoader();
+
+        try {
+            thread.setContextClassLoader(
+                org.apache.cxf.jaxrs.client.Client.class.getClassLoader());
+
+            return ClientBuilder.newClient();
+        }
+        finally {
+            thread.setContextClassLoader(contextClassLoader);
+        }
+    }
+
 }
