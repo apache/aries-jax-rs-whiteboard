@@ -48,15 +48,7 @@ public class JaxrsTest {
         ServiceRegistration<?> serviceRegistration = null;
 
         try {
-            TestApplication testApplication = new TestApplication();
-
-            Dictionary<String, Object> properties = new Hashtable<>();
-
-            properties.put(
-                "osgi.jaxrs.application.base", "/test-application");
-
-            serviceRegistration = bundleContext.registerService(
-                Application.class, testApplication, properties);
+            serviceRegistration = registerApplication();
 
             Client client = createClient();
 
@@ -83,19 +75,12 @@ public class JaxrsTest {
         ServiceRegistration<?> serviceRegistration = null;
 
         try {
-            TestApplication testApplication = new TestApplication();
+            applicationRegistration = registerApplication();
 
-            Dictionary<String, Object> properties = new Hashtable<>();
-
-            properties.put(
-                "osgi.jaxrs.application.base", "/test-application");
-
-            applicationRegistration = bundleContext.registerService(
-                Application.class, testApplication, properties);
 
             TestAddon testAddon = new TestAddon();
 
-            properties = new Hashtable<>();
+            Dictionary<String, Object> properties = new Hashtable<>();
 
             properties.put(
                 "jaxrs.application.select",
@@ -133,19 +118,11 @@ public class JaxrsTest {
         ServiceRegistration<?> filterRegistration = null;
 
         try {
-            TestApplication testApplication = new TestApplication();
-
-            Dictionary<String, Object> properties = new Hashtable<>();
-
-            properties.put(
-                "osgi.jaxrs.application.base", "/test-application");
-
-            applicationRegistration = bundleContext.registerService(
-                Application.class, testApplication, properties);
+            applicationRegistration = registerApplication();
 
             TestFilter testFilter = new TestFilter();
 
-            properties = new Hashtable<>();
+            Dictionary<String, Object> properties = new Hashtable<>();
 
             properties.put(
                 "jaxrs.application.select",
@@ -275,6 +252,19 @@ public class JaxrsTest {
         finally {
             thread.setContextClassLoader(contextClassLoader);
         }
+    }
+
+
+    private ServiceRegistration<?> registerApplication() {
+        TestApplication testApplication = new TestApplication();
+
+        Dictionary<String, Object> properties = new Hashtable<>();
+
+        properties.put(
+            "osgi.jaxrs.application.base", "/test-application");
+
+        return bundleContext.registerService(
+            Application.class, testApplication, properties);
     }
 
 }
