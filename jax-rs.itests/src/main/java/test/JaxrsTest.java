@@ -20,20 +20,21 @@ package test;
 import java.util.Dictionary;
 import java.util.Hashtable;
 
+import org.junit.Test;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.Filter;
 import org.osgi.framework.FrameworkUtil;
 import org.osgi.framework.ServiceRegistration;
 import org.osgi.util.tracker.ServiceTracker;
 
-import junit.framework.TestCase;
 import test.types.TestAddon;
 
-public class JaxrsTest extends TestCase {
+public class JaxrsTest {
 
     static BundleContext bundleContext = FrameworkUtil.getBundle(
         JaxrsTest.class).getBundleContext();
-
+	
+	@Test
     public void testEndPoint() throws Exception {
         ServiceRegistration<?> serviceRegistration = null;
 
