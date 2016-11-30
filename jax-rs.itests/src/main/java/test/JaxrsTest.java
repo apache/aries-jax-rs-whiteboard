@@ -22,35 +22,240 @@ import java.util.Hashtable;
 
 import org.junit.Test;
 import org.osgi.framework.BundleContext;
-import org.osgi.framework.Filter;
 import org.osgi.framework.FrameworkUtil;
 import org.osgi.framework.ServiceRegistration;
-import org.osgi.util.tracker.ServiceTracker;
 
 import test.types.TestAddon;
+import test.types.TestApplication;
+import test.types.TestFilter;
+
+import javax.ws.rs.client.Client;
+import javax.ws.rs.client.ClientBuilder;
+import javax.ws.rs.client.WebTarget;
+import javax.ws.rs.core.Application;
+import javax.ws.rs.core.Response;
+
+import static org.junit.Assert.assertEquals;
+
 
 public class JaxrsTest {
 
     static BundleContext bundleContext = FrameworkUtil.getBundle(
         JaxrsTest.class).getBundleContext();
-	
-	@Test
-    public void testEndPoint() throws Exception {
+
+    @Test
+    public void testApplication() {
+        ServiceRegistration<?> serviceRegistration = null;
+
+        try {
+            TestApplication testApplication = new TestApplication();
+
+            Dictionary<String, Object> properties = new Hashtable<>();
+
+            properties.put(
+                "osgi.jaxrs.application.base", "/test-application");
+
+            serviceRegistration = bundleContext.registerService(
+                Application.class, testApplication, properties);
+
+            Client client = createClient();
+
+            WebTarget webTarget = client.
+                target("http://localhost:8080").
+                path("/test-application");
+
+            Response response = webTarget.request().get();
+
+            assertEquals("Hello application",
+                response.readEntity(String.class));
+        }
+        finally {
+            if (serviceRegistration != null) {
+                serviceRegistration.unregister();
+            }
+        }
+    }
+
+    @Test
+    public void testApplicationEndpointExtension() {
+        ServiceRegistration<?> applicationRegistration = null;
+
+        ServiceRegistration<?> serviceRegistration = null;
+
+        try {
+            TestApplication testApplication = new TestApplication();
+
+            Dictionary<String, Object> properties = new Hashtable<>();
+
+            properties.put(
+                "osgi.jaxrs.application.base", "/test-application");
+
+            applicationRegistration = bundleContext.registerService(
+                Application.class, testApplication, properties);
+
+            TestAddon testAddon = new TestAddon();
+
+            properties = new Hashtable<>();
+
+            properties.put(
+                "jaxrs.application.select",
+                "(osgi.jaxrs.application.base=/test-application)");
+
+            serviceRegistration = bundleContext.registerService(
+                Object.class, testAddon, properties);
+
+            Client client = createClient();
+
+            WebTarget webTarget = client.
+                target("http://localhost:8080").
+                path("/test-application").
+                path("extended");
+
+            Response response = webTarget.request().get();
+
+            assertEquals("Hello extended",
+                response.readEntity(String.class));
+        }
+        finally {
+            if (applicationRegistration != null) {
+                applicationRegistration.unregister();
+            }
+            if (serviceRegistration != null) {
+                serviceRegistration.unregister();
+            }
+        }
+    }
+
+    @Test
+    public void testApplicationProviderExtension() {
+        ServiceRegistration<?> applicationRegistration = null;
+
+        ServiceRegistration<?> filterRegistration = null;
+
+        try {
+            TestApplication testApplication = new TestApplication();
+
+            Dictionary<String, Object> properties = new Hashtable<>();
+
+            properties.put(
+                "osgi.jaxrs.application.base", "/test-application");
+
+            applicationRegistration = bundleContext.registerService(
+                Application.class, testApplication, properties);
+
+            TestFilter testFilter = new TestFilter();
+
+            properties = new Hashtable<>();
+
+            properties.put(
+                "jaxrs.application.select",
+                "(osgi.jaxrs.application.base=/test-application)");
+
+            filterRegistration = bundleContext.registerService(
+                Object.class, testFilter, properties);
+
+            Client client = createClient();
+
+            WebTarget webTarget = client.
+                target("http://localhost:8080").
+                path("/test-application");
+            Response response = webTarget.request().get();
+
+            assertEquals(
+                "Hello application", response.readEntity(String.class));
+
+            assertEquals(response.getHeaders().getFirst("Filtered"), "true");
+        }
+        finally {
+            if (applicationRegistration != null) {
+                applicationRegistration.unregister();
+            }
+            if (filterRegistration != null) {
+                filterRegistration.unregister();
+            }
+        }
+    }
+
+    @Test
+    public void testStandaloneEndPoint() {
         ServiceRegistration<?> serviceRegistration = null;
 
         try {
             TestAddon testAddon = new TestAddon();
 
             Dictionary<String, Object> properties = new Hashtable<>();
+
             properties.put("osgi.jaxrs.resource.base", "/test-addon");
 
             serviceRegistration = bundleContext.registerService(
                 Object.class, testAddon, properties);
 
+            Client client = createClient();
+
+            WebTarget webTarget = client.
+                target("http://localhost:8080").
+                path("/test-addon").
+                path("test");
+
+            Response response = webTarget.request().get();
+
+            assertEquals(
+                "This should say hello", "Hello test",
+                response.readEntity(String.class));
         }
         finally {
             if (serviceRegistration != null) {
                 serviceRegistration.unregister();
+            }
+        }
+    }
+
+    @Test
+    public void testStandaloneFilter() {
+        ServiceRegistration<?> filterRegistration = null;
+
+        ServiceRegistration<?> serviceRegistration = null;
+
+        try {
+            TestAddon testAddon = new TestAddon();
+
+            Dictionary<String, Object> properties = new Hashtable<>();
+
+            properties.put("osgi.jaxrs.resource.base", "/test-addon");
+
+            serviceRegistration = bundleContext.registerService(
+                Object.class, testAddon, properties);
+
+            TestFilter testFilter = new TestFilter();
+
+            properties = new Hashtable<>();
+
+            properties.put("osgi.jaxrs.filter.base", "/test-addon");
+
+            filterRegistration = bundleContext.registerService(
+                Object.class, testFilter, properties);
+
+            Client client = createClient();
+
+            WebTarget webTarget = client.
+                target("http://localhost:8080").
+                path("/test-addon").
+                path("test");
+
+            Response response = webTarget.request().get();
+
+            assertEquals(
+                "This should say hello", "Hello test",
+                response.readEntity(String.class));
+
+            assertEquals(response.getHeaders().getFirst("Filtered"), "true");
+        }
+        finally {
+            if (serviceRegistration != null) {
+                serviceRegistration.unregister();
+            }
+            if (filterRegistration != null) {
+                filterRegistration.unregister();
             }
         }
     }
