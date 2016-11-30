@@ -24,7 +24,6 @@ import javax.ws.rs.GET;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Application;
 
-//    property = "osgi.jaxrs.application.base=/example-application",
 public class TestApplication extends Application {
 
     @Override

@@ -17,14 +17,10 @@
 
 package test.types;
 
-import javax.annotation.PostConstruct;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.UriInfo;
 
-//property = "osgi.jaxrs.resource.base=/test-addon",
 public class TestAddon {
 
     @GET
@@ -32,13 +28,5 @@ public class TestAddon {
     public String sayHello(@PathParam("name") String name) {
         return "Hello " + name;
     }
-
-    @PostConstruct
-    public void init() {
-        System.out.println("URIINFO: " + _uriInfo);
-    }
-
-    @Context
-    UriInfo _uriInfo;
 
 }

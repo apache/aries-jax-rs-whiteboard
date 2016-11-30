@@ -23,10 +23,6 @@ import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ContainerRequestFilter;
 import javax.ws.rs.ext.Provider;
 
-//    property = {
-//        "jaxrs.application.select=(component.name=org.apache.aries.jax.rs.example.ExampleApplication)",
-//        "osgi.jaxrs.filter.base=/examples"
-//    }
 @Provider
 public class TestFilter implements ContainerRequestFilter {
 
