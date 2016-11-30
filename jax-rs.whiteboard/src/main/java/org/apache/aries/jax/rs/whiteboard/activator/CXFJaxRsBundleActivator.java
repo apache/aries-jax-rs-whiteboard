@@ -17,14 +17,9 @@
 
 package org.apache.aries.jax.rs.whiteboard.activator;
 
-import java.util.ArrayList;
-import java.util.Dictionary;
-import java.util.Hashtable;
-
 import javax.ws.rs.ext.RuntimeDelegate;
 
 import org.apache.cxf.Bus;
-import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.Filter;
@@ -42,58 +37,46 @@ public class CXFJaxRsBundleActivator implements BundleActivator {
 
     @Override
     public void start(BundleContext bundleContext) throws Exception {
-        Thread thread = Thread.currentThread();
-
-        ClassLoader contextClassLoader = thread.getContextClassLoader();
-
-        Bundle bundle = bundleContext.getBundle();
-
-        BundleWiring bundleWiring = bundle.adapt(BundleWiring.class);
-
-        thread.setContextClassLoader(bundleWiring.getClassLoader());
-
-        try {
-
-            // Initialize instance so it is never looked up again
-
-            RuntimeDelegate.getInstance();
-        }
-        finally {
-            thread.setContextClassLoader(contextClassLoader);
-        }
-
-        Dictionary<String, Object> runtimeProperties = new Hashtable<>();
-
-        runtimeProperties.put("endpoints", new ArrayList<String>());
+        initRuntimeDelegate(bundleContext);
 
         // TODO make the context path of the JAX-RS Whiteboard configurable.
-
         _servicesRegistrator = new ServicesRegistrator(bundleContext);
-
         _servicesRegistrator.start();
 
         _busServiceTracker = new ServiceTracker<>(
             bundleContext, Bus.class,
             new BusServiceTrackerCustomizer(bundleContext));
-
         _busServiceTracker.open();
 
         Filter filter = bundleContext.createFilter(
             "(jaxrs.application.select=*)");
-
         _singletonsTracker = new ServiceTracker<>(
             bundleContext, filter,
             new ServicesServiceTrackerCustomizer(bundleContext));
-
         _singletonsTracker.open();
+    }
+
+    /**
+     * Initialize instance so it is never looked up again
+     * @param bundleContext
+     */
+    private void initRuntimeDelegate(BundleContext bundleContext) {
+        Thread thread = Thread.currentThread();
+        ClassLoader oldClassLoader = thread.getContextClassLoader();
+        BundleWiring bundleWiring = bundleContext.getBundle().adapt(BundleWiring.class);
+        thread.setContextClassLoader(bundleWiring.getClassLoader());
+        try {
+            RuntimeDelegate.getInstance();
+        }
+        finally {
+            thread.setContextClassLoader(oldClassLoader);
+        }
     }
 
     @Override
     public void stop(BundleContext context) throws Exception {
         _busServiceTracker.close();
-
         _singletonsTracker.close();
-
         _servicesRegistrator.stop();
     }
 
