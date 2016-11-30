@@ -46,19 +46,6 @@ public class JaxrsTest extends TestCase {
             serviceRegistration = bundleContext.registerService(
                 Object.class, testAddon, properties);
 
-            // TODO this availability should be checked through a jaxrs runtime service
-
-            Filter filter = bundleContext.createFilter("(CXF_ENDPOINT_ADDRESS=/test-addon)");
-
-            ServiceTracker<?, ?> st = new ServiceTracker<>(bundleContext, filter, null);
-
-            st.open();
-
-            if (st.waitForService(5000) == null) {
-                fail();
-            }
-
-            // TODO add http client to connect to the endpoint
         }
         finally {
             if (serviceRegistration != null) {
