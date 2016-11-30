@@ -36,6 +36,7 @@ import javax.ws.rs.core.Application;
 import javax.ws.rs.core.Response;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 
 public class JaxrsTest {
@@ -69,6 +70,51 @@ public class JaxrsTest {
     }
 
     @Test
+    public void testApplicationReadd() {
+        ServiceRegistration<?> serviceRegistration = null;
+
+        Client client = createClient();
+
+        WebTarget webTarget = client.
+            target("http://localhost:8080").
+            path("/test-application");
+
+        assertTrue(webTarget.request().get().getStatus() == 404);
+
+        try {
+            serviceRegistration = registerApplication();
+
+            assertEquals(
+                "Hello application",
+                webTarget.
+                    request().
+                    get().
+                    readEntity(String.class));
+        }
+        finally {
+            if (serviceRegistration != null) {
+                serviceRegistration.unregister();
+            }
+        }
+
+        assertTrue(webTarget.request().get().getStatus() == 404);
+
+        try {
+            serviceRegistration = registerApplication();
+
+            assertEquals("Hello application",
+                webTarget.
+                    request().
+                    get().readEntity(String.class));
+        }
+        finally {
+            if (serviceRegistration != null) {
+                serviceRegistration.unregister();
+            }
+        }
+    }
+
+    @Test
     public void testApplicationEndpointExtension() {
         ServiceRegistration<?> applicationRegistration = null;
 
@@ -76,7 +122,6 @@ public class JaxrsTest {
 
         try {
             applicationRegistration = registerApplication();
-
 
             TestAddon testAddon = new TestAddon();
 
@@ -236,7 +281,6 @@ public class JaxrsTest {
             }
         }
     }
-
 
     private Client createClient() {
         Thread thread = Thread.currentThread();
