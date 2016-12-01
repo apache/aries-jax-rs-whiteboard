@@ -72,6 +72,7 @@
         <module>jax-rs.itests-run</module>
         <module>jax-rs.example</module>
         <module>jax-rs.example-run</module>
+        <module>org.osgi.service.jaxrs.whiteboard</module>
     </modules>
     <dependencies>
         <dependency>

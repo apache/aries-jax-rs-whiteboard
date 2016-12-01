@@ -1,0 +1,7 @@
+# Since the packages don't start with the project name, we need to tell javadoc the packages
+org.osgi.service.jaxrs.whiteboard.specs = org.osgi.service.jaxrs.*
+
+Export-Package:  \
+	org.osgi.service.jaxrs.*
+
+-contract: JavaJAXRS
