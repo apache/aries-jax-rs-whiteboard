@@ -77,19 +77,17 @@ public class FiltersAndInterceptorsServiceTrackerCustomizer
                 @Override
                 public void modifiedService(
                     ServiceReference<CXFJaxRsServiceRegistrator> reference,
-                    CXFJaxRsServiceRegistrator service) {
+                    CXFJaxRsServiceRegistrator serviceRegistrator) {
 
-                    removedService(reference, service);
+                    removedService(reference, serviceRegistrator);
                     addingService(reference);
                 }
 
                 @Override
                 public void removedService(
                     ServiceReference<CXFJaxRsServiceRegistrator> reference,
-                    CXFJaxRsServiceRegistrator service) {
+                    CXFJaxRsServiceRegistrator serviceRegistrator) {
 
-                    CXFJaxRsServiceRegistrator serviceRegistrator =
-                        _bundleContext.getService(reference);
                     try {
                         serviceRegistrator.removeProvider(service);
                     }
