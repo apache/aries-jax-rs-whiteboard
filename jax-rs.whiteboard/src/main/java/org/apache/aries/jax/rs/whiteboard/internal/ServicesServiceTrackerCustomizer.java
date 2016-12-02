@@ -26,10 +26,7 @@ import org.osgi.framework.wiring.BundleWiring;
 import org.osgi.util.tracker.ServiceTracker;
 import org.osgi.util.tracker.ServiceTrackerCustomizer;
 
-public class ServicesServiceTrackerCustomizer
-    implements ServiceTrackerCustomizer
-        <Object, ServiceTracker
-            <CXFJaxRsServiceRegistrator, ?>> {
+public class ServicesServiceTrackerCustomizer implements ServiceTrackerCustomizer<Object, ServiceTracker<?, ?>> {
 
     private final BundleContext _bundleContext;
 
@@ -38,61 +35,39 @@ public class ServicesServiceTrackerCustomizer
     }
 
     @Override
-    public ServiceTracker
-        <CXFJaxRsServiceRegistrator, ?>
-    addingService(ServiceReference<Object> reference) {
-
-        String applicationSelector =
-            reference.getProperty("jaxrs.application.select").toString();
-
+    public ServiceTracker<?, ?> addingService(ServiceReference<Object> reference) {
+        String applicationSelector = reference.getProperty("jaxrs.application.select").toString();
         Bundle bundle = reference.getBundle();
-
         BundleWiring bundleWiring = bundle.adapt(BundleWiring.class);
-
         ClassLoader classLoader = bundleWiring.getClassLoader();
-
         Object service = _bundleContext.getService(reference);
-
         try {
             Filter filter = _bundleContext.createFilter(
                 "(&(objectClass=" + CXFJaxRsServiceRegistrator.class.getName() +
-                    ")" + applicationSelector + ")");
-
-            ServiceTracker
-                <CXFJaxRsServiceRegistrator, ?>
-                serviceTracker = new ServiceTracker<>(
-                    _bundleContext, filter,
+                ")" + applicationSelector + ")");
+            ServiceTracker<?, ?> serviceTracker = new ServiceTracker<>(
+                    _bundleContext,
+                    filter,
                     new AddonsServiceTrackerCustomizer(
                         _bundleContext, classLoader, service));
-
             serviceTracker.open();
-
             return serviceTracker;
         }
         catch (InvalidSyntaxException ise) {
             _bundleContext.ungetService(reference);
-
             throw new RuntimeException(ise);
         }
     }
 
     @Override
-    public void modifiedService(
-        ServiceReference<Object> reference,
-        ServiceTracker<CXFJaxRsServiceRegistrator, ?> serviceTracker) {
-
+    public void modifiedService(ServiceReference<Object> reference, ServiceTracker<?, ?> serviceTracker) {
         removedService(reference, serviceTracker);
-
         addingService(reference);
     }
 
     @Override
-    public void removedService(
-        ServiceReference<Object> reference,
-        ServiceTracker<CXFJaxRsServiceRegistrator, ?> serviceTracker) {
-
+    public void removedService(ServiceReference<Object> reference, ServiceTracker<?, ?> serviceTracker) {
         serviceTracker.close();
-
         _bundleContext.ungetService(reference);
     }
 

@@ -21,15 +21,12 @@ import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
 import org.osgi.util.tracker.ServiceTrackerCustomizer;
 
-import javax.ws.rs.ext.Provider;
-
 public class AddonsServiceTrackerCustomizer
     implements
         ServiceTrackerCustomizer<CXFJaxRsServiceRegistrator, CXFJaxRsServiceRegistrator> {
 
     private final BundleContext _bundleContext;
     private final ClassLoader _classLoader;
-    private final Class<?> _serviceClass;
     private final Object _service;
 
     public AddonsServiceTrackerCustomizer(
@@ -39,41 +36,18 @@ public class AddonsServiceTrackerCustomizer
         _bundleContext = bundleContext;
         _classLoader = classLoader;
         _service = service;
-
-        _serviceClass = service.getClass();
     }
 
     @Override
-    public CXFJaxRsServiceRegistrator addingService(
-        ServiceReference<CXFJaxRsServiceRegistrator> reference) {
-
-        Thread thread = Thread.currentThread();
-
-        ClassLoader contextClassLoader =
-            thread.getContextClassLoader();
-
-        CXFJaxRsServiceRegistrator cxfJaxRsServiceRegistrator =
-            _bundleContext.getService(reference);
-
+    public CXFJaxRsServiceRegistrator addingService(ServiceReference<CXFJaxRsServiceRegistrator> reference) {
+        CXFJaxRsServiceRegistrator registrator = _bundleContext.getService(reference);
         try {
-            thread.setContextClassLoader(_classLoader);
-
-            if (_serviceClass.isAnnotationPresent(Provider.class)) {
-                cxfJaxRsServiceRegistrator.addProvider(_service);
-            } else {
-                cxfJaxRsServiceRegistrator.addService(_service);
-            }
-
-
-            return cxfJaxRsServiceRegistrator;
+            runInClassLoader(_classLoader, () -> registrator.add(_service));
+            return registrator;
         }
         catch (Exception e) {
             _bundleContext.ungetService(reference);
-
             throw e;
-        }
-        finally {
-            thread.setContextClassLoader(contextClassLoader);
         }
     }
 
@@ -83,7 +57,6 @@ public class AddonsServiceTrackerCustomizer
         CXFJaxRsServiceRegistrator cxfJaxRsServiceRegistrator) {
 
         removedService(reference, cxfJaxRsServiceRegistrator);
-
         addingService(reference);
     }
 
@@ -92,13 +65,20 @@ public class AddonsServiceTrackerCustomizer
         ServiceReference<CXFJaxRsServiceRegistrator> reference,
         CXFJaxRsServiceRegistrator cxfJaxRsServiceRegistrator) {
 
-        if (_serviceClass.isAnnotationPresent(Provider.class)) {
-            cxfJaxRsServiceRegistrator.removeProvider(_service);
-        } else {
-            cxfJaxRsServiceRegistrator.removeService(_service);
-        }
-
+        cxfJaxRsServiceRegistrator.remove(_service);
         _bundleContext.ungetService(reference);
     }
-
+    
+    private void runInClassLoader(ClassLoader cl, Runnable runable) {
+        Thread thread = Thread.currentThread();
+        ClassLoader contextClassLoader = thread.getContextClassLoader();
+        try {
+            thread.setContextClassLoader(_classLoader);
+            runable.run();
+        }
+        finally {
+            thread.setContextClassLoader(contextClassLoader);
+        }
+    }
+    
 }

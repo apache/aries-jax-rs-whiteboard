@@ -23,6 +23,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import javax.ws.rs.core.Application;
+import javax.ws.rs.ext.Provider;
 import javax.ws.rs.ext.RuntimeDelegate;
 
 import org.apache.cxf.Bus;
@@ -33,6 +34,13 @@ import org.apache.cxf.jaxrs.provider.json.JSONProvider;
 import org.osgi.framework.ServiceReference;
 
 public class CXFJaxRsServiceRegistrator {
+    private volatile boolean _closed = false;
+    private final Application _application;
+    private final Bus _bus;
+    private final Map<String, Object> _properties;
+    private final Collection<Object> _providers = new ArrayList<>();
+    private Server _server;
+    private final Collection<Object> _services = new ArrayList<>();
 
     public CXFJaxRsServiceRegistrator(
         Bus bus, Application application, Map<String, Object> properties) {
@@ -71,43 +79,27 @@ public class CXFJaxRsServiceRegistrator {
         _closed = true;
     }
 
-    public void addProvider(Object provider) {
+    public void add(Object object) {
         if (_closed) {
             return;
         }
-
-        _providers.add(provider);
-
+        if (object.getClass().isAnnotationPresent(Provider.class)) {
+            _providers.add(object);
+        } else {
+            _services.add(object);
+        }
         rewire();
     }
 
-    public void addService(Object service) {
+    public void remove(Object object) {
         if (_closed) {
             return;
         }
-
-        _services.add(service);
-
-        rewire();
-    }
-
-    public void removeProvider(Object provider) {
-        if (_closed) {
-            return;
+        if (object.getClass().isAnnotationPresent(Provider.class)) {
+            _providers.remove(object);
+        } else {
+            _services.remove(object);
         }
-
-        _providers.remove(provider);
-
-        rewire();
-    }
-
-    public void removeService(Object service) {
-        if (_closed) {
-            return;
-        }
-
-        _services.remove(service);
-
         rewire();
     }
 
@@ -153,13 +145,5 @@ public class CXFJaxRsServiceRegistrator {
 
         _server.start();
     }
-
-    private volatile boolean _closed = false;
-    private final Application _application;
-    private final Bus _bus;
-    private final Map<String, Object> _properties;
-    private final Collection<Object> _providers = new ArrayList<>();
-    private Server _server;
-    private final Collection<Object> _services = new ArrayList<>();
 
 }

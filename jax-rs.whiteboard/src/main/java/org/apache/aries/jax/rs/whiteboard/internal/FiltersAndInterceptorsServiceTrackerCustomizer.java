@@ -62,7 +62,7 @@ public class FiltersAndInterceptorsServiceTrackerCustomizer
                         CXFJaxRsServiceRegistrator serviceRegistrator =
                             _bundleContext.getService(cxfReference);
                         try {
-                            serviceRegistrator.addProvider(service);
+                            serviceRegistrator.add(service);
 
                             return serviceRegistrator;
                         }
@@ -89,7 +89,7 @@ public class FiltersAndInterceptorsServiceTrackerCustomizer
                     CXFJaxRsServiceRegistrator serviceRegistrator) {
 
                     try {
-                        serviceRegistrator.removeProvider(service);
+                        serviceRegistrator.remove(service);
                     }
                     finally {
                         _bundleContext.ungetService(reference);
