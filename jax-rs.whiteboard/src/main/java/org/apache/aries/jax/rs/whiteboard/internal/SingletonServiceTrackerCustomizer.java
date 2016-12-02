@@ -30,7 +30,7 @@ import java.util.Hashtable;
 import java.util.Map;
 import java.util.Set;
 
-class SingletonServiceTrackerCustomizer
+public class SingletonServiceTrackerCustomizer
     implements ServiceTrackerCustomizer
         <Object, SingletonServiceTrackerCustomizer.Tracked> {
 

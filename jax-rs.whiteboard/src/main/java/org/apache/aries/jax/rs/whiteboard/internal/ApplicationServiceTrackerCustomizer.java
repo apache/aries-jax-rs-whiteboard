@@ -29,7 +29,7 @@ import org.osgi.framework.ServiceReference;
 import org.osgi.framework.ServiceRegistration;
 import org.osgi.util.tracker.ServiceTrackerCustomizer;
 
-class ApplicationServiceTrackerCustomizer
+public class ApplicationServiceTrackerCustomizer
     implements ServiceTrackerCustomizer
         <Application, ApplicationServiceTrackerCustomizer.Tracked> {
 
