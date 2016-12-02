@@ -17,8 +17,6 @@
 
 package org.apache.aries.jax.rs.whiteboard.internal;
 
-import java.util.HashMap;
-import java.util.Hashtable;
 import java.util.Map;
 
 import javax.ws.rs.core.Application;
@@ -26,107 +24,43 @@ import javax.ws.rs.core.Application;
 import org.apache.cxf.Bus;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
-import org.osgi.framework.ServiceRegistration;
 import org.osgi.util.tracker.ServiceTrackerCustomizer;
 
 public class ApplicationServiceTrackerCustomizer
-    implements ServiceTrackerCustomizer
-        <Application, ApplicationServiceTrackerCustomizer.Tracked> {
+    implements ServiceTrackerCustomizer<Application, TrackedJaxRsRegistrator> {
 
     private BundleContext _bundleContext;
     private Bus _bus;
 
-    public ApplicationServiceTrackerCustomizer(
-        BundleContext bundleContext, Bus bus) {
-
+    public ApplicationServiceTrackerCustomizer(BundleContext bundleContext, Bus bus) {
         _bundleContext = bundleContext;
         _bus = bus;
     }
 
     @Override
-    public Tracked addingService(
-        ServiceReference<Application> serviceReference) {
-
-        Application application = _bundleContext.getService(
-            serviceReference);
-
+    public TrackedJaxRsRegistrator addingService(ServiceReference<Application> serviceReference) {
+        Application application = _bundleContext.getService(serviceReference);
         try {
-            String[] propertyKeys = serviceReference.getPropertyKeys();
-
-            Map<String, Object> properties = new HashMap<>(
-                propertyKeys.length);
-
-            for (String propertyKey : propertyKeys) {
-                properties.put(
-                    propertyKey, serviceReference.getProperty(propertyKey));
-            }
-
-            properties.put(
-                "CXF_ENDPOINT_ADDRESS",
-                serviceReference.getProperty("osgi.jaxrs.application.base").
-                    toString());
-
-            CXFJaxRsServiceRegistrator cxfJaxRsServiceRegistrator =
-                new CXFJaxRsServiceRegistrator(_bus, application, properties);
-
-            ServiceRegistration<CXFJaxRsServiceRegistrator>
-                cxfJaxRsServiceRegistratorRegistration =
-                    _bundleContext.registerService(
-                        CXFJaxRsServiceRegistrator.class,
-                        cxfJaxRsServiceRegistrator,
-                        new Hashtable<>(properties));
-
-            return new Tracked(
-                cxfJaxRsServiceRegistrator, application,
-                cxfJaxRsServiceRegistratorRegistration);
+            Map<String, Object> props = CXFJaxRsServiceRegistrator
+                .getProperties(serviceReference, "osgi.jaxrs.application.base");
+            CXFJaxRsServiceRegistrator registrator = new CXFJaxRsServiceRegistrator(_bus, application, props);
+            return new TrackedJaxRsRegistrator(registrator, _bundleContext, props);
         }
         catch (Throwable e) {
             _bundleContext.ungetService(serviceReference);
-
             throw e;
         }
     }
 
     @Override
-    public void modifiedService(
-        ServiceReference<Application> serviceReference, Tracked tracked) {
-
+    public void modifiedService(ServiceReference<Application> serviceReference, TrackedJaxRsRegistrator tracked) {
         removedService(serviceReference, tracked);
-
         addingService(serviceReference);
     }
 
     @Override
-    public void removedService(
-        ServiceReference<Application> reference, Tracked tracked) {
-
+    public void removedService(ServiceReference<Application> reference, TrackedJaxRsRegistrator tracked) {
         _bundleContext.ungetService(reference);
-
-        tracked._cxfJaxRsServiceRegistrator.close();
-
-        tracked._cxfJaxRsServiceRegistratorServiceRegistration.unregister();
-    }
-
-    public static class Tracked {
-
-        private final CXFJaxRsServiceRegistrator _cxfJaxRsServiceRegistrator;
-        private final Application _application;
-        private final ServiceRegistration<CXFJaxRsServiceRegistrator>
-            _cxfJaxRsServiceRegistratorServiceRegistration;
-
-        public Tracked(
-            CXFJaxRsServiceRegistrator cxfJaxRsServiceRegistrator,
-            Application application,
-            ServiceRegistration<CXFJaxRsServiceRegistrator>
-                cxfJaxRsServiceRegistratorServiceRegistration) {
-
-            _cxfJaxRsServiceRegistrator = cxfJaxRsServiceRegistrator;
-            _application = application;
-            _cxfJaxRsServiceRegistratorServiceRegistration =
-                cxfJaxRsServiceRegistratorServiceRegistration;
-        }
-
+        tracked.close();
     }
 }
-
-

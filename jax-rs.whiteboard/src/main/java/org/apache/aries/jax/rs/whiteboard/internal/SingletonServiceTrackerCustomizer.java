@@ -17,143 +17,62 @@
 
 package org.apache.aries.jax.rs.whiteboard.internal;
 
-import org.apache.cxf.Bus;
-import org.osgi.framework.BundleContext;
-import org.osgi.framework.ServiceReference;
-import org.osgi.framework.ServiceRegistration;
-import org.osgi.util.tracker.ServiceTrackerCustomizer;
-
-import javax.ws.rs.core.Application;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.Hashtable;
 import java.util.Map;
 import java.util.Set;
 
+import javax.ws.rs.core.Application;
+
+import org.apache.cxf.Bus;
+import org.osgi.framework.BundleContext;
+import org.osgi.framework.ServiceReference;
+import org.osgi.util.tracker.ServiceTrackerCustomizer;
+
 public class SingletonServiceTrackerCustomizer
-    implements ServiceTrackerCustomizer
-        <Object, SingletonServiceTrackerCustomizer.Tracked> {
+    implements ServiceTrackerCustomizer<Object, TrackedJaxRsRegistrator> {
 
     private BundleContext _bundleContext;
     private Bus _bus;
 
-    public SingletonServiceTrackerCustomizer(
-        BundleContext bundleContext, Bus bus) {
-
+    public SingletonServiceTrackerCustomizer(BundleContext bundleContext, Bus bus) {
         _bundleContext = bundleContext;
         _bus = bus;
     }
 
     @Override
-    public Tracked addingService(
+    public TrackedJaxRsRegistrator addingService(
         ServiceReference<Object> serviceReference) {
 
-        final Object service = _bundleContext.getService(
-            serviceReference);
-
-        try {
-            String[] propertyKeys = serviceReference.getPropertyKeys();
-
-            Map<String, Object> properties = new HashMap<>(
-                propertyKeys.length);
-
-            for (String propertyKey : propertyKeys) {
-                if (propertyKey.equals("osgi.jaxrs.resource.base")) {
-                    continue;
-                }
-                properties.put(
-                    propertyKey, serviceReference.getProperty(propertyKey));
+        final Object service = _bundleContext.getService(serviceReference);
+        Application application = new Application() {
+            @Override
+            public Set<Object> getSingletons() {
+                return Collections.singleton(service);
             }
-
-            properties.put(
-                "CXF_ENDPOINT_ADDRESS",
-                serviceReference.getProperty("osgi.jaxrs.resource.base").
-                    toString());
-
-            CXFJaxRsServiceRegistrator cxfJaxRsServiceRegistrator =
-                new CXFJaxRsServiceRegistrator(
-                    _bus,
-                    new Application() {
-                        @Override
-                        public Set<Object> getSingletons() {
-                            return Collections.singleton(service);
-                        }
-                    },
-                    properties);
-
-            return new Tracked(
-                cxfJaxRsServiceRegistrator, service,
-                _bundleContext.registerService(
-                    CXFJaxRsServiceRegistrator.class,
-                    cxfJaxRsServiceRegistrator, new Hashtable<>(properties)));
+        };
+        try {
+            Map<String, Object> properties = CXFJaxRsServiceRegistrator
+                .getProperties(serviceReference, "osgi.jaxrs.resource.base");
+            CXFJaxRsServiceRegistrator cxfJaxRsServiceRegistrator = 
+                new CXFJaxRsServiceRegistrator(_bus, application, properties);
+            return new TrackedJaxRsRegistrator(cxfJaxRsServiceRegistrator, _bundleContext, properties);
         }
         catch (Exception e) {
             _bundleContext.ungetService(serviceReference);
-
             throw e;
         }
     }
 
     @Override
-    public void modifiedService(
-        ServiceReference<Object> serviceReference, Tracked tracked) {
-
+    public void modifiedService(ServiceReference<Object> serviceReference, TrackedJaxRsRegistrator tracked) {
         removedService(serviceReference, tracked);
-
         addingService(serviceReference);
     }
 
     @Override
-    public void removedService(
-        ServiceReference<Object> reference, Tracked tracked) {
-
+    public void removedService(ServiceReference<Object> reference, TrackedJaxRsRegistrator tracked) {
         _bundleContext.ungetService(reference);
-
-        Object service = tracked.getService();
-
-        CXFJaxRsServiceRegistrator cxfJaxRsServiceRegistrator =
-            tracked.getCxfJaxRsServiceRegistrator();
-
-        cxfJaxRsServiceRegistrator.close();
-
-        tracked.getCxfJaxRsServiceRegistratorServiceRegistration().unregister();
-    }
-
-    public static class Tracked {
-
-        private final CXFJaxRsServiceRegistrator _cxfJaxRsServiceRegistrator;
-        private final Object _service;
-        private final ServiceRegistration<CXFJaxRsServiceRegistrator>
-            _cxfJaxRsServiceRegistratorServiceRegistration;
-
-        public Object getService() {
-            return _service;
-        }
-
-        public CXFJaxRsServiceRegistrator getCxfJaxRsServiceRegistrator() {
-            return _cxfJaxRsServiceRegistrator;
-        }
-
-        public ServiceRegistration<CXFJaxRsServiceRegistrator>
-            getCxfJaxRsServiceRegistratorServiceRegistration() {
-
-            return _cxfJaxRsServiceRegistratorServiceRegistration;
-        }
-
-        public Tracked(
-            CXFJaxRsServiceRegistrator cxfJaxRsServiceRegistrator,
-            Object service,
-            ServiceRegistration<CXFJaxRsServiceRegistrator>
-                cxfJaxRsServiceRegistratorServiceRegistration) {
-
-            _cxfJaxRsServiceRegistrator = cxfJaxRsServiceRegistrator;
-            _service = service;
-            _cxfJaxRsServiceRegistratorServiceRegistration =
-                cxfJaxRsServiceRegistratorServiceRegistration;
-        }
-
+        tracked.close();
     }
 
 }
-
-
