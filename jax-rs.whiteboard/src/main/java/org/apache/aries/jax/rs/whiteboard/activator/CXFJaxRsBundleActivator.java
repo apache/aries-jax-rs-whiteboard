@@ -37,8 +37,6 @@ import org.osgi.framework.ServiceRegistration;
 import org.osgi.framework.wiring.BundleWiring;
 import org.osgi.util.tracker.ServiceTracker;
 
-import org.apache.aries.jax.rs.whiteboard.internal.ServicesServiceTrackerCustomizer;
-
 import java.util.Dictionary;
 import java.util.Hashtable;
 
@@ -49,7 +47,6 @@ import static org.osgi.service.http.whiteboard.HttpWhiteboardConstants.HTTP_WHIT
 
 public class CXFJaxRsBundleActivator implements BundleActivator {
 
-    private ServiceTracker<?, ?> _singletonsTracker;
     private BundleContext _bundleContext;
     private ServiceTracker<Application, ?> _applicationTracker;
     private ServiceTracker<Object, ?> _singletonsServiceTracker;
@@ -79,14 +76,6 @@ public class CXFJaxRsBundleActivator implements BundleActivator {
             bundleContext, getFiltersFilter(),
             new FiltersAndInterceptorsServiceTrackerCustomizer(bundleContext));
         _filtersAndInterceptorsServiceTracker.open();
-        
-        Filter filter = bundleContext.createFilter(
-            "(jaxrs.application.select=*)");
-        
-        _singletonsTracker = new ServiceTracker<>(
-            bundleContext, filter, 
-            new ServicesServiceTrackerCustomizer(bundleContext));
-        _singletonsTracker.open();
     }
 
     /**
@@ -144,7 +133,6 @@ public class CXFJaxRsBundleActivator implements BundleActivator {
         _applicationTracker.close();
         _filtersAndInterceptorsServiceTracker.close();
         _singletonsServiceTracker.close();
-        _singletonsTracker.close();
     }
 
 }
