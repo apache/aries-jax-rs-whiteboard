@@ -43,6 +43,7 @@ import java.util.Set;
 
 import static org.apache.aries.osgi.functional.OSGi.bundleContext;
 import static org.apache.aries.osgi.functional.OSGi.just;
+import static org.apache.aries.osgi.functional.OSGi.nothing;
 import static org.apache.aries.osgi.functional.OSGi.onClose;
 import static org.apache.aries.osgi.functional.OSGi.register;
 import static org.apache.aries.osgi.functional.OSGi.serviceReferences;
@@ -101,40 +102,44 @@ public class CXFJaxRsBundleActivator implements BundleActivator {
         OSGi<?> singletons =
             serviceReferences(getSingletonsFilter()).
                 flatMap(serviceReference ->
-            just(
-                CXFJaxRsServiceRegistrator.getProperties(
-                    serviceReference, "osgi.jaxrs.resource.base")).
-                flatMap(properties ->
-            service(serviceReference).flatMap(service ->
-            cxfRegistrator(bus,
-                new Application() {
-                    @Override
-                        public Set<Object> getSingletons() {
-                            return Collections.singleton(service);
-                        }
-                },
-                properties)
-        )));
+            waitForExtensionDependencies(serviceReference,
+                just(
+                    CXFJaxRsServiceRegistrator.getProperties(
+                        serviceReference, "osgi.jaxrs.resource.base")).
+                    flatMap(properties ->
+                service(serviceReference).flatMap(service ->
+                cxfRegistrator(bus,
+                    new Application() {
+                        @Override
+                            public Set<Object> getSingletons() {
+                                return Collections.singleton(service);
+                            }
+                    },
+                    properties)
+                )))
+            );
 
         _singletonsResult = singletons.run(bundleContext);
 
         OSGi<?> filters =
             serviceReferences(getFiltersFilter()).flatMap(ref ->
-            just(
-                ref.getProperty("osgi.jaxrs.filter.base").toString()).
-                flatMap(filterBase ->
-            serviceReferences(
-                CXFJaxRsServiceRegistrator.class, "(CXF_ENDPOINT_ADDRESS=*)").
-                filter(regref ->
-                    regref.
-                        getProperty("CXF_ENDPOINT_ADDRESS").
-                        toString().
-                        startsWith(filterBase)).
-                flatMap(regref ->
-            service(regref).flatMap(registrator ->
-            service(ref).flatMap(service ->
-            safeRegisterEndpoint(ref, registrator, service)
-        )))));
+            waitForExtensionDependencies(ref,
+                just(
+                    ref.getProperty("osgi.jaxrs.filter.base").toString()).
+                    flatMap(filterBase ->
+                serviceReferences(
+                    CXFJaxRsServiceRegistrator.class, "(CXF_ENDPOINT_ADDRESS=*)").
+                    filter(regref ->
+                        regref.
+                            getProperty("CXF_ENDPOINT_ADDRESS").
+                            toString().
+                            startsWith(filterBase)).
+                    flatMap(regref ->
+                service(regref).flatMap(registrator ->
+                service(ref).flatMap(service ->
+                safeRegisterEndpoint(ref, registrator, service)
+            )))))
+        );
 
         _filtersResult = filters.run(bundleContext);
     }
@@ -155,6 +160,37 @@ public class CXFJaxRsBundleActivator implements BundleActivator {
         finally {
             thread.setContextClassLoader(oldClassLoader);
         }
+    }
+
+    private String[] canonicalize(Object propertyValue) {
+        if (propertyValue == null) {
+            return new String[0];
+        }
+
+        if (propertyValue instanceof String[]) {
+            return (String[]) propertyValue;
+        }
+
+        return new String[]{propertyValue.toString()};
+    }
+
+    private String buildExtensionFilter(String filter) {
+        return "(&(osgi.jaxrs.extension.name=*)" + filter + ")";
+    }
+
+    private OSGi<?> waitForExtensionDependencies(
+        ServiceReference<?> serviceReference, OSGi<?> program) {
+
+        String[] extensionDependencies = canonicalize(
+            serviceReference.getProperty("osgi.jaxrs.extension.select"));
+
+        for (String extensionDependency : extensionDependencies) {
+            program =
+                serviceReferences(buildExtensionFilter(extensionDependency)).
+                then(program);
+        }
+
+        return program;
     }
 
     private OSGi<?> safeRegisterEndpoint(
