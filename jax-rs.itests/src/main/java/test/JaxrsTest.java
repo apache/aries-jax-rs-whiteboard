@@ -78,7 +78,7 @@ public class JaxrsTest {
             path("/test-application");
 
         Runnable testCase = () -> {
-            assertEquals(webTarget.request().get().getStatus(), 404);
+            assertEquals(404, webTarget.request().get().getStatus());
 
             ServiceRegistration<?> serviceRegistration = null;
 
@@ -142,7 +142,7 @@ public class JaxrsTest {
             path("test");
 
         Runnable testCase = () -> {
-            assertEquals(webTarget.request().get().getStatus(), 404);
+            assertEquals(404, webTarget.request().get().getStatus());
 
             ServiceRegistration<?> serviceRegistration = null;
 
@@ -192,7 +192,7 @@ public class JaxrsTest {
                 "This should say hello", "Hello test",
                 response.readEntity(String.class));
 
-            assertEquals(response.getHeaders().getFirst("Filtered"), "true");
+            assertEquals("true", response.getHeaders().getFirst("Filtered"));
         }
         finally {
             if (serviceRegistration != null) {
@@ -239,7 +239,7 @@ public class JaxrsTest {
                         "Hello test", response.readEntity(String.class));
 
                     assertEquals(
-                        response.getHeaders().getFirst("Filtered"), "true");
+                        "true", response.getHeaders().getFirst("Filtered"));
                 }
                 finally {
                     if (filterRegistration != null) {
