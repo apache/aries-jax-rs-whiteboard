@@ -97,5 +97,10 @@
             <artifactId>slf4j-api</artifactId>
             <version>1.7.2</version>
         </dependency>
+        <dependency>
+            <groupId>org.apache.aries.component-dsl</groupId>
+            <artifactId>component-dsl</artifactId>
+            <version>0.0.1-SNAPSHOT</version>
+        </dependency>
     </dependencies>
 </project>

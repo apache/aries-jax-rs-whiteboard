@@ -21,9 +21,9 @@ import javax.servlet.Servlet;
 import javax.ws.rs.core.Application;
 import javax.ws.rs.ext.RuntimeDelegate;
 
-import org.apache.aries.jax.rs.whiteboard.internal.ApplicationServiceTrackerCustomizer;
-import org.apache.aries.jax.rs.whiteboard.internal.FiltersAndInterceptorsServiceTrackerCustomizer;
-import org.apache.aries.jax.rs.whiteboard.internal.SingletonServiceTrackerCustomizer;
+import org.apache.aries.jax.rs.whiteboard.internal.CXFJaxRsServiceRegistrator;
+import org.apache.aries.osgi.functional.OSGi;
+import org.apache.aries.osgi.functional.OSGiResult;
 import org.apache.cxf.Bus;
 import org.apache.cxf.BusFactory;
 import org.apache.cxf.bus.CXFBusFactory;
@@ -31,15 +31,21 @@ import org.apache.cxf.transport.servlet.CXFNonSpringServlet;
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.Constants;
-import org.osgi.framework.Filter;
-import org.osgi.framework.InvalidSyntaxException;
+import org.osgi.framework.ServiceReference;
 import org.osgi.framework.ServiceRegistration;
 import org.osgi.framework.wiring.BundleWiring;
-import org.osgi.util.tracker.ServiceTracker;
 
+import java.util.Collections;
 import java.util.Dictionary;
 import java.util.Hashtable;
+import java.util.Map;
+import java.util.Set;
 
+import static org.apache.aries.osgi.functional.OSGi.bundleContext;
+import static org.apache.aries.osgi.functional.OSGi.just;
+import static org.apache.aries.osgi.functional.OSGi.onClose;
+import static org.apache.aries.osgi.functional.OSGi.register;
+import static org.apache.aries.osgi.functional.OSGi.serviceReferences;
 import static org.osgi.service.http.whiteboard.HttpWhiteboardConstants.HTTP_WHITEBOARD_CONTEXT_NAME;
 import static org.osgi.service.http.whiteboard.HttpWhiteboardConstants.HTTP_WHITEBOARD_CONTEXT_SELECT;
 import static org.osgi.service.http.whiteboard.HttpWhiteboardConstants.HTTP_WHITEBOARD_DEFAULT_CONTEXT_NAME;
@@ -48,9 +54,26 @@ import static org.osgi.service.http.whiteboard.HttpWhiteboardConstants.HTTP_WHIT
 public class CXFJaxRsBundleActivator implements BundleActivator {
 
     private BundleContext _bundleContext;
-    private ServiceTracker<Application, ?> _applicationTracker;
-    private ServiceTracker<Object, ?> _singletonsServiceTracker;
-    private ServiceTracker<Object, ?> _filtersAndInterceptorsServiceTracker;
+    private OSGiResult<?> _applicationsResult;
+    private OSGiResult<?> _singletonsResult;
+    private OSGiResult<?> _filtersResult;
+
+    private static <T> OSGi<T> service(ServiceReference<T> serviceReference) {
+        return
+            bundleContext().flatMap(bundleContext ->
+            onClose(() -> bundleContext.ungetService(serviceReference)).then(
+            just(bundleContext.getService(serviceReference))
+        ));
+    }
+
+    private static OSGi<?> cxfRegistrator(
+        Bus bus, Application application, Map<String, Object> props) {
+
+        return
+            just(new CXFJaxRsServiceRegistrator(bus, application, props)).flatMap(registrator ->
+            onClose(registrator::close).then(
+            register(CXFJaxRsServiceRegistrator.class, registrator, props)));
+    }
 
     @Override
     public void start(BundleContext bundleContext) throws Exception {
@@ -62,20 +85,58 @@ public class CXFJaxRsBundleActivator implements BundleActivator {
             CXFBusFactory.class.getName()).createBus();
         registerCXFServletService(bus);
 
-        _applicationTracker = new ServiceTracker<>(
-            bundleContext, getApplicationFilter(),
-            new ApplicationServiceTrackerCustomizer(bundleContext, bus));
-        _applicationTracker.open();
+        OSGi<?> applications =
+            serviceReferences(Application.class, getApplicationFilter()).
+                flatMap(ref ->
+            just(
+                CXFJaxRsServiceRegistrator.getProperties(
+                    ref, "osgi.jaxrs.application.base")).
+                flatMap(properties ->
+            service(ref).flatMap(application ->
+            cxfRegistrator(bus, application, properties)
+        )));
 
-        _singletonsServiceTracker = new ServiceTracker<>(
-            bundleContext, getSingletonsFilter(),
-            new SingletonServiceTrackerCustomizer(bundleContext, bus));
-        _singletonsServiceTracker.open();
+        _applicationsResult = applications.run(bundleContext);
 
-        _filtersAndInterceptorsServiceTracker = new ServiceTracker<>(
-            bundleContext, getFiltersFilter(),
-            new FiltersAndInterceptorsServiceTrackerCustomizer(bundleContext));
-        _filtersAndInterceptorsServiceTracker.open();
+        OSGi<?> singletons =
+            serviceReferences(getSingletonsFilter()).
+                flatMap(serviceReference ->
+            just(
+                CXFJaxRsServiceRegistrator.getProperties(
+                    serviceReference, "osgi.jaxrs.resource.base")).
+                flatMap(properties ->
+            service(serviceReference).flatMap(service ->
+            cxfRegistrator(bus,
+                new Application() {
+                    @Override
+                        public Set<Object> getSingletons() {
+                            return Collections.singleton(service);
+                        }
+                },
+                properties)
+        )));
+
+        _singletonsResult = singletons.run(bundleContext);
+
+        OSGi<?> filters =
+            serviceReferences(getFiltersFilter()).flatMap(ref ->
+            just(
+                ref.getProperty("osgi.jaxrs.filter.base").toString()).
+                flatMap(filterBase ->
+            serviceReferences(
+                CXFJaxRsServiceRegistrator.class, "(CXF_ENDPOINT_ADDRESS=*)").
+                filter(regref ->
+                    regref.
+                        getProperty("CXF_ENDPOINT_ADDRESS").
+                        toString().
+                        startsWith(filterBase)).
+                flatMap(regref ->
+            service(regref).flatMap(registrator ->
+            service(ref).flatMap(service ->
+            safeRegisterEndpoint(ref, registrator, service)
+        )))));
+
+        _filtersResult = filters.run(bundleContext);
     }
 
     /**
@@ -96,6 +157,44 @@ public class CXFJaxRsBundleActivator implements BundleActivator {
         }
     }
 
+    private OSGi<?> safeRegisterEndpoint(
+        ServiceReference<?> ref, CXFJaxRsServiceRegistrator registrator,
+        Object service) {
+
+        return
+            onClose(() -> unregisterEndpoint(registrator, service)).then(
+            registerEndpoint(ref, registrator, service));
+    }
+
+    private OSGi<?> registerEndpoint(
+        ServiceReference<?> ref,
+        CXFJaxRsServiceRegistrator registrator, Object service) {
+
+        Thread thread = Thread.currentThread();
+
+        ClassLoader contextClassLoader = thread.getContextClassLoader();
+
+        ClassLoader classLoader = ref.getBundle().adapt(BundleWiring.class).
+            getClassLoader();
+
+        try {
+            thread.setContextClassLoader(classLoader);
+
+            registrator.add(service);
+        }
+        finally {
+            thread.setContextClassLoader(contextClassLoader);
+        }
+
+        return just(service);
+    }
+
+    private void unregisterEndpoint(
+        CXFJaxRsServiceRegistrator registrator, Object service) {
+
+        registrator.remove(service);
+    }
+
     private ServiceRegistration<Servlet> registerCXFServletService(Bus bus) {
         Dictionary<String, Object> properties = new Hashtable<>();
         properties.put(HTTP_WHITEBOARD_CONTEXT_SELECT,
@@ -114,25 +213,23 @@ public class CXFJaxRsBundleActivator implements BundleActivator {
         return cxfNonSpringServlet;
     }
 
-    private Filter getFiltersFilter() throws InvalidSyntaxException {
-        return _bundleContext.createFilter("(osgi.jaxrs.filter.base=*)");
+    private String getFiltersFilter() {
+        return "(osgi.jaxrs.filter.base=*)";
     }
 
-    private Filter getApplicationFilter() throws InvalidSyntaxException {
-        return _bundleContext.createFilter(
-            "(&(objectClass=" + Application.class.getName() + ")" +
-                "(osgi.jaxrs.application.base=*))");
+    private String getApplicationFilter() {
+        return "(osgi.jaxrs.application.base=*)";
     }
 
-    private Filter getSingletonsFilter() throws InvalidSyntaxException {
-        return _bundleContext.createFilter("(osgi.jaxrs.resource.base=*)");
+    private String getSingletonsFilter() {
+        return "(osgi.jaxrs.resource.base=*)";
     }
     
     @Override
     public void stop(BundleContext context) throws Exception {
-        _applicationTracker.close();
-        _filtersAndInterceptorsServiceTracker.close();
-        _singletonsServiceTracker.close();
+        _applicationsResult.close();
+        _filtersResult.close();
+        _singletonsResult.close();
     }
 
 }
