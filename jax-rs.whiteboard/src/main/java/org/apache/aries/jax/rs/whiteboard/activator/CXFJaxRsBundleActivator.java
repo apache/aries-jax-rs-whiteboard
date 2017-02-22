@@ -59,7 +59,7 @@ public class CXFJaxRsBundleActivator implements BundleActivator {
     private BundleContext _bundleContext;
     private OSGiResult<?> _applicationsResult;
     private OSGiResult<?> _singletonsResult;
-    private OSGiResult<?> _filtersResult;
+    private OSGiResult<?> _extensionsResult;
 
     private static <T> OSGi<T> service(ServiceReference<T> serviceReference) {
         return
@@ -127,27 +127,14 @@ public class CXFJaxRsBundleActivator implements BundleActivator {
 
         _singletonsResult = singletons.run(bundleContext);
 
-        OSGi<?> filters =
-            serviceReferences(getFiltersFilter()).flatMap(ref ->
+        OSGi<?> extensions =
+            serviceReferences(getExtensionFilter()).flatMap(ref ->
             waitForExtensionDependencies(ref,
-                just(
-                    ref.getProperty("osgi.jaxrs.filter.base").toString()).
-                    flatMap(filterBase ->
-                serviceReferences(
-                    CXFJaxRsServiceRegistrator.class, "(CXF_ENDPOINT_ADDRESS=*)").
-                    filter(regref ->
-                        regref.
-                            getProperty("CXF_ENDPOINT_ADDRESS").
-                            toString().
-                            startsWith(filterBase)).
-                    flatMap(regref ->
-                service(regref).flatMap(registrator ->
-                service(ref).flatMap(service ->
-                safeRegisterEndpoint(ref, registrator, service)
-            )))))
+                safeRegisterEndpoint(ref, defaultServiceRegistrator)
+            )
         );
 
-        _filtersResult = filters.run(bundleContext);
+        _extensionsResult = extensions.run(bundleContext);
     }
 
     /**
@@ -260,8 +247,8 @@ public class CXFJaxRsBundleActivator implements BundleActivator {
         return cxfNonSpringServlet;
     }
 
-    private String getFiltersFilter() {
-        return "(osgi.jaxrs.filter.base=*)";
+    private String getExtensionFilter() {
+        return "(osgi.jaxrs.extension.name=*)";
     }
 
     private String getApplicationFilter() {
@@ -275,7 +262,7 @@ public class CXFJaxRsBundleActivator implements BundleActivator {
     @Override
     public void stop(BundleContext context) throws Exception {
         _applicationsResult.close();
-        _filtersResult.close();
+        _extensionsResult.close();
         _singletonsResult.close();
     }
 
