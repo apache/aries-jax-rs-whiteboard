@@ -49,6 +49,7 @@ import static org.apache.aries.osgi.functional.OSGi.nothing;
 import static org.apache.aries.osgi.functional.OSGi.onClose;
 import static org.apache.aries.osgi.functional.OSGi.register;
 import static org.apache.aries.osgi.functional.OSGi.serviceReferences;
+import static org.apache.aries.osgi.functional.OSGi.services;
 import static org.osgi.service.http.whiteboard.HttpWhiteboardConstants.HTTP_WHITEBOARD_CONTEXT_NAME;
 import static org.osgi.service.http.whiteboard.HttpWhiteboardConstants.HTTP_WHITEBOARD_CONTEXT_SELECT;
 import static org.osgi.service.http.whiteboard.HttpWhiteboardConstants.HTTP_WHITEBOARD_DEFAULT_CONTEXT_NAME;
@@ -60,6 +61,7 @@ public class CXFJaxRsBundleActivator implements BundleActivator {
     private OSGiResult<?> _applicationsResult;
     private OSGiResult<?> _singletonsResult;
     private OSGiResult<?> _extensionsResult;
+    private OSGiResult<?> _applicationSingletonsResult;
 
     private static <T> OSGi<T> service(ServiceReference<T> serviceReference) {
         return
@@ -135,6 +137,18 @@ public class CXFJaxRsBundleActivator implements BundleActivator {
         );
 
         _extensionsResult = extensions.run(bundleContext);
+
+        OSGi<?> applicationSingletons =
+            serviceReferences("(osgi.jaxrs.application.select=*)").
+                flatMap(ref ->
+            just(ref.getProperty("osgi.jaxrs.application.select").toString()).
+                flatMap(applicationFilter ->
+            services(CXFJaxRsServiceRegistrator.class, applicationFilter).
+                flatMap(registrator ->
+            safeRegisterEndpoint(ref, registrator)
+        )));
+
+        _applicationSingletonsResult = applicationSingletons.run(bundleContext);
     }
 
     /**
@@ -261,6 +275,7 @@ public class CXFJaxRsBundleActivator implements BundleActivator {
     
     @Override
     public void stop(BundleContext context) throws Exception {
+        _applicationSingletonsResult.close();
         _applicationsResult.close();
         _extensionsResult.close();
         _singletonsResult.close();
