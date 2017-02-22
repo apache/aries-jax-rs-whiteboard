@@ -105,6 +105,180 @@ public class JaxrsTest {
     }
 
     @Test
+    public void testApplicationEndpointExtension() {
+        Client client = createClient();
+
+        WebTarget webTarget = client.
+            target("http://localhost:8080").
+            path("/test-application").
+            path("extended");
+
+        ServiceRegistration<?> applicationRegistration = null;
+
+        ServiceRegistration<?> serviceRegistration = null;
+
+        try {
+            applicationRegistration = registerApplication();
+
+            serviceRegistration = registerAddon(
+                "osgi.jaxrs.application.select",
+                "(osgi.jaxrs.application.base=/test-application)");
+
+            assertEquals(
+                "Hello extended",
+                webTarget.request().get().readEntity(String.class));
+        }
+        finally {
+            if (applicationRegistration != null) {
+                applicationRegistration.unregister();
+            }
+            if (serviceRegistration != null) {
+                serviceRegistration.unregister();
+            }
+        }
+    }
+
+    @Test
+    public void testApplicationEndpointExtensionReadd() {
+        Client client = createClient();
+
+        WebTarget webTarget = client.
+            target("http://localhost:8080").
+            path("/test-application").
+            path("extended");
+
+        ServiceRegistration<?> applicationRegistration = null;
+
+        try {
+            applicationRegistration = registerApplication();
+
+            Runnable testCase = () -> {
+                assertEquals(webTarget.request().get().getStatus(), 404);
+
+                ServiceRegistration<?> serviceRegistration = null;
+
+                try {
+                    serviceRegistration = registerAddon(
+                        "osgi.jaxrs.application.select",
+                        "(osgi.jaxrs.application.base=/test-application)");
+
+                    assertEquals(
+                        "Hello extended",
+                        webTarget.request().get().readEntity(String.class));
+                }
+                finally {
+                    if (serviceRegistration != null) {
+                        serviceRegistration.unregister();
+                    }
+                }
+            };
+
+            testCase.run();
+
+            testCase.run();
+        }
+        finally {
+            if (applicationRegistration != null) {
+                applicationRegistration.unregister();
+            }
+
+        }
+    }
+
+    @Test
+    public void testApplicationProviderExtension() {
+        Client client = createClient();
+
+        WebTarget webTarget = client.
+            target("http://localhost:8080").
+            path("/test-application");
+
+        ServiceRegistration<?> applicationRegistration = null;
+
+        ServiceRegistration<?> filterRegistration = null;
+
+        try {
+            applicationRegistration = registerApplication();
+
+            filterRegistration = registerFilter(
+                "osgi.jaxrs.application.select",
+                "(osgi.jaxrs.application.base=/test-application)");
+
+            Response response = webTarget.request().get();
+
+            assertEquals(
+                "Hello application",
+                response.readEntity(String.class));
+
+            assertEquals(
+                response.getHeaders().getFirst("Filtered"),
+                "true");
+        }
+        finally {
+            if (applicationRegistration != null) {
+                applicationRegistration.unregister();
+            }
+            if (filterRegistration != null) {
+                filterRegistration.unregister();
+            }
+        }
+    }
+
+    @Test
+    public void testApplicationProviderExtensionReadd() {
+        Client client = createClient();
+
+        WebTarget webTarget = client.
+            target("http://localhost:8080").
+            path("/test-application");
+
+        ServiceRegistration<?> applicationRegistration = null;
+
+        try {
+            applicationRegistration = registerApplication();
+
+            assertEquals(
+                "Hello application",
+                webTarget.request().get().readEntity(String.class));
+
+            Runnable testCase = () ->  {
+                Response response = webTarget.request().get();
+
+                assertNull(response.getHeaders().getFirst("Filtered"));
+
+                ServiceRegistration<?> filterRegistration = null;
+
+                try {
+                    filterRegistration = registerFilter(
+                        "osgi.jaxrs.application.select",
+                        "(osgi.jaxrs.application.base=/test-application)");
+
+                    response = webTarget.request().get();
+
+                    assertEquals(
+                        response.getHeaders().getFirst("Filtered"),
+                        "true");
+                }
+                finally {
+                    if (filterRegistration != null) {
+                        filterRegistration.unregister();
+                    }
+                }
+            };
+
+            testCase.run();
+
+            testCase.run();
+
+        }
+        finally {
+            if (applicationRegistration != null) {
+                applicationRegistration.unregister();
+            }
+        }
+    }
+
+    @Test
     public void testStandaloneEndPoint() {
         Client client = createClient();
 
