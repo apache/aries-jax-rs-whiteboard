@@ -22,6 +22,7 @@ import javax.ws.rs.core.Application;
 import javax.ws.rs.ext.RuntimeDelegate;
 
 import org.apache.aries.jax.rs.whiteboard.internal.CXFJaxRsServiceRegistrator;
+import org.apache.aries.jax.rs.whiteboard.internal.CXFJaxRsServiceRegistrator.ServiceInformation;
 import org.apache.aries.osgi.functional.OSGi;
 import org.apache.aries.osgi.functional.OSGiResult;
 import org.apache.cxf.Bus;
@@ -37,6 +38,7 @@ import org.osgi.framework.wiring.BundleWiring;
 
 import java.util.Collections;
 import java.util.Dictionary;
+import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Map;
 import java.util.Set;
@@ -67,13 +69,17 @@ public class CXFJaxRsBundleActivator implements BundleActivator {
         ));
     }
 
-    private static OSGi<?> cxfRegistrator(
+    private static OSGi<CXFJaxRsServiceRegistrator> cxfRegistrator(
         Bus bus, Application application, Map<String, Object> props) {
 
+        CXFJaxRsServiceRegistrator registrator =
+            new CXFJaxRsServiceRegistrator(bus, application, props);
+
         return
-            just(new CXFJaxRsServiceRegistrator(bus, application, props)).flatMap(registrator ->
             onClose(registrator::close).then(
-            register(CXFJaxRsServiceRegistrator.class, registrator, props)));
+            register(CXFJaxRsServiceRegistrator.class, registrator, props).then(
+            just(registrator)
+        ));
     }
 
     @Override
@@ -99,6 +105,12 @@ public class CXFJaxRsBundleActivator implements BundleActivator {
 
         _applicationsResult = applications.run(bundleContext);
 
+        Application defaultApplication = new Application() {};
+
+        CXFJaxRsServiceRegistrator defaultServiceRegistrator =
+            new CXFJaxRsServiceRegistrator(
+                bus, defaultApplication, new HashMap<>());
+
         OSGi<?> singletons =
             serviceReferences(getSingletonsFilter()).
                 flatMap(serviceReference ->
@@ -108,16 +120,10 @@ public class CXFJaxRsBundleActivator implements BundleActivator {
                         serviceReference, "osgi.jaxrs.resource.base")).
                     flatMap(properties ->
                 service(serviceReference).flatMap(service ->
-                cxfRegistrator(bus,
-                    new Application() {
-                        @Override
-                            public Set<Object> getSingletons() {
-                                return Collections.singleton(service);
-                            }
-                    },
-                    properties)
-                )))
-            );
+                safeRegisterEndpoint(
+                    serviceReference, defaultServiceRegistrator)
+            )))
+        );
 
         _singletonsResult = singletons.run(bundleContext);
 
@@ -166,11 +172,9 @@ public class CXFJaxRsBundleActivator implements BundleActivator {
         if (propertyValue == null) {
             return new String[0];
         }
-
         if (propertyValue instanceof String[]) {
             return (String[]) propertyValue;
         }
-
         return new String[]{propertyValue.toString()};
     }
 
@@ -194,12 +198,14 @@ public class CXFJaxRsBundleActivator implements BundleActivator {
     }
 
     private OSGi<?> safeRegisterEndpoint(
-        ServiceReference<?> ref, CXFJaxRsServiceRegistrator registrator,
-        Object service) {
+        ServiceReference<?> ref, CXFJaxRsServiceRegistrator registrator) {
 
         return
+            bundleContext().flatMap(bundleContext ->
+            service(ref).flatMap(service ->
             onClose(() -> unregisterEndpoint(registrator, service)).then(
-            registerEndpoint(ref, registrator, service));
+            registerEndpoint(ref, registrator, service)
+        )));
     }
 
     private OSGi<?> registerEndpoint(
@@ -207,21 +213,26 @@ public class CXFJaxRsBundleActivator implements BundleActivator {
         CXFJaxRsServiceRegistrator registrator, Object service) {
 
         Thread thread = Thread.currentThread();
-
         ClassLoader contextClassLoader = thread.getContextClassLoader();
-
         ClassLoader classLoader = ref.getBundle().adapt(BundleWiring.class).
             getClassLoader();
+        Object resourceBaseObject = ref.getProperty("osgi.jaxrs.resource.base");
 
+        String resourceBase;
+
+        if (resourceBaseObject == null) {
+            resourceBase = "";
+        }
+        else {
+            resourceBase = resourceBaseObject.toString();
+        }
         try {
             thread.setContextClassLoader(classLoader);
-
-            registrator.add(service);
+            registrator.add(new ServiceInformation(resourceBase, "", service));
         }
         finally {
             thread.setContextClassLoader(contextClassLoader);
         }
-
         return just(service);
     }
 
