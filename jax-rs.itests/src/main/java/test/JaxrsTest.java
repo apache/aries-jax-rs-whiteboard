@@ -184,7 +184,7 @@ public class JaxrsTest {
                 "osgi.jaxrs.resource.base", "/test-addon");
 
             filterRegistration = registerFilter(
-                "osgi.jaxrs.filter.base", "/test-addon");
+                "osgi.jaxrs.extension.name", "test-filter");
 
             Response response = webTarget.request().get();
 
@@ -231,7 +231,7 @@ public class JaxrsTest {
                     assertNull(response.getHeaders().getFirst("Filtered"));
 
                     filterRegistration = registerFilter(
-                        "osgi.jaxrs.filter.base", "/test-addon");
+                        "osgi.jaxrs.extension.name", "test-filter");
 
                     response = webTarget.request().get();
 
