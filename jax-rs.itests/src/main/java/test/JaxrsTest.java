@@ -21,11 +21,15 @@ import java.util.Dictionary;
 import java.util.Hashtable;
 
 import org.junit.Test;
+import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.FrameworkUtil;
+import org.osgi.framework.PrototypeServiceFactory;
+import org.osgi.framework.ServiceFactory;
 import org.osgi.framework.ServiceRegistration;
 
 import test.types.TestAddon;
+import test.types.TestAddonLifecycle;
 import test.types.TestApplication;
 import test.types.TestFilter;
 
@@ -36,6 +40,7 @@ import javax.ws.rs.core.Application;
 import javax.ws.rs.core.Response;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
 
 
@@ -341,6 +346,60 @@ public class JaxrsTest {
     }
 
     @Test
+    public void testStandaloneEndPointSingletonLifecycle() {
+        Client client = createClient();
+
+        WebTarget webTarget = client.
+            target("http://localhost:8080").
+            path("/test-addon");
+
+        ServiceRegistration<?> serviceRegistration = null;
+
+        try {
+            serviceRegistration = registerAddonLifecycle(
+                true, "osgi.jaxrs.resource.base", "/test-addon");
+
+            String first = webTarget.request().get().readEntity(String.class);
+
+            String second = webTarget.request().get().readEntity(String.class);
+
+            assertEquals("This should be equal", first, second);
+        }
+        finally {
+            if (serviceRegistration != null) {
+                serviceRegistration.unregister();
+            }
+        }
+    }
+
+    @Test
+    public void testStandaloneEndPointPrototypeLifecycle() {
+        Client client = createClient();
+
+        WebTarget webTarget = client.
+            target("http://localhost:8080").
+            path("/test-addon");
+
+        ServiceRegistration<?> serviceRegistration = null;
+
+        try {
+            serviceRegistration = registerAddonLifecycle(
+                false, "osgi.jaxrs.resource.base", "/test-addon");
+
+            String first = webTarget.request().get().readEntity(String.class);
+
+            String second = webTarget.request().get().readEntity(String.class);
+
+            assertNotEquals("This should be different", first, second);
+        }
+        finally {
+            if (serviceRegistration != null) {
+                serviceRegistration.unregister();
+            }
+        }
+    }
+
+    @Test
     public void testStandaloneFilter() {
         Client client = createClient();
 
@@ -512,7 +571,6 @@ public class JaxrsTest {
     }
 
     private ServiceRegistration<?> registerAddon(Object ... keyValues) {
-
         TestAddon testAddon = new TestAddon();
 
         Dictionary<String, Object> properties = new Hashtable<>();
@@ -523,6 +581,43 @@ public class JaxrsTest {
 
         return bundleContext.registerService(
             Object.class, testAddon, properties);
+    }
+
+    private ServiceRegistration<?> registerAddonLifecycle(
+        boolean singleton, Object ... keyValues) {
+
+        Dictionary<String, Object> properties = new Hashtable<>();
+
+        for (int i = 0; i < keyValues.length; i = i + 2) {
+            properties.put(keyValues[i].toString(), keyValues[i + 1]);
+        }
+
+        if (singleton) {
+            return bundleContext.registerService(
+                Object.class, new TestAddonLifecycle(), properties);
+        }
+        else {
+            PrototypeServiceFactory<Object> prototypeServiceFactory =
+                new PrototypeServiceFactory<Object>() {
+                    @Override
+                    public Object getService(
+                        Bundle bundle, ServiceRegistration registration) {
+
+                        return new TestAddonLifecycle();
+                    }
+
+                    @Override
+                    public void ungetService(
+                        Bundle bundle, ServiceRegistration registration,
+                        Object service) {
+
+                    }
+                };
+
+            return bundleContext.registerService(
+                Object.class, (ServiceFactory<?>)prototypeServiceFactory,
+                properties);
+        }
     }
 
 
