@@ -21,11 +21,15 @@ import java.util.Dictionary;
 import java.util.Hashtable;
 
 import org.junit.Test;
+import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.FrameworkUtil;
+import org.osgi.framework.PrototypeServiceFactory;
+import org.osgi.framework.ServiceFactory;
 import org.osgi.framework.ServiceRegistration;
 
 import test.types.TestAddon;
+import test.types.TestAddonLifecycle;
 import test.types.TestApplication;
 import test.types.TestFilter;
 
@@ -36,6 +40,7 @@ import javax.ws.rs.core.Application;
 import javax.ws.rs.core.Response;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
 
 
@@ -78,7 +83,7 @@ public class JaxrsTest {
             path("/test-application");
 
         Runnable testCase = () -> {
-            assertEquals(webTarget.request().get().getStatus(), 404);
+            assertEquals(404, webTarget.request().get().getStatus());
 
             ServiceRegistration<?> serviceRegistration = null;
 
@@ -121,7 +126,7 @@ public class JaxrsTest {
             applicationRegistration = registerApplication();
 
             serviceRegistration = registerAddon(
-                "jaxrs.application.select",
+                "osgi.jaxrs.application.select",
                 "(osgi.jaxrs.application.base=/test-application)");
 
             assertEquals(
@@ -159,7 +164,7 @@ public class JaxrsTest {
 
                 try {
                     serviceRegistration = registerAddon(
-                        "jaxrs.application.select",
+                        "osgi.jaxrs.application.select",
                         "(osgi.jaxrs.application.base=/test-application)");
 
                     assertEquals(
@@ -201,7 +206,7 @@ public class JaxrsTest {
             applicationRegistration = registerApplication();
 
             filterRegistration = registerFilter(
-                "jaxrs.application.select",
+                "osgi.jaxrs.application.select",
                 "(osgi.jaxrs.application.base=/test-application)");
 
             Response response = webTarget.request().get();
@@ -250,7 +255,7 @@ public class JaxrsTest {
 
                 try {
                     filterRegistration = registerFilter(
-                        "jaxrs.application.select",
+                        "osgi.jaxrs.application.select",
                         "(osgi.jaxrs.application.base=/test-application)");
 
                     response = webTarget.request().get();
@@ -306,7 +311,6 @@ public class JaxrsTest {
         }
     }
 
-
     @Test
     public void testStandaloneEndPointReadd() {
         Client client = createClient();
@@ -317,7 +321,7 @@ public class JaxrsTest {
             path("test");
 
         Runnable testCase = () -> {
-            assertEquals(webTarget.request().get().getStatus(), 404);
+            assertEquals(404, webTarget.request().get().getStatus());
 
             ServiceRegistration<?> serviceRegistration = null;
 
@@ -342,6 +346,60 @@ public class JaxrsTest {
     }
 
     @Test
+    public void testStandaloneEndPointSingletonLifecycle() {
+        Client client = createClient();
+
+        WebTarget webTarget = client.
+            target("http://localhost:8080").
+            path("/test-addon");
+
+        ServiceRegistration<?> serviceRegistration = null;
+
+        try {
+            serviceRegistration = registerAddonLifecycle(
+                true, "osgi.jaxrs.resource.base", "/test-addon");
+
+            String first = webTarget.request().get().readEntity(String.class);
+
+            String second = webTarget.request().get().readEntity(String.class);
+
+            assertEquals("This should be equal", first, second);
+        }
+        finally {
+            if (serviceRegistration != null) {
+                serviceRegistration.unregister();
+            }
+        }
+    }
+
+    @Test
+    public void testStandaloneEndPointPrototypeLifecycle() {
+        Client client = createClient();
+
+        WebTarget webTarget = client.
+            target("http://localhost:8080").
+            path("/test-addon");
+
+        ServiceRegistration<?> serviceRegistration = null;
+
+        try {
+            serviceRegistration = registerAddonLifecycle(
+                false, "osgi.jaxrs.resource.base", "/test-addon");
+
+            String first = webTarget.request().get().readEntity(String.class);
+
+            String second = webTarget.request().get().readEntity(String.class);
+
+            assertNotEquals("This should be different", first, second);
+        }
+        finally {
+            if (serviceRegistration != null) {
+                serviceRegistration.unregister();
+            }
+        }
+    }
+
+    @Test
     public void testStandaloneFilter() {
         Client client = createClient();
 
@@ -359,7 +417,7 @@ public class JaxrsTest {
                 "osgi.jaxrs.resource.base", "/test-addon");
 
             filterRegistration = registerFilter(
-                "osgi.jaxrs.filter.base", "/test-addon");
+                "osgi.jaxrs.extension.name", "test-filter");
 
             Response response = webTarget.request().get();
 
@@ -367,7 +425,7 @@ public class JaxrsTest {
                 "This should say hello", "Hello test",
                 response.readEntity(String.class));
 
-            assertEquals(response.getHeaders().getFirst("Filtered"), "true");
+            assertEquals("true", response.getHeaders().getFirst("Filtered"));
         }
         finally {
             if (serviceRegistration != null) {
@@ -406,7 +464,7 @@ public class JaxrsTest {
                     assertNull(response.getHeaders().getFirst("Filtered"));
 
                     filterRegistration = registerFilter(
-                        "osgi.jaxrs.filter.base", "/test-addon");
+                        "osgi.jaxrs.extension.name", "test-filter");
 
                     response = webTarget.request().get();
 
@@ -414,7 +472,7 @@ public class JaxrsTest {
                         "Hello test", response.readEntity(String.class));
 
                     assertEquals(
-                        response.getHeaders().getFirst("Filtered"), "true");
+                        "true", response.getHeaders().getFirst("Filtered"));
                 }
                 finally {
                     if (filterRegistration != null) {
@@ -435,6 +493,67 @@ public class JaxrsTest {
         }
     }
 
+    @Test
+    public void testStandaloneEndpointWithExtensionsDependencies() {
+        Client client = createClient();
+
+        WebTarget webTarget = client.
+            target("http://localhost:8080").
+            path("/test-addon").
+            path("test");
+
+        ServiceRegistration<?> serviceRegistration = null;
+        ServiceRegistration<?> extensionRegistration1;
+        ServiceRegistration<?> extensionRegistration2;
+
+        try {
+            serviceRegistration = registerAddon(
+                "osgi.jaxrs.resource.base", "/test-addon",
+                "osgi.jaxrs.extension.select", new String[]{
+                    "(property one=one)",
+                    "(property two=two)",
+                });
+
+            assertEquals(404, webTarget.request().get().getStatus());
+
+            extensionRegistration1 = registerExtension(
+                "aExtension", "property one", "one");
+
+            assertEquals(404, webTarget.request().get().getStatus());
+
+            extensionRegistration2 = registerExtension(
+                "anotherExtension", "property two", "two");
+
+            Response response = webTarget.request().get();
+
+            assertEquals(
+                "This should say hello", "Hello test",
+                response.readEntity(String.class));
+
+            extensionRegistration1.unregister();
+
+            assertEquals(404, webTarget.request().get().getStatus());
+
+            extensionRegistration1 = registerExtension(
+                "aExtension", "property one", "one");
+
+            assertEquals(
+                "This should say hello", "Hello test",
+                response.readEntity(String.class));
+
+            extensionRegistration2.unregister();
+
+            assertEquals(404, webTarget.request().get().getStatus());
+
+            extensionRegistration1.unregister();
+        }
+        finally {
+            if (serviceRegistration != null) {
+                serviceRegistration.unregister();
+            }
+        }
+    }
+
     private Client createClient() {
         Thread thread = Thread.currentThread();
 
@@ -451,15 +570,54 @@ public class JaxrsTest {
         }
     }
 
-    private ServiceRegistration<?> registerAddon(String key, String value) {
+    private ServiceRegistration<?> registerAddon(Object ... keyValues) {
         TestAddon testAddon = new TestAddon();
 
         Dictionary<String, Object> properties = new Hashtable<>();
 
-        properties.put(key, value);
+        for (int i = 0; i < keyValues.length; i = i + 2) {
+            properties.put(keyValues[i].toString(), keyValues[i + 1]);
+        }
 
         return bundleContext.registerService(
             Object.class, testAddon, properties);
+    }
+
+    private ServiceRegistration<?> registerAddonLifecycle(
+        boolean singleton, Object ... keyValues) {
+
+        Dictionary<String, Object> properties = new Hashtable<>();
+
+        for (int i = 0; i < keyValues.length; i = i + 2) {
+            properties.put(keyValues[i].toString(), keyValues[i + 1]);
+        }
+
+        if (singleton) {
+            return bundleContext.registerService(
+                Object.class, new TestAddonLifecycle(), properties);
+        }
+        else {
+            PrototypeServiceFactory<Object> prototypeServiceFactory =
+                new PrototypeServiceFactory<Object>() {
+                    @Override
+                    public Object getService(
+                        Bundle bundle, ServiceRegistration registration) {
+
+                        return new TestAddonLifecycle();
+                    }
+
+                    @Override
+                    public void ungetService(
+                        Bundle bundle, ServiceRegistration registration,
+                        Object service) {
+
+                    }
+                };
+
+            return bundleContext.registerService(
+                Object.class, (ServiceFactory<?>)prototypeServiceFactory,
+                properties);
+        }
     }
 
 
@@ -475,12 +633,32 @@ public class JaxrsTest {
             Application.class, testApplication, properties);
     }
 
-    private ServiceRegistration<?> registerFilter(String key, String value) {
+    private ServiceRegistration<?> registerFilter(Object ... keyValues) {
+
         TestFilter testFilter = new TestFilter();
 
         Dictionary<String, Object> properties = new Hashtable<>();
 
-        properties.put(key, value);
+        for (int i = 0; i < keyValues.length; i = i + 2) {
+            properties.put(keyValues[i].toString(), keyValues[i + 1]);
+        }
+
+        return bundleContext.registerService(
+            Object.class, testFilter, properties);
+    }
+
+    private ServiceRegistration<?> registerExtension(
+        String name, Object ... keyValues) {
+
+        TestFilter testFilter = new TestFilter();
+
+        Dictionary<String, Object> properties = new Hashtable<>();
+
+        properties.put("osgi.jaxrs.extension.name", name);
+
+        for (int i = 0; i < keyValues.length; i = i + 2) {
+            properties.put(keyValues[i].toString(), keyValues[i + 1]);
+        }
 
         return bundleContext.registerService(
             Object.class, testFilter, properties);
