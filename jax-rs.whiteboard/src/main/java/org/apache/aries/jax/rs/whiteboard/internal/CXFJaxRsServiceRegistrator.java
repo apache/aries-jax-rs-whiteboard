@@ -20,19 +20,17 @@ package org.apache.aries.jax.rs.whiteboard.internal;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
 import javax.ws.rs.core.Application;
-import javax.ws.rs.ext.Provider;
 import javax.ws.rs.ext.RuntimeDelegate;
 
 import org.apache.cxf.Bus;
 import org.apache.cxf.endpoint.Server;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.JAXRSServiceFactoryBean;
-import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
+import org.apache.cxf.jaxrs.lifecycle.ResourceProvider;
 import org.apache.cxf.jaxrs.model.ClassResourceInfo;
 import org.apache.cxf.jaxrs.model.URITemplate;
 import org.apache.cxf.jaxrs.provider.json.JSONProvider;
@@ -89,38 +87,40 @@ public class CXFJaxRsServiceRegistrator {
             return;
         }
 
-        Object object = serviceInformation.getService();
+        _services.add(serviceInformation);
 
-        if (object.getClass().isAnnotationPresent(Provider.class)) {
-            _providers.add(object);
-        } else {
-            _services.add(serviceInformation);
-        }
         rewire();
     }
 
-    public void remove(Object object) {
+    public void remove(ServiceInformation serviceInformation) {
         if (_closed) {
             return;
         }
 
-        if (object.getClass().isAnnotationPresent(Provider.class)) {
-            _providers.remove(object);
-        }
-        else {
-            Iterator<ServiceInformation> iterator = _services.iterator();
-            while (iterator.hasNext()) {
-                ServiceInformation next = iterator.next();
-
-                if (next.getService() == object) {
-                    iterator.remove();
-                }
-            }
-        }
+        _services.remove(serviceInformation);
 
         rewire();
     }
 
+    public void addProvider(Object provider) {
+        if (_closed) {
+            return;
+        }
+
+        _providers.add(provider);
+
+        rewire();
+    }
+
+    public void removeProvider(Object provider) {
+        if (_closed) {
+            return;
+        }
+
+        _providers.remove(provider);
+
+        rewire();
+    }
     protected synchronized void rewire() {
         if (_server != null) {
             _server.destroy();
@@ -159,18 +159,18 @@ public class CXFJaxRsServiceRegistrator {
             jaxRsServerFactoryBean.getServiceFactory();
 
         for (ServiceInformation serviceInformation : _services) {
-            Object service = serviceInformation.getService();
 
-            SingletonResourceProvider rp = new SingletonResourceProvider(
-                service, true);
+            ResourceProvider resourceProvider =
+                serviceInformation.getResourceProvider();
 
-            jaxRsServerFactoryBean.setResourceProvider(rp);
+            jaxRsServerFactoryBean.setResourceProvider(resourceProvider);
 
             List<ClassResourceInfo> classResourceInfo =
                 serviceFactory.getClassResourceInfo();
 
             for (ClassResourceInfo resourceInfo : classResourceInfo) {
-                if (resourceInfo.getServiceClass() == service.getClass()) {
+                if (resourceInfo.getServiceClass() ==
+                        resourceProvider.getResourceClass()) {
                     URITemplate uriTemplate = resourceInfo.getURITemplate();
                     resourceInfo.setURITemplate(
                         new URITemplate(
@@ -203,27 +203,21 @@ public class CXFJaxRsServiceRegistrator {
 
     public static class ServiceInformation {
         private final String prefixPath;
-        private final String scope;
-        private final Object service;
+        private final ResourceProvider _resourceProvider;
 
         public ServiceInformation(
-            String prefixPath, String scope, Object service) {
+            String prefixPath, ResourceProvider resourceProvider) {
 
             this.prefixPath = prefixPath;
-            this.scope = scope;
-            this.service = service;
+            this._resourceProvider = resourceProvider;
         }
 
         public String getPrefixPath() {
             return prefixPath;
         }
 
-        public String getScope() {
-            return scope;
-        }
-
-        public Object getService() {
-            return service;
+        public ResourceProvider getResourceProvider() {
+            return _resourceProvider;
         }
 
     }
