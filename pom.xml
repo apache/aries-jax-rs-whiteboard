@@ -87,7 +87,6 @@
         <module>jax-rs.itests-run</module>
         <module>jax-rs.example</module>
         <module>jax-rs.example-run</module>
-        <module>org.osgi.service.jaxrs.whiteboard</module>
     </modules>
     <dependencies>
         <dependency>
@@ -98,7 +97,7 @@
     </dependencies>
     <repositories>
         <repository>
-            <id>osgi-snapshots</id>
+            <id>osgi-releases-and-snapshots</id>
             <url>https://oss.sonatype.org/content/groups/osgi/</url>
             <layout>default</layout>
         </repository>
