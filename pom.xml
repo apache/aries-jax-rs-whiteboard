@@ -16,8 +16,8 @@
   under the License.
 -->
 <project
-    xmlns="http://maven.apache.org/POM/4.0.0" 
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+    xmlns="http://maven.apache.org/POM/4.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 
     <modelVersion>4.0.0</modelVersion>
@@ -28,9 +28,10 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <cxf.version>3.1.7</cxf.version>
+        <bnd.version>3.4.0-SNAPSHOT</bnd.version>
     </properties>
-	
-	<distributionManagement>
+
+    <distributionManagement>
         <repository>
             <id>apache.releases.https</id>
             <name>Apache Release Distribution Repository</name>
@@ -44,49 +45,105 @@
         </snapshotRepository>
     </distributionManagement>
 
-
     <build>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.1</version>
-                <configuration>
-                    <source>1.8</source>
-                    <target>1.8</target>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-jar-plugin</artifactId>
-                <version>3.0.1</version>
-                <configuration>
-                    <archive>
-                        <manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
-                    </archive>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>biz.aQute.bnd</groupId>
-                <artifactId>bnd-maven-plugin</artifactId>
-                <version>3.4.0-SNAPSHOT</version>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>bnd-process</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-        </plugins>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <version>3.1</version>
+                    <configuration>
+                        <source>1.8</source>
+                        <target>1.8</target>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-jar-plugin</artifactId>
+                    <version>3.0.1</version>
+                    <configuration>
+                        <archive>
+                            <manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
+                        </archive>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>biz.aQute.bnd</groupId>
+                    <artifactId>bnd-baseline-maven-plugin</artifactId>
+                    <version>${bnd.version}</version>
+                    <configuration>
+                        <includeDistributionManagement>false</includeDistributionManagement>
+                        <fullReport>true</fullReport>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <id>baseline</id>
+                            <goals>
+                                <goal>baseline</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+                <plugin>
+                    <groupId>biz.aQute.bnd</groupId>
+                    <artifactId>bnd-export-maven-plugin</artifactId>
+                    <version>${bnd.version}</version>
+                    <executions>
+                        <execution>
+                            <id>export</id>
+                            <goals>
+                                <goal>export</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+                <plugin>
+                    <groupId>biz.aQute.bnd</groupId>
+                    <artifactId>bnd-indexer-maven-plugin</artifactId>
+                    <version>${bnd.version}</version>
+                    <executions>
+                        <execution>
+                            <id>index</id>
+                            <goals>
+                                <goal>index</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+                <plugin>
+                    <groupId>biz.aQute.bnd</groupId>
+                    <artifactId>bnd-maven-plugin</artifactId>
+                    <version>${bnd.version}</version>
+                    <executions>
+                        <execution>
+                            <id>bnd-process</id>
+                            <goals>
+                                <goal>bnd-process</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+                <plugin>
+                    <groupId>biz.aQute.bnd</groupId>
+                    <artifactId>bnd-testing-maven-plugin</artifactId>
+                    <version>${bnd.version}</version>
+                    <executions>
+                        <execution>
+                            <id>testing</id>
+                            <goals>
+                                <goal>testing</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+            </plugins>
+        </pluginManagement>
     </build>
     <modules>
         <module>jax-rs.whiteboard</module>
         <module>jax-rs.log4j-configuration</module>
         <module>jax-rs.itests</module>
-        <module>jax-rs.itests-run</module>
         <module>jax-rs.example</module>
-        <module>jax-rs.example-run</module>
     </modules>
     <dependencies>
         <dependency>
@@ -96,6 +153,11 @@
         </dependency>
     </dependencies>
     <repositories>
+        <repository>
+            <id>apache snapshots</id>
+            <url>http://repository.apache.org/snapshots/</url>
+            <layout>default</layout>
+        </repository>
         <repository>
             <id>osgi-releases-and-snapshots</id>
             <url>https://oss.sonatype.org/content/groups/osgi/</url>
