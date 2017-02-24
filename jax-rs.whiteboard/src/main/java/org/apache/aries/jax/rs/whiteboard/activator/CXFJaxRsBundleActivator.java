@@ -19,23 +19,18 @@ package org.apache.aries.jax.rs.whiteboard.activator;
 
 import javax.servlet.Servlet;
 import javax.ws.rs.core.Application;
-import javax.ws.rs.ext.Provider;
 import javax.ws.rs.ext.RuntimeDelegate;
 
 import org.apache.aries.jax.rs.whiteboard.internal.CXFJaxRsServiceRegistrator;
-import org.apache.aries.jax.rs.whiteboard.internal.CXFJaxRsServiceRegistrator.ServiceInformation;
 import org.apache.aries.osgi.functional.OSGi;
 import org.apache.aries.osgi.functional.OSGiResult;
 import org.apache.cxf.Bus;
 import org.apache.cxf.BusFactory;
 import org.apache.cxf.bus.CXFBusFactory;
-import org.apache.cxf.jaxrs.lifecycle.ResourceProvider;
-import org.apache.cxf.message.Message;
 import org.apache.cxf.transport.servlet.CXFNonSpringServlet;
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.Constants;
-import org.osgi.framework.ServiceObjects;
 import org.osgi.framework.ServiceReference;
 import org.osgi.framework.ServiceRegistration;
 import org.osgi.framework.wiring.BundleWiring;
@@ -43,14 +38,11 @@ import org.osgi.framework.wiring.BundleWiring;
 import java.util.Dictionary;
 import java.util.HashMap;
 import java.util.Hashtable;
-import java.util.Map;
 
 import static java.lang.String.format;
 import static org.apache.aries.jax.rs.whiteboard.AriesJaxRSWhiteboardConstants.*;
-import static org.apache.aries.osgi.functional.OSGi.bundleContext;
+import static org.apache.aries.jax.rs.whiteboard.internal.Utils.*;
 import static org.apache.aries.osgi.functional.OSGi.just;
-import static org.apache.aries.osgi.functional.OSGi.onClose;
-import static org.apache.aries.osgi.functional.OSGi.register;
 import static org.apache.aries.osgi.functional.OSGi.serviceReferences;
 import static org.apache.aries.osgi.functional.OSGi.services;
 import static org.osgi.service.jaxrs.whiteboard.JaxRSWhiteboardConstants.*;
@@ -61,41 +53,12 @@ import static org.osgi.service.http.whiteboard.HttpWhiteboardConstants.HTTP_WHIT
 
 public class CXFJaxRsBundleActivator implements BundleActivator {
 
-    private BundleContext _bundleContext;
     private OSGiResult<?> _applicationsResult;
-    private OSGiResult<?> _singletonsResult;
-    private OSGiResult<?> _extensionsResult;
     private OSGiResult<?> _applicationSingletonsResult;
-
-    private static <T> OSGi<T> service(ServiceReference<T> serviceReference) {
-        return
-            bundleContext().flatMap(bundleContext ->
-            onClose(() -> bundleContext.ungetService(serviceReference)).then(
-            just(bundleContext.getService(serviceReference))
-        ));
-    }
-
-    private static <T> OSGi<ServiceObjects<T>> serviceObjects(
-        ServiceReference<T> serviceReference) {
-
-        return
-            bundleContext().flatMap(bundleContext ->
-            just(bundleContext.getServiceObjects(serviceReference))
-        );
-    }
-
-    private static OSGi<CXFJaxRsServiceRegistrator> cxfRegistrator(
-        Bus bus, Application application, Map<String, Object> props) {
-
-        CXFJaxRsServiceRegistrator registrator =
-            new CXFJaxRsServiceRegistrator(bus, application, props);
-
-        return
-            onClose(registrator::close).then(
-            register(CXFJaxRsServiceRegistrator.class, registrator, props).then(
-            just(registrator)
-        ));
-    }
+    private BundleContext _bundleContext;
+    private Bus _bus;
+    private OSGiResult<?> _extensionsResult;
+    private OSGiResult<?> _singletonsResult;
 
     @Override
     public void start(BundleContext bundleContext) throws Exception {
@@ -103,9 +66,9 @@ public class CXFJaxRsBundleActivator implements BundleActivator {
         initRuntimeDelegate(bundleContext);
 
         // TODO make the context path of the JAX-RS Whiteboard configurable.
-        Bus bus = BusFactory.newInstance(
+        _bus = BusFactory.newInstance(
             CXFBusFactory.class.getName()).createBus();
-        registerCXFServletService(bus);
+        registerCXFServletService(_bus);
 
         OSGi<?> applications =
             serviceReferences(Application.class, getApplicationFilter()).
@@ -115,16 +78,37 @@ public class CXFJaxRsBundleActivator implements BundleActivator {
                     ref, JAX_RS_APPLICATION_BASE)).
                 flatMap(properties ->
             service(ref).flatMap(application ->
-            cxfRegistrator(bus, application, properties)
+            cxfRegistrator(_bus, application, properties)
         )));
 
         _applicationsResult = applications.run(bundleContext);
+
+        OSGi<?> applicationSingletons =
+            serviceReferences(format("(%s=*)", JAX_RS_APPLICATION_SELECT)).
+                flatMap(ref ->
+            just(ref.getProperty(JAX_RS_APPLICATION_SELECT).toString()).
+                flatMap(applicationFilter ->
+            services(CXFJaxRsServiceRegistrator.class, applicationFilter).
+                flatMap(registrator ->
+            safeRegisterGeneric(ref, registrator)
+        )));
+
+        _applicationSingletonsResult = applicationSingletons.run(bundleContext);
 
         Application defaultApplication = new Application() {};
 
         CXFJaxRsServiceRegistrator defaultServiceRegistrator =
             new CXFJaxRsServiceRegistrator(
-                bus, defaultApplication, new HashMap<>());
+                _bus, defaultApplication, new HashMap<>());
+
+        OSGi<?> extensions =
+            serviceReferences(getExtensionFilter()).flatMap(ref ->
+                waitForExtensionDependencies(ref,
+                    safeRegisterExtension(ref, defaultServiceRegistrator)
+                )
+            );
+
+        _extensionsResult = extensions.run(bundleContext);
 
         OSGi<?> singletons =
             serviceReferences(getSingletonsFilter()).
@@ -141,59 +125,46 @@ public class CXFJaxRsBundleActivator implements BundleActivator {
         );
 
         _singletonsResult = singletons.run(bundleContext);
-
-        OSGi<?> extensions =
-            serviceReferences(getExtensionFilter()).flatMap(ref ->
-            waitForExtensionDependencies(ref,
-                safeRegisterExtension(ref, defaultServiceRegistrator)
-            )
-        );
-
-        _extensionsResult = extensions.run(bundleContext);
-
-        OSGi<?> applicationSingletons =
-            serviceReferences(format("(%s=*)", JAX_RS_APPLICATION_SELECT)).
-                flatMap(ref ->
-            just(ref.getProperty(JAX_RS_APPLICATION_SELECT).toString()).
-                flatMap(applicationFilter ->
-            services(CXFJaxRsServiceRegistrator.class, applicationFilter).
-                flatMap(registrator ->
-            testProvider(ref).flatMap(isProvider -> {
-                if (isProvider) {
-                    return safeRegisterExtension(ref, registrator);
-                }
-                else {
-                    return safeRegisterEndpoint(ref, registrator);
-                }
-            })
-        )));
-
-        _applicationSingletonsResult = applicationSingletons.run(bundleContext);
     }
 
-    private OSGi<Boolean> testProvider(ServiceReference<?> serviceReference) {
-        return bundleContext().flatMap(bundleContext -> {
-            Object service = bundleContext.getService(serviceReference);
-            Class<?> serviceClass = service.getClass();
-            if (serviceClass.isAnnotationPresent(Provider.class)) {
-                return just(Boolean.TRUE);
-            }
-            else {
-                return just(Boolean.FALSE);
-            }
-        });
+    @Override
+    public void stop(BundleContext context) throws Exception {
+        _applicationsResult.close();
+        _applicationSingletonsResult.close();
+        _extensionsResult.close();
+        _singletonsResult.close();
     }
 
-    private OSGi<?> safeRegisterExtension(
-        ServiceReference<Object> ref,
-        CXFJaxRsServiceRegistrator registrator) {
+    private static String buildExtensionFilter(String filter) {
+        return String.format("(&%s%s)", getExtensionFilter(), filter);
+    }
 
-        return
-            service(ref).flatMap(extension ->
-            onClose(() -> registrator.removeProvider(extension)).
-                foreach(ign ->
-            registrator.addProvider(extension)
-        ));
+    private static String[] canonicalize(Object propertyValue) {
+        if (propertyValue == null) {
+            return new String[0];
+        }
+        if (propertyValue instanceof String[]) {
+            return (String[]) propertyValue;
+        }
+        return new String[]{propertyValue.toString()};
+    }
+
+    private static CXFNonSpringServlet createCXFServlet(Bus bus) {
+        CXFNonSpringServlet cxfNonSpringServlet = new CXFNonSpringServlet();
+        cxfNonSpringServlet.setBus(bus);
+        return cxfNonSpringServlet;
+    }
+
+    private static String getApplicationFilter() {
+        return format("(%s=*)", JAX_RS_APPLICATION_BASE);
+    }
+
+    private static String getExtensionFilter() {
+        return format("(%s=*)", JAX_RS_EXTENSION_NAME);
+    }
+
+    private static String getSingletonsFilter() {
+        return format("(%s=*)", JAX_RS_RESOURCE_BASE);
     }
 
     /**
@@ -214,121 +185,6 @@ public class CXFJaxRsBundleActivator implements BundleActivator {
         }
     }
 
-    private String[] canonicalize(Object propertyValue) {
-        if (propertyValue == null) {
-            return new String[0];
-        }
-        if (propertyValue instanceof String[]) {
-            return (String[]) propertyValue;
-        }
-        return new String[]{propertyValue.toString()};
-    }
-
-    private String buildExtensionFilter(String filter) {
-        return format("(&%s%s)", getExtensionFilter(), filter);
-    }
-
-    private OSGi<?> waitForExtensionDependencies(
-        ServiceReference<?> serviceReference, OSGi<?> program) {
-
-        String[] extensionDependencies = canonicalize(
-            serviceReference.getProperty(JAX_RS_EXTENSION_SELECT));
-
-        for (String extensionDependency : extensionDependencies) {
-            program =
-                serviceReferences(buildExtensionFilter(extensionDependency)).
-                then(program);
-        }
-
-        return program;
-    }
-
-    private <T> OSGi<?> safeRegisterEndpoint(
-        ServiceReference<T> ref, CXFJaxRsServiceRegistrator registrator) {
-
-        return
-            bundleContext().flatMap(bundleContext ->
-            serviceObjects(ref).flatMap(service ->
-            registerEndpoint(ref, registrator, service).
-                flatMap(serviceInformation ->
-            onClose(
-                () -> unregisterEndpoint(registrator, serviceInformation)))));
-    }
-
-    private <T> OSGi<ServiceInformation> registerEndpoint(
-        ServiceReference<?> ref,
-        CXFJaxRsServiceRegistrator registrator,
-        ServiceObjects<T> serviceObjects) {
-
-        Thread thread = Thread.currentThread();
-        ClassLoader contextClassLoader = thread.getContextClassLoader();
-        ClassLoader classLoader = ref.getBundle().adapt(BundleWiring.class).
-            getClassLoader();
-        Object resourceBaseObject = ref.getProperty(JAX_RS_RESOURCE_BASE);
-
-        ResourceProvider resourceProvider = getResourceProvider(serviceObjects);
-
-        String resourceBase;
-
-        if (resourceBaseObject == null) {
-            resourceBase = "";
-        }
-        else {
-            resourceBase = resourceBaseObject.toString();
-        }
-        try {
-            thread.setContextClassLoader(classLoader);
-            ServiceInformation serviceInformation = new ServiceInformation(
-                resourceBase, resourceProvider);
-            registrator.add(serviceInformation);
-            return just(serviceInformation);
-        }
-        finally {
-            thread.setContextClassLoader(contextClassLoader);
-        }
-    }
-
-    private <T> ResourceProvider getResourceProvider(
-        ServiceObjects<T> serviceObjects) {
-
-        ResourceProvider resourceProvider;
-        T service = serviceObjects.getService();
-        Class<?> serviceClass = service.getClass();
-
-        resourceProvider = new ResourceProvider() {
-
-            @Override
-            public Object getInstance(Message m) {
-                return serviceObjects.getService();
-            }
-
-            @Override
-            public void releaseInstance(Message m, Object o) {
-                serviceObjects.ungetService((T)o);
-            }
-
-            @Override
-            public Class<?> getResourceClass() {
-                return serviceClass;
-            }
-
-            @Override
-            public boolean isSingleton() {
-                return false;
-            }
-        };
-
-        serviceObjects.ungetService(service);
-        return resourceProvider;
-    }
-
-    private void unregisterEndpoint(
-        CXFJaxRsServiceRegistrator registrator,
-        ServiceInformation serviceInformation) {
-
-        registrator.remove(serviceInformation);
-    }
-
     private ServiceRegistration<Servlet> registerCXFServletService(Bus bus) {
         Dictionary<String, Object> properties = new Hashtable<>();
         properties.put(HTTP_WHITEBOARD_CONTEXT_SELECT,
@@ -341,30 +197,19 @@ public class CXFJaxRsBundleActivator implements BundleActivator {
             Servlet.class, cxfNonSpringServlet, properties);
     }
 
-    private CXFNonSpringServlet createCXFServlet(Bus bus) {
-        CXFNonSpringServlet cxfNonSpringServlet = new CXFNonSpringServlet();
-        cxfNonSpringServlet.setBus(bus);
-        return cxfNonSpringServlet;
-    }
+    private static OSGi<?> waitForExtensionDependencies(
+        ServiceReference<?> serviceReference, OSGi<?> program) {
 
-    private String getExtensionFilter() {
-        return format("(%s=*)", JAX_RS_EXTENSION_NAME);
-    }
+        String[] extensionDependencies = canonicalize(
+            serviceReference.getProperty(JAX_RS_EXTENSION_SELECT));
 
-    private String getApplicationFilter() {
-        return format("(%s=*)", JAX_RS_APPLICATION_BASE);
-    }
+        for (String extensionDependency : extensionDependencies) {
+            program =
+                serviceReferences(buildExtensionFilter(extensionDependency)).
+                then(program);
+        }
 
-    private String getSingletonsFilter() {
-        return format("(%s=*)", JAX_RS_RESOURCE_BASE);
-    }
-
-    @Override
-    public void stop(BundleContext context) throws Exception {
-        _applicationSingletonsResult.close();
-        _applicationsResult.close();
-        _extensionsResult.close();
-        _singletonsResult.close();
+        return program;
     }
 
 }

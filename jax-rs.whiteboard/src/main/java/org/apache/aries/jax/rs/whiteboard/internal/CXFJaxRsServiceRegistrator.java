@@ -36,16 +36,18 @@ import org.apache.cxf.jaxrs.model.URITemplate;
 import org.apache.cxf.jaxrs.provider.json.JSONProvider;
 import org.osgi.framework.ServiceReference;
 
+import static org.apache.aries.jax.rs.whiteboard.internal.Utils.safeToString;
 import static org.osgi.service.jaxrs.whiteboard.JaxRSWhiteboardConstants.*;
 
 public class CXFJaxRsServiceRegistrator {
+
     private volatile boolean _closed = false;
     private final Application _application;
     private final Bus _bus;
     private final Map<String, Object> _properties;
     private final Collection<Object> _providers = new ArrayList<>();
     private Server _server;
-    private final Collection<ServiceInformation> _services = new ArrayList<>();
+    private final Collection<ResourceInformation> _services = new ArrayList<>();
 
     private static final String CXF_ENDPOINT_ADDRESS = "CXF_ENDPOINT_ADDRESS";
 
@@ -59,9 +61,11 @@ public class CXFJaxRsServiceRegistrator {
         rewire();
     }
 
-    public static Map<String, Object> getProperties(ServiceReference<?> sref, String addressKey) {
+    public static Map<String, Object> getProperties(
+        ServiceReference<?> sref, String addressKey) {
+
         String[] propertyKeys = sref.getPropertyKeys();
-        Map<String, Object> properties = new HashMap<String, Object>(propertyKeys.length);
+        Map<String, Object> properties = new HashMap<>(propertyKeys.length);
 
         for (String key : propertyKeys) {
             if (key.equals(JAX_RS_RESOURCE_BASE)) {
@@ -70,38 +74,17 @@ public class CXFJaxRsServiceRegistrator {
             properties.put(key, sref.getProperty(key));
         }
 
-        properties.put(CXF_ENDPOINT_ADDRESS, sref.getProperty(addressKey).toString());
+        properties.put(
+            CXF_ENDPOINT_ADDRESS, sref.getProperty(addressKey).toString());
         return properties;
     }
 
-    public void close() {
+    public void add(ResourceInformation resourceInformation) {
         if (_closed) {
             return;
         }
 
-        if (_server != null) {
-            _server.destroy();
-        }
-
-        _closed = true;
-    }
-
-    public void add(ServiceInformation serviceInformation) {
-        if (_closed) {
-            return;
-        }
-
-        _services.add(serviceInformation);
-
-        rewire();
-    }
-
-    public void remove(ServiceInformation serviceInformation) {
-        if (_closed) {
-            return;
-        }
-
-        _services.remove(serviceInformation);
+        _services.add(resourceInformation);
 
         rewire();
     }
@@ -116,6 +99,28 @@ public class CXFJaxRsServiceRegistrator {
         rewire();
     }
 
+    public void close() {
+        if (_closed) {
+            return;
+        }
+
+        if (_server != null) {
+            _server.destroy();
+        }
+
+        _closed = true;
+    }
+
+    public void remove(ResourceInformation resourceInformation) {
+        if (_closed) {
+            return;
+        }
+
+        _services.remove(resourceInformation);
+
+        rewire();
+    }
+
     public void removeProvider(Object provider) {
         if (_closed) {
             return;
@@ -125,6 +130,7 @@ public class CXFJaxRsServiceRegistrator {
 
         rewire();
     }
+
     protected synchronized void rewire() {
         if (_server != null) {
             _server.destroy();
@@ -162,13 +168,14 @@ public class CXFJaxRsServiceRegistrator {
         JAXRSServiceFactoryBean serviceFactory =
             jaxRsServerFactoryBean.getServiceFactory();
 
-        for (ServiceInformation serviceInformation : _services) {
+        for (ResourceInformation resourceInformation : _services) {
 
             ResourceProvider resourceProvider =
-                serviceInformation.getResourceProvider();
+                resourceInformation.getResourceProvider();
 
             jaxRsServerFactoryBean.setResourceProvider(resourceProvider);
 
+            //FIXME: this is hack to programmatically prefix only resource path
             List<ClassResourceInfo> classResourceInfo =
                 serviceFactory.getClassResourceInfo();
 
@@ -178,23 +185,13 @@ public class CXFJaxRsServiceRegistrator {
                     URITemplate uriTemplate = resourceInfo.getURITemplate();
                     resourceInfo.setURITemplate(
                         new URITemplate(
-                            serviceInformation.getPrefixPath() +
+                            resourceInformation.getPrefixPath() +
                                 uriTemplate.getValue()));
                 }
             }
         }
 
-        Object cxfEndpointAddressObject = _properties.get(
-            CXF_ENDPOINT_ADDRESS);
-
-        String address;
-
-        if (cxfEndpointAddressObject == null) {
-            address = "";
-        }
-        else {
-            address = cxfEndpointAddressObject.toString();
-        }
+        String address = safeToString(_properties.get(CXF_ENDPOINT_ADDRESS));
 
         if (address != null) {
             jaxRsServerFactoryBean.setAddress(address);
@@ -205,11 +202,11 @@ public class CXFJaxRsServiceRegistrator {
         _server.start();
     }
 
-    public static class ServiceInformation {
+    public static class ResourceInformation {
         private final String prefixPath;
         private final ResourceProvider _resourceProvider;
 
-        public ServiceInformation(
+        public ResourceInformation(
             String prefixPath, ResourceProvider resourceProvider) {
 
             this.prefixPath = prefixPath;
