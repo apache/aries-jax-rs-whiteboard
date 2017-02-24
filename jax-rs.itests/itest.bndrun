@@ -2,7 +2,6 @@
 
 -runrequires: \
 	osgi.identity;filter:='(osgi.identity=org.apache.aries.jax.rs.itests)',\
-	osgi.identity;filter:='(osgi.identity=org.apache.aries.jax.rs.log4j-configuration)',\
 	osgi.identity;filter:='(osgi.identity=org.apache.aries.jax.rs.whiteboard)',\
 	osgi.identity;filter:='(osgi.identity=slf4j.log4j12)'
 
@@ -15,6 +14,7 @@
 
 -runsystemcapabilities: ${native_capability}
 -runproperties: \
+	log4j.configuration=file:${.}/log4j.properties,\
 	osgi.console.enable.builtin=false, \
 	osgi.console=, \
 	org.osgi.service.http.port=8080
@@ -26,7 +26,6 @@
 	javax.ws.rs-api;version='[2.0.1,2.0.2)',\
 	log4j;version='[1.2.17,1.2.18)',\
 	org.apache.aries.jax.rs.itests;version='[0.0.1,0.0.2)',\
-	org.apache.aries.jax.rs.log4j-configuration;version='[0.0.1,0.0.2)',\
 	org.apache.cxf.cxf-core;version='[3.1.7,3.1.8)',\
 	org.apache.cxf.cxf-rt-transports-http;version='[3.1.7,3.1.8)',\
 	org.apache.cxf.cxf-rt-frontend-jaxrs;version='[3.1.7,3.1.8)',\
