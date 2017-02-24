@@ -17,6 +17,9 @@
 
 package test;
 
+import static org.osgi.service.jaxrs.whiteboard.JaxRSWhiteboardConstants.*;
+import static org.apache.aries.jax.rs.whiteboard.AriesJaxRSWhiteboardConstants.*;
+
 import java.util.Dictionary;
 import java.util.Hashtable;
 
@@ -126,8 +129,8 @@ public class JaxrsTest {
             applicationRegistration = registerApplication();
 
             serviceRegistration = registerAddon(
-                "osgi.jaxrs.application.select",
-                "(osgi.jaxrs.application.base=/test-application)");
+                JAX_RS_APPLICATION_SELECT,
+                "(" + JAX_RS_APPLICATION_BASE + "=/test-application)");
 
             assertEquals(
                 "Hello extended",
@@ -164,8 +167,8 @@ public class JaxrsTest {
 
                 try {
                     serviceRegistration = registerAddon(
-                        "osgi.jaxrs.application.select",
-                        "(osgi.jaxrs.application.base=/test-application)");
+                        JAX_RS_APPLICATION_SELECT,
+                        "(" + JAX_RS_APPLICATION_BASE + "=/test-application)");
 
                     assertEquals(
                         "Hello extended",
@@ -206,8 +209,8 @@ public class JaxrsTest {
             applicationRegistration = registerApplication();
 
             filterRegistration = registerFilter(
-                "osgi.jaxrs.application.select",
-                "(osgi.jaxrs.application.base=/test-application)");
+                JAX_RS_APPLICATION_SELECT,
+                "(" + JAX_RS_APPLICATION_BASE + "=/test-application)");
 
             Response response = webTarget.request().get();
 
@@ -255,8 +258,8 @@ public class JaxrsTest {
 
                 try {
                     filterRegistration = registerFilter(
-                        "osgi.jaxrs.application.select",
-                        "(osgi.jaxrs.application.base=/test-application)");
+                        JAX_RS_APPLICATION_SELECT,
+                        "(" + JAX_RS_APPLICATION_BASE + "=/test-application)");
 
                     response = webTarget.request().get();
 
@@ -296,7 +299,7 @@ public class JaxrsTest {
 
         try {
             serviceRegistration = registerAddon(
-                "osgi.jaxrs.resource.base", "/test-addon");
+                JAX_RS_RESOURCE_BASE, "/test-addon");
 
             Response response = webTarget.request().get();
 
@@ -327,7 +330,7 @@ public class JaxrsTest {
 
             try {
                 serviceRegistration = registerAddon(
-                    "osgi.jaxrs.resource.base", "/test-addon");
+                    JAX_RS_RESOURCE_BASE, "/test-addon");
 
                 assertEquals(
                     "Hello test",
@@ -357,7 +360,7 @@ public class JaxrsTest {
 
         try {
             serviceRegistration = registerAddonLifecycle(
-                true, "osgi.jaxrs.resource.base", "/test-addon");
+                true, JAX_RS_RESOURCE_BASE, "/test-addon");
 
             String first = webTarget.request().get().readEntity(String.class);
 
@@ -384,7 +387,7 @@ public class JaxrsTest {
 
         try {
             serviceRegistration = registerAddonLifecycle(
-                false, "osgi.jaxrs.resource.base", "/test-addon");
+                false, JAX_RS_RESOURCE_BASE, "/test-addon");
 
             String first = webTarget.request().get().readEntity(String.class);
 
@@ -414,10 +417,10 @@ public class JaxrsTest {
 
         try {
             serviceRegistration = registerAddon(
-                "osgi.jaxrs.resource.base", "/test-addon");
+                JAX_RS_RESOURCE_BASE, "/test-addon");
 
             filterRegistration = registerFilter(
-                "osgi.jaxrs.extension.name", "test-filter");
+                JAX_RS_EXTENSION_NAME, "test-filter");
 
             Response response = webTarget.request().get();
 
@@ -450,7 +453,7 @@ public class JaxrsTest {
 
         try {
             serviceRegistration = registerAddon(
-                "osgi.jaxrs.resource.base", "/test-addon");
+                JAX_RS_RESOURCE_BASE, "/test-addon");
 
             assertEquals("Hello test",
                 webTarget.request().get().readEntity(String.class));
@@ -464,7 +467,7 @@ public class JaxrsTest {
                     assertNull(response.getHeaders().getFirst("Filtered"));
 
                     filterRegistration = registerFilter(
-                        "osgi.jaxrs.extension.name", "test-filter");
+                        JAX_RS_EXTENSION_NAME, "test-filter");
 
                     response = webTarget.request().get();
 
@@ -508,8 +511,8 @@ public class JaxrsTest {
 
         try {
             serviceRegistration = registerAddon(
-                "osgi.jaxrs.resource.base", "/test-addon",
-                "osgi.jaxrs.extension.select", new String[]{
+                JAX_RS_RESOURCE_BASE, "/test-addon",
+                JAX_RS_EXTENSION_SELECT, new String[]{
                     "(property one=one)",
                     "(property two=two)",
                 });
@@ -601,14 +604,14 @@ public class JaxrsTest {
                 new PrototypeServiceFactory<Object>() {
                     @Override
                     public Object getService(
-                        Bundle bundle, ServiceRegistration registration) {
+                        Bundle bundle, ServiceRegistration<Object> registration) {
 
                         return new TestAddonLifecycle();
                     }
 
                     @Override
                     public void ungetService(
-                        Bundle bundle, ServiceRegistration registration,
+                        Bundle bundle, ServiceRegistration<Object> registration,
                         Object service) {
 
                     }
@@ -626,8 +629,7 @@ public class JaxrsTest {
 
         Dictionary<String, Object> properties = new Hashtable<>();
 
-        properties.put(
-            "osgi.jaxrs.application.base", "/test-application");
+        properties.put(JAX_RS_APPLICATION_BASE, "/test-application");
 
         return bundleContext.registerService(
             Application.class, testApplication, properties);
@@ -654,7 +656,7 @@ public class JaxrsTest {
 
         Dictionary<String, Object> properties = new Hashtable<>();
 
-        properties.put("osgi.jaxrs.extension.name", name);
+        properties.put(JAX_RS_EXTENSION_NAME, name);
 
         for (int i = 0; i < keyValues.length; i = i + 2) {
             properties.put(keyValues[i].toString(), keyValues[i + 1]);

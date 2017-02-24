@@ -48,6 +48,7 @@ Import-Package:\
 #            version:Version=1
 
 -exportcontents:\
+    org.apache.aries.jax.rs.whiteboard,\
     org.apache.cxf.jaxrs.ext.*
 
 -includeresource:\

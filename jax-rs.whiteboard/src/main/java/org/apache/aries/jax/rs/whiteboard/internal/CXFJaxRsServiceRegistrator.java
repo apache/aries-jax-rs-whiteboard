@@ -36,6 +36,8 @@ import org.apache.cxf.jaxrs.model.URITemplate;
 import org.apache.cxf.jaxrs.provider.json.JSONProvider;
 import org.osgi.framework.ServiceReference;
 
+import static org.osgi.service.jaxrs.whiteboard.JaxRSWhiteboardConstants.*;
+
 public class CXFJaxRsServiceRegistrator {
     private volatile boolean _closed = false;
     private final Application _application;
@@ -44,6 +46,8 @@ public class CXFJaxRsServiceRegistrator {
     private final Collection<Object> _providers = new ArrayList<>();
     private Server _server;
     private final Collection<ServiceInformation> _services = new ArrayList<>();
+
+    private static final String CXF_ENDPOINT_ADDRESS = "CXF_ENDPOINT_ADDRESS";
 
     public CXFJaxRsServiceRegistrator(
         Bus bus, Application application, Map<String, Object> properties) {
@@ -54,19 +58,19 @@ public class CXFJaxRsServiceRegistrator {
 
         rewire();
     }
-    
+
     public static Map<String, Object> getProperties(ServiceReference<?> sref, String addressKey) {
         String[] propertyKeys = sref.getPropertyKeys();
         Map<String, Object> properties = new HashMap<String, Object>(propertyKeys.length);
 
         for (String key : propertyKeys) {
-            if (key.equals("osgi.jaxrs.resource.base")) {
+            if (key.equals(JAX_RS_RESOURCE_BASE)) {
                 continue;
             }
             properties.put(key, sref.getProperty(key));
         }
 
-        properties.put("CXF_ENDPOINT_ADDRESS", sref.getProperty(addressKey).toString());
+        properties.put(CXF_ENDPOINT_ADDRESS, sref.getProperty(addressKey).toString());
         return properties;
     }
 
@@ -181,7 +185,7 @@ public class CXFJaxRsServiceRegistrator {
         }
 
         Object cxfEndpointAddressObject = _properties.get(
-            "CXF_ENDPOINT_ADDRESS");
+            CXF_ENDPOINT_ADDRESS);
 
         String address;
 

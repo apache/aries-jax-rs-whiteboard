@@ -45,12 +45,15 @@ import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Map;
 
+import static java.lang.String.format;
+import static org.apache.aries.jax.rs.whiteboard.AriesJaxRSWhiteboardConstants.*;
 import static org.apache.aries.osgi.functional.OSGi.bundleContext;
 import static org.apache.aries.osgi.functional.OSGi.just;
 import static org.apache.aries.osgi.functional.OSGi.onClose;
 import static org.apache.aries.osgi.functional.OSGi.register;
 import static org.apache.aries.osgi.functional.OSGi.serviceReferences;
 import static org.apache.aries.osgi.functional.OSGi.services;
+import static org.osgi.service.jaxrs.whiteboard.JaxRSWhiteboardConstants.*;
 import static org.osgi.service.http.whiteboard.HttpWhiteboardConstants.HTTP_WHITEBOARD_CONTEXT_NAME;
 import static org.osgi.service.http.whiteboard.HttpWhiteboardConstants.HTTP_WHITEBOARD_CONTEXT_SELECT;
 import static org.osgi.service.http.whiteboard.HttpWhiteboardConstants.HTTP_WHITEBOARD_DEFAULT_CONTEXT_NAME;
@@ -109,7 +112,7 @@ public class CXFJaxRsBundleActivator implements BundleActivator {
                 flatMap(ref ->
             just(
                 CXFJaxRsServiceRegistrator.getProperties(
-                    ref, "osgi.jaxrs.application.base")).
+                    ref, JAX_RS_APPLICATION_BASE)).
                 flatMap(properties ->
             service(ref).flatMap(application ->
             cxfRegistrator(bus, application, properties)
@@ -129,7 +132,7 @@ public class CXFJaxRsBundleActivator implements BundleActivator {
             waitForExtensionDependencies(serviceReference,
                 just(
                     CXFJaxRsServiceRegistrator.getProperties(
-                        serviceReference, "osgi.jaxrs.resource.base")).
+                        serviceReference, JAX_RS_RESOURCE_BASE)).
                     flatMap(properties ->
                 service(serviceReference).flatMap(service ->
                 safeRegisterEndpoint(
@@ -149,9 +152,9 @@ public class CXFJaxRsBundleActivator implements BundleActivator {
         _extensionsResult = extensions.run(bundleContext);
 
         OSGi<?> applicationSingletons =
-            serviceReferences("(osgi.jaxrs.application.select=*)").
+            serviceReferences(format("(%s=*)", JAX_RS_APPLICATION_SELECT)).
                 flatMap(ref ->
-            just(ref.getProperty("osgi.jaxrs.application.select").toString()).
+            just(ref.getProperty(JAX_RS_APPLICATION_SELECT).toString()).
                 flatMap(applicationFilter ->
             services(CXFJaxRsServiceRegistrator.class, applicationFilter).
                 flatMap(registrator ->
@@ -222,14 +225,14 @@ public class CXFJaxRsBundleActivator implements BundleActivator {
     }
 
     private String buildExtensionFilter(String filter) {
-        return "(&(osgi.jaxrs.extension.name=*)" + filter + ")";
+        return format("(&%s%s)", getExtensionFilter(), filter);
     }
 
     private OSGi<?> waitForExtensionDependencies(
         ServiceReference<?> serviceReference, OSGi<?> program) {
 
         String[] extensionDependencies = canonicalize(
-            serviceReference.getProperty("osgi.jaxrs.extension.select"));
+            serviceReference.getProperty(JAX_RS_EXTENSION_SELECT));
 
         for (String extensionDependency : extensionDependencies) {
             program =
@@ -261,7 +264,7 @@ public class CXFJaxRsBundleActivator implements BundleActivator {
         ClassLoader contextClassLoader = thread.getContextClassLoader();
         ClassLoader classLoader = ref.getBundle().adapt(BundleWiring.class).
             getClassLoader();
-        Object resourceBaseObject = ref.getProperty("osgi.jaxrs.resource.base");
+        Object resourceBaseObject = ref.getProperty(JAX_RS_RESOURCE_BASE);
 
         ResourceProvider resourceProvider = getResourceProvider(serviceObjects);
 
@@ -329,8 +332,8 @@ public class CXFJaxRsBundleActivator implements BundleActivator {
     private ServiceRegistration<Servlet> registerCXFServletService(Bus bus) {
         Dictionary<String, Object> properties = new Hashtable<>();
         properties.put(HTTP_WHITEBOARD_CONTEXT_SELECT,
-            "(" + HTTP_WHITEBOARD_CONTEXT_NAME + "=" + 
-                HTTP_WHITEBOARD_DEFAULT_CONTEXT_NAME + ")");
+            format("(%s=%s)", HTTP_WHITEBOARD_CONTEXT_NAME,
+                HTTP_WHITEBOARD_DEFAULT_CONTEXT_NAME));
         properties.put(HTTP_WHITEBOARD_SERVLET_PATTERN, "/*");
         properties.put(Constants.SERVICE_RANKING, -1);
         CXFNonSpringServlet cxfNonSpringServlet = createCXFServlet(bus);
@@ -345,17 +348,17 @@ public class CXFJaxRsBundleActivator implements BundleActivator {
     }
 
     private String getExtensionFilter() {
-        return "(osgi.jaxrs.extension.name=*)";
+        return format("(%s=*)", JAX_RS_EXTENSION_NAME);
     }
 
     private String getApplicationFilter() {
-        return "(osgi.jaxrs.application.base=*)";
+        return format("(%s=*)", JAX_RS_APPLICATION_BASE);
     }
 
     private String getSingletonsFilter() {
-        return "(osgi.jaxrs.resource.base=*)";
+        return format("(%s=*)", JAX_RS_RESOURCE_BASE);
     }
-    
+
     @Override
     public void stop(BundleContext context) throws Exception {
         _applicationSingletonsResult.close();
