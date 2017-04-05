@@ -23,6 +23,7 @@ import org.apache.cxf.Bus;
 import org.apache.cxf.jaxrs.lifecycle.ResourceProvider;
 import org.apache.cxf.message.Message;
 import org.osgi.framework.Bundle;
+import org.osgi.framework.Constants;
 import org.osgi.framework.ServiceObjects;
 import org.osgi.framework.ServiceReference;
 import org.osgi.framework.wiring.BundleWiring;
@@ -129,8 +130,9 @@ public class Utils {
 
         try {
             thread.setContextClassLoader(classLoader);
-            ResourceInformation resourceInformation = new ResourceInformation(
-                resourceBase, resourceProvider);
+            ResourceInformation<ServiceReference<?>> resourceInformation =
+                new ResourceInformation<>(
+                    serviceReference, resourceBase, resourceProvider);
             registrator.add(resourceInformation);
             return just(resourceInformation);
         }
@@ -139,8 +141,8 @@ public class Utils {
         }
     }
 
-    public static String safeToString(Object resourceBaseObject) {
-        return resourceBaseObject == null ? "" : resourceBaseObject.toString();
+    public static String safeToString(Object object) {
+        return object == null ? "" : object.toString();
     }
 
     public static <T> ResourceProvider getResourceProvider(
