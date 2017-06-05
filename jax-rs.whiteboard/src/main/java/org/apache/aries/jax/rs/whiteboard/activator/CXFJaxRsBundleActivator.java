@@ -40,7 +40,6 @@ import java.util.HashMap;
 import java.util.Hashtable;
 
 import static java.lang.String.format;
-import static org.apache.aries.jax.rs.whiteboard.AriesJaxRSWhiteboardConstants.*;
 import static org.apache.aries.jax.rs.whiteboard.internal.Utils.*;
 import static org.apache.aries.osgi.functional.OSGi.just;
 import static org.apache.aries.osgi.functional.OSGi.serviceReferences;
@@ -50,6 +49,7 @@ import static org.osgi.service.http.whiteboard.HttpWhiteboardConstants.HTTP_WHIT
 import static org.osgi.service.http.whiteboard.HttpWhiteboardConstants.HTTP_WHITEBOARD_CONTEXT_SELECT;
 import static org.osgi.service.http.whiteboard.HttpWhiteboardConstants.HTTP_WHITEBOARD_DEFAULT_CONTEXT_NAME;
 import static org.osgi.service.http.whiteboard.HttpWhiteboardConstants.HTTP_WHITEBOARD_SERVLET_PATTERN;
+import static org.osgi.service.jaxrs.whiteboard.JaxRSWhiteboardConstants.JAX_RS_APPLICATION_SELECT;
 
 public class CXFJaxRsBundleActivator implements BundleActivator {
 
@@ -103,10 +103,10 @@ public class CXFJaxRsBundleActivator implements BundleActivator {
 
         OSGi<?> extensions =
             serviceReferences(getExtensionFilter()).flatMap(ref ->
-                waitForExtensionDependencies(ref,
-                    safeRegisterExtension(ref, defaultServiceRegistrator)
-                )
-            );
+            waitForExtensionDependencies(ref,
+                safeRegisterExtension(ref, defaultServiceRegistrator)
+            )
+        );
 
         _extensionsResult = extensions.run(bundleContext);
 
@@ -114,14 +114,9 @@ public class CXFJaxRsBundleActivator implements BundleActivator {
             serviceReferences(getSingletonsFilter()).
                 flatMap(serviceReference ->
             waitForExtensionDependencies(serviceReference,
-                just(
-                    CXFJaxRsServiceRegistrator.getProperties(
-                        serviceReference, JAX_RS_RESOURCE_BASE)).
-                    flatMap(properties ->
-                service(serviceReference).flatMap(service ->
                 safeRegisterEndpoint(
                     serviceReference, defaultServiceRegistrator)
-            )))
+            )
         );
 
         _singletonsResult = singletons.run(bundleContext);
@@ -160,11 +155,11 @@ public class CXFJaxRsBundleActivator implements BundleActivator {
     }
 
     private static String getExtensionFilter() {
-        return format("(%s=*)", JAX_RS_EXTENSION_NAME);
+        return format("(%s=*)", JAX_RS_EXTENSION);
     }
 
     private static String getSingletonsFilter() {
-        return format("(%s=*)", JAX_RS_RESOURCE_BASE);
+        return format("(%s=true)", JAX_RS_RESOURCE);
     }
 
     /**

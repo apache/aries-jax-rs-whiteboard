@@ -21,7 +21,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.TreeSet;
 
@@ -31,15 +30,11 @@ import javax.ws.rs.ext.RuntimeDelegate;
 import org.apache.cxf.Bus;
 import org.apache.cxf.endpoint.Server;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
-import org.apache.cxf.jaxrs.JAXRSServiceFactoryBean;
 import org.apache.cxf.jaxrs.lifecycle.ResourceProvider;
-import org.apache.cxf.jaxrs.model.ClassResourceInfo;
-import org.apache.cxf.jaxrs.model.URITemplate;
 import org.apache.cxf.jaxrs.provider.json.JSONProvider;
 import org.osgi.framework.ServiceReference;
 
 import static org.apache.aries.jax.rs.whiteboard.internal.Utils.safeToString;
-import static org.osgi.service.jaxrs.whiteboard.JaxRSWhiteboardConstants.*;
 
 public class CXFJaxRsServiceRegistrator {
 
@@ -71,9 +66,6 @@ public class CXFJaxRsServiceRegistrator {
         Map<String, Object> properties = new HashMap<>(propertyKeys.length);
 
         for (String key : propertyKeys) {
-            if (key.equals(JAX_RS_RESOURCE_BASE)) {
-                continue;
-            }
             properties.put(key, sref.getProperty(key));
         }
 
@@ -170,30 +162,9 @@ public class CXFJaxRsServiceRegistrator {
             jaxRsServerFactoryBean.setProvider(provider);
         }
 
-        JAXRSServiceFactoryBean serviceFactory =
-            jaxRsServerFactoryBean.getServiceFactory();
-
         for (ResourceInformation resourceInformation : _services) {
-
-            ResourceProvider resourceProvider =
-                resourceInformation.getResourceProvider();
-
-            jaxRsServerFactoryBean.setResourceProvider(resourceProvider);
-
-            //FIXME: this is hack to programmatically prefix only resource path
-            List<ClassResourceInfo> classResourceInfo =
-                serviceFactory.getClassResourceInfo();
-
-            for (ClassResourceInfo resourceInfo : classResourceInfo) {
-                if (resourceInfo.getServiceClass() ==
-                        resourceProvider.getResourceClass()) {
-                    URITemplate uriTemplate = resourceInfo.getURITemplate();
-                    resourceInfo.setURITemplate(
-                        new URITemplate(
-                            resourceInformation.getPrefixPath() +
-                                uriTemplate.getValue()));
-                }
-            }
+            jaxRsServerFactoryBean.setResourceProvider(
+                resourceInformation.getResourceProvider());
         }
 
         String address = safeToString(_properties.get(CXF_ENDPOINT_ADDRESS));
@@ -208,21 +179,14 @@ public class CXFJaxRsServiceRegistrator {
     public static class ResourceInformation<T extends Comparable<? super T>>
         implements Comparable<ResourceInformation<T>> {
 
-        private final String _prefixPath;
         private final T _comparable;
         private final ResourceProvider _resourceProvider;
 
         public ResourceInformation(
-            T comparable, String prefixPath,
-            ResourceProvider resourceProvider) {
-
+            T comparable, ResourceProvider resourceProvider) {
             _comparable = comparable;
 
             _resourceProvider = resourceProvider;
-        }
-
-        public String getPrefixPath() {
-            return _prefixPath;
         }
 
         public ResourceProvider getResourceProvider() {
@@ -231,6 +195,7 @@ public class CXFJaxRsServiceRegistrator {
 
         @Override
         public int compareTo(ResourceInformation<T> resourceInformation) {
+
             if (resourceInformation == null) {
                 return 1;
             }
