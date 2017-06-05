@@ -36,7 +36,6 @@ import static org.apache.aries.osgi.functional.OSGi.bundleContext;
 import static org.apache.aries.osgi.functional.OSGi.just;
 import static org.apache.aries.osgi.functional.OSGi.onClose;
 import static org.apache.aries.osgi.functional.OSGi.register;
-import static org.osgi.service.jaxrs.whiteboard.JaxRSWhiteboardConstants.JAX_RS_RESOURCE_BASE;
 
 /**
  * @author Carlos Sierra Andrés
@@ -125,14 +124,10 @@ public class Utils {
         BundleWiring bundleWiring = bundle.adapt(BundleWiring.class);
         ClassLoader classLoader = bundleWiring.getClassLoader();
         ResourceProvider resourceProvider = getResourceProvider(serviceObjects);
-        String resourceBase = safeToString(
-            serviceReference.getProperty(JAX_RS_RESOURCE_BASE));
-
         try {
             thread.setContextClassLoader(classLoader);
             ResourceInformation<ServiceReference<?>> resourceInformation =
-                new ResourceInformation<>(
-                    serviceReference, resourceBase, resourceProvider);
+                new ResourceInformation<>(serviceReference, resourceProvider);
             registrator.add(resourceInformation);
             return just(resourceInformation);
         }
