@@ -104,7 +104,7 @@
         </dependency>
         <dependency>
             <groupId>org.apache.aries.component-dsl</groupId>
-            <artifactId>component-dsl</artifactId>
+            <artifactId>org.apache.aries.component-dsl.component-dsl</artifactId>
             <version>0.0.1-SNAPSHOT</version>
         </dependency>
     </dependencies>
