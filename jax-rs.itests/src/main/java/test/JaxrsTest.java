@@ -48,15 +48,13 @@ import static org.junit.Assert.assertNull;
 
 public class JaxrsTest {
 
-    static BundleContext bundleContext = FrameworkUtil.getBundle(
-        JaxrsTest.class).getBundleContext();
-
     @Test
     public void testApplication() {
         ServiceRegistration<?> serviceRegistration = null;
 
         try {
-            serviceRegistration = registerApplication();
+            serviceRegistration = registerApplication(
+                new TestApplication());
 
             Client client = createClient();
 
@@ -90,7 +88,7 @@ public class JaxrsTest {
             ServiceRegistration<?> serviceRegistration = null;
 
             try {
-                serviceRegistration = registerApplication();
+                serviceRegistration = registerApplication(new TestApplication());
 
                 assertEquals(
                     "Hello application",
@@ -125,10 +123,11 @@ public class JaxrsTest {
         ServiceRegistration<?> serviceRegistration = null;
 
         try {
-            applicationRegistration = registerApplication();
+            applicationRegistration = registerApplication(
+                new TestApplication());
 
             serviceRegistration = registerAddon(
-                JAX_RS_APPLICATION_SELECT,
+                new TestAddon(), JAX_RS_APPLICATION_SELECT,
                 "(" + JAX_RS_APPLICATION_BASE + "=/test-application)");
 
             assertEquals(
@@ -157,7 +156,8 @@ public class JaxrsTest {
         ServiceRegistration<?> applicationRegistration = null;
 
         try {
-            applicationRegistration = registerApplication();
+            applicationRegistration = registerApplication(
+                new TestApplication());
 
             Runnable testCase = () -> {
                 assertEquals(webTarget.request().get().getStatus(), 404);
@@ -166,7 +166,7 @@ public class JaxrsTest {
 
                 try {
                     serviceRegistration = registerAddon(
-                        JAX_RS_APPLICATION_SELECT,
+                        new TestAddon(), JAX_RS_APPLICATION_SELECT,
                         "(" + JAX_RS_APPLICATION_BASE + "=/test-application)");
 
                     assertEquals(
@@ -205,7 +205,8 @@ public class JaxrsTest {
         ServiceRegistration<?> filterRegistration = null;
 
         try {
-            applicationRegistration = registerApplication();
+            applicationRegistration = registerApplication(
+                new TestApplication());
 
             filterRegistration = registerFilter(
                 JAX_RS_APPLICATION_SELECT,
@@ -242,7 +243,8 @@ public class JaxrsTest {
         ServiceRegistration<?> applicationRegistration = null;
 
         try {
-            applicationRegistration = registerApplication();
+            applicationRegistration = registerApplication(
+                new TestApplication());
 
             assertEquals(
                 "Hello application",
@@ -296,7 +298,7 @@ public class JaxrsTest {
         ServiceRegistration<?> serviceRegistration = null;
 
         try {
-            serviceRegistration = registerAddon(JAX_RS_RESOURCE, "true");
+            serviceRegistration = registerAddon(new TestAddon());
 
             Response response = webTarget.request().get();
 
@@ -310,6 +312,7 @@ public class JaxrsTest {
             }
         }
     }
+
 
     @Test
     public void testStandaloneEndPointReadd() {
@@ -325,7 +328,7 @@ public class JaxrsTest {
             ServiceRegistration<?> serviceRegistration = null;
 
             try {
-                serviceRegistration = registerAddon(JAX_RS_RESOURCE, "true");
+                serviceRegistration = registerAddon(new TestAddon());
 
                 assertEquals(
                     "Hello test",
@@ -410,8 +413,7 @@ public class JaxrsTest {
         ServiceRegistration<?> serviceRegistration = null;
 
         try {
-            serviceRegistration = registerAddon(
-                JAX_RS_RESOURCE, true);
+            serviceRegistration = registerAddon(new TestAddon());
 
             filterRegistration = registerFilter(
                 JAX_RS_EXTENSION, "test-filter");
@@ -445,8 +447,7 @@ public class JaxrsTest {
         ServiceRegistration<?> serviceRegistration = null;
 
         try {
-            serviceRegistration = registerAddon(
-                JAX_RS_RESOURCE, "true");
+            serviceRegistration = registerAddon(new TestAddon());
 
             assertEquals("Hello test",
                 webTarget.request().get().readEntity(String.class));
@@ -503,7 +504,7 @@ public class JaxrsTest {
 
         try {
             serviceRegistration = registerAddon(
-                JAX_RS_RESOURCE, "true",
+                new TestAddon(),
                 JAX_RS_EXTENSION_SELECT, new String[]{
                     "(property one=one)",
                     "(property two=two)",
@@ -565,17 +566,17 @@ public class JaxrsTest {
         }
     }
 
-    private ServiceRegistration<?> registerAddon(Object ... keyValues) {
-        TestAddon testAddon = new TestAddon();
-
+    private ServiceRegistration<?> registerAddon(Object instance, Object ... keyValues) {
         Dictionary<String, Object> properties = new Hashtable<>();
+
+        properties.put(JAX_RS_RESOURCE, "true");
 
         for (int i = 0; i < keyValues.length; i = i + 2) {
             properties.put(keyValues[i].toString(), keyValues[i + 1]);
         }
 
         return bundleContext.registerService(
-            Object.class, testAddon, properties);
+            Object.class, instance, properties);
     }
 
     private ServiceRegistration<?> registerAddonLifecycle(
@@ -615,16 +616,19 @@ public class JaxrsTest {
         }
     }
 
-
-    private ServiceRegistration<?> registerApplication() {
-        TestApplication testApplication = new TestApplication();
+    private ServiceRegistration<Application> registerApplication(
+        Application application, Object ... keyValues) {
 
         Dictionary<String, Object> properties = new Hashtable<>();
 
         properties.put(JAX_RS_APPLICATION_BASE, "/test-application");
 
+        for (int i = 0; i < keyValues.length; i = i + 2) {
+            properties.put(keyValues[i].toString(), keyValues[i + 1]);
+        }
+
         return bundleContext.registerService(
-            Application.class, testApplication, properties);
+            Application.class, application, properties);
     }
 
     private ServiceRegistration<?> registerFilter(Object ... keyValues) {
