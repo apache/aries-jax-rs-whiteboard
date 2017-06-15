@@ -17,6 +17,7 @@
 
 package test;
 
+import static org.junit.Assert.assertNotNull;
 import static org.osgi.service.jaxrs.whiteboard.JaxRSWhiteboardConstants.*;
 
 import java.util.Dictionary;
@@ -30,9 +31,12 @@ import org.osgi.framework.PrototypeServiceFactory;
 import org.osgi.framework.ServiceFactory;
 import org.osgi.framework.ServiceRegistration;
 
+import org.osgi.service.jaxrs.runtime.dto.FailedApplicationDTO;
+import org.osgi.util.tracker.ServiceTracker;
 import test.types.TestAddon;
 import test.types.TestAddonLifecycle;
 import test.types.TestApplication;
+import test.types.TestApplicationConflict;
 import test.types.TestFilter;
 
 import javax.ws.rs.client.Client;
@@ -73,6 +77,128 @@ public class JaxrsTest {
             }
         }
     }
+
+    @Test
+    public void testApplicationConflict() {
+        Client client = createClient();
+
+        WebTarget webTarget = client.
+            target("http://localhost:8080").
+            path("test-application");
+
+        ServiceTracker serviceTracker = new ServiceTracker<>(
+            bundleContext, FailedApplicationDTO.class, null);
+
+        serviceTracker.open();
+
+        ServiceRegistration<?> serviceRegistration = null;
+        ServiceRegistration<?> serviceRegistration2;
+
+        try {
+            serviceRegistration = registerApplication(new TestApplication());
+
+            Response response = webTarget.request().get();
+
+            assertEquals(
+                "Hello application",
+                response.readEntity(String.class));
+
+            assertNull(serviceTracker.getService());
+
+            serviceRegistration2 = registerApplication(
+                new TestApplicationConflict(), "service.ranking", -1);
+
+            response = webTarget.request().get();
+
+            assertEquals(
+                "Hello application", response.readEntity(String.class));
+
+            assertNotNull(serviceTracker.getService());
+
+            assertEquals(
+                Response.Status.NOT_FOUND.getStatusCode(),
+                webTarget.path("conflict").request().get().getStatus());
+
+            serviceRegistration2.unregister();
+
+            assertNull(serviceTracker.getService());
+
+            response = webTarget.request().get();
+
+            assertEquals(
+                "Hello application", response.readEntity(String.class));
+        }
+        finally {
+            if (serviceRegistration != null) {
+                serviceRegistration.unregister();
+            }
+
+            serviceTracker.close();
+        }
+    }
+
+    @Test
+    public void testApplicationOverride() {
+        Client client = createClient();
+
+        WebTarget webTarget = client.
+            target("http://localhost:8080").
+            path("test-application");
+
+        ServiceTracker serviceTracker = new ServiceTracker<>(
+            bundleContext, FailedApplicationDTO.class, null);
+
+        serviceTracker.open();
+
+        ServiceRegistration<?> serviceRegistration = null;
+        ServiceRegistration<?> serviceRegistration2;
+
+        try {
+            serviceRegistration = registerApplication(new TestApplication());
+
+            Response response = webTarget.request().get();
+
+            assertEquals(
+                "Hello application",
+                response.readEntity(String.class));
+
+            assertNull(serviceTracker.getService());
+
+            serviceRegistration2 = registerApplication(
+                new TestApplicationConflict(), "service.ranking", 1);
+
+            response = webTarget.request().get();
+
+            assertEquals(
+                "Hello application conflict",
+                response.readEntity(String.class));
+
+            assertNotNull(serviceTracker.getService());
+
+            assertEquals(
+                "conflict",
+                webTarget.path("conflict").request().get(String.class));
+
+            serviceRegistration2.unregister();
+
+            assertNull(serviceTracker.getService());
+
+            response = webTarget.request().get();
+
+            assertEquals(
+                "Hello application", response.readEntity(String.class));
+        }
+        finally {
+            if (serviceRegistration != null) {
+                serviceRegistration.unregister();
+            }
+
+            serviceTracker.close();
+        }
+    }
+
+    static BundleContext bundleContext = FrameworkUtil.getBundle(
+        JaxrsTest.class).getBundleContext();
 
     @Test
     public void testApplicationReadd() {
