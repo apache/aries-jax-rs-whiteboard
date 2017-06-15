@@ -17,11 +17,14 @@
 
 package org.apache.aries.jax.rs.whiteboard.internal;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeSet;
 
 import javax.ws.rs.core.Application;
@@ -29,9 +32,15 @@ import javax.ws.rs.ext.RuntimeDelegate;
 
 import org.apache.cxf.Bus;
 import org.apache.cxf.endpoint.Server;
+import org.apache.cxf.endpoint.ServerImpl;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.lifecycle.ResourceProvider;
 import org.apache.cxf.jaxrs.provider.json.JSONProvider;
+import org.apache.cxf.service.factory.ServiceConstructionException;
+import org.apache.cxf.service.model.EndpointInfo;
+import org.apache.cxf.transport.Destination;
+import org.apache.cxf.transport.DestinationFactory;
+import org.apache.cxf.transport.DestinationFactoryManager;
 import org.osgi.framework.ServiceReference;
 
 import static org.apache.aries.jax.rs.whiteboard.internal.Utils.safeToString;
@@ -149,6 +158,16 @@ public class CXFJaxRsServiceRegistrator {
         jaxRsServerFactoryBean.setBus(_bus);
         jaxRsServerFactoryBean.setProperties(_properties);
 
+        String address = safeToString(_properties.get(CXF_ENDPOINT_ADDRESS));
+
+        DestinationFactoryManager dfm = _bus.getExtension(
+            DestinationFactoryManager.class);
+        DestinationFactory destinationFactory = dfm.getDestinationFactoryForUri(
+            address);
+
+        jaxRsServerFactoryBean.setDestinationFactory(
+            new CXF7409DestinationFactory(destinationFactory));
+
         JSONProvider<Object> jsonProvider = new JSONProvider<>();
 
         jsonProvider.setDropCollectionWrapperElement(true);
@@ -166,8 +185,6 @@ public class CXFJaxRsServiceRegistrator {
             jaxRsServerFactoryBean.setResourceProvider(
                 resourceInformation.getResourceProvider());
         }
-
-        String address = safeToString(_properties.get(CXF_ENDPOINT_ADDRESS));
 
         jaxRsServerFactoryBean.setAddress(address);
 
@@ -201,6 +218,49 @@ public class CXFJaxRsServiceRegistrator {
             }
 
             return _comparable.compareTo(resourceInformation._comparable);
+        }
+
+    }
+
+    /**
+     * This class exists as a workaround for
+     * https://issues.apache.org/jira/browse/CXF-7409
+     */
+    private static class CXF7409DestinationFactory
+        implements DestinationFactory {
+
+        private final DestinationFactory _destinationFactory;
+
+        public CXF7409DestinationFactory(
+            DestinationFactory destinationFactory) {
+
+            _destinationFactory = destinationFactory;
+        }
+
+        @Override
+        public Destination getDestination(
+            EndpointInfo endpointInfo, Bus bus) throws IOException {
+
+            Destination destination = _destinationFactory.getDestination(
+                endpointInfo, bus);
+
+            if (destination.getMessageObserver() != null) {
+                throw new RuntimeException(
+                    "There is already an application running at " +
+                        endpointInfo.getAddress());
+            }
+
+            return destination;
+        }
+
+        @Override
+        public Set<String> getUriPrefixes() {
+            return _destinationFactory.getUriPrefixes();
+        }
+
+        @Override
+        public List<String> getTransportIds() {
+            return _destinationFactory.getTransportIds();
         }
 
     }

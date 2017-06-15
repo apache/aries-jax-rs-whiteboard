@@ -18,6 +18,7 @@
 package org.apache.aries.jax.rs.whiteboard.internal;
 
 import org.apache.aries.jax.rs.whiteboard.internal.CXFJaxRsServiceRegistrator.ResourceInformation;
+import org.apache.aries.osgi.functional.Event;
 import org.apache.aries.osgi.functional.OSGi;
 import org.apache.cxf.Bus;
 import org.apache.cxf.jaxrs.lifecycle.ResourceProvider;
@@ -27,10 +28,15 @@ import org.osgi.framework.Constants;
 import org.osgi.framework.ServiceObjects;
 import org.osgi.framework.ServiceReference;
 import org.osgi.framework.wiring.BundleWiring;
+import org.osgi.service.jaxrs.runtime.dto.FailedApplicationDTO;
 
 import javax.ws.rs.core.Application;
 import javax.ws.rs.ext.Provider;
+import java.util.Comparator;
 import java.util.Map;
+import java.util.SortedSet;
+import java.util.TreeSet;
+import java.util.function.Consumer;
 
 import static org.apache.aries.osgi.functional.OSGi.bundleContext;
 import static org.apache.aries.osgi.functional.OSGi.just;
@@ -59,18 +65,23 @@ public class Utils {
         );
     }
 
-    public static OSGi<CXFJaxRsServiceRegistrator> cxfRegistrator(
+    public static OSGi<?> cxfRegistrator(
         Bus bus, Application application, Map<String, Object> props) {
 
-        CXFJaxRsServiceRegistrator registrator =
-            new CXFJaxRsServiceRegistrator(bus, application, props);
+        try {
+            CXFJaxRsServiceRegistrator registrator =
+                new CXFJaxRsServiceRegistrator(bus, application, props);
 
-        return
-            onClose(registrator::close).then(
-            register(CXFJaxRsServiceRegistrator.class, registrator, props).then(
-            just(registrator)
-        ));
-    }
+            return
+                onClose(registrator::close).then(
+                register(CXFJaxRsServiceRegistrator.class, registrator, props)
+            );
+        }
+        catch (Exception e) {
+            return register(
+                FailedApplicationDTO.class, new FailedApplicationDTO(), props);
+        }
+    };
 
     public static OSGi<?> safeRegisterGeneric(
         ServiceReference<?> serviceReference,
@@ -113,10 +124,17 @@ public class Utils {
                 unregisterEndpoint(registrator, serviceInformation)))));
     }
 
-    public static <T> OSGi<ResourceInformation> registerEndpoint(
-        ServiceReference<?> serviceReference,
-        CXFJaxRsServiceRegistrator registrator,
-        ServiceObjects<T> serviceObjects) {
+    public static <T extends Comparable<? super T>> OSGi<T> repeatInOrder(
+        OSGi<T> program) {
+
+        return program.route(new RepeatInOrderRouter<>());
+    }
+
+    public static <T> OSGi<ResourceInformation<ServiceReference<?>>>
+        registerEndpoint(
+            ServiceReference<?> serviceReference,
+            CXFJaxRsServiceRegistrator registrator,
+            ServiceObjects<T> serviceObjects) {
 
         Thread thread = Thread.currentThread();
         ClassLoader contextClassLoader = thread.getContextClassLoader();
@@ -176,9 +194,52 @@ public class Utils {
 
     public static void unregisterEndpoint(
         CXFJaxRsServiceRegistrator registrator,
-        ResourceInformation resourceInformation) {
+        ResourceInformation<ServiceReference<?>> resourceInformation) {
 
         registrator.remove(resourceInformation);
+    }
+
+    private static class RepeatInOrderRouter<T extends Comparable<? super T>>
+        implements Consumer<OSGi.Router<T>> {
+
+        private final TreeSet<Event<T>> _treeSet;
+
+        public RepeatInOrderRouter() {
+            Comparator<Event<T>> comparing = Comparator.comparing(
+                Event::getContent);
+
+            _treeSet = new TreeSet<>(comparing.reversed());
+        }
+
+        @Override
+        public void accept(OSGi.Router<T> router) {
+            router.onIncoming(ev -> {
+                _treeSet.add(ev);
+
+                SortedSet<Event<T>> events = _treeSet.tailSet(ev, false);
+                events.forEach(router::signalLeave);
+
+                router.signalAdd(ev);
+
+                events.forEach(router::signalAdd);
+            });
+            router.onLeaving(ev -> {
+                _treeSet.remove(ev);
+
+                SortedSet<Event<T>> events = _treeSet.tailSet(ev, false);
+                events.forEach(router::signalLeave);
+
+                router.signalLeave(ev);
+
+                events.forEach(router::signalAdd);
+            });
+            router.onClose(() -> {
+                _treeSet.forEach(router::signalLeave);
+
+                _treeSet.clear();
+            });
+        }
+
     }
 
 }

@@ -71,8 +71,9 @@ public class CXFJaxRsBundleActivator implements BundleActivator {
         registerCXFServletService(_bus);
 
         OSGi<?> applications =
-            serviceReferences(Application.class, getApplicationFilter()).
-                flatMap(ref ->
+            repeatInOrder(
+                serviceReferences(Application.class, getApplicationFilter())).
+            flatMap(ref ->
             just(
                 CXFJaxRsServiceRegistrator.getProperties(
                     ref, JAX_RS_APPLICATION_BASE)).
