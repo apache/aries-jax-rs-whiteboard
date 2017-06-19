@@ -20,7 +20,6 @@ package test.types;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 
-@Path("/test-addon-lifecycle")
 public class TestAddonLifecycle {
 
     @GET

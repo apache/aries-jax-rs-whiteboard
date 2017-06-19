@@ -18,6 +18,7 @@
 package test;
 
 import static org.osgi.service.jaxrs.whiteboard.JaxRSWhiteboardConstants.*;
+import static org.apache.aries.jax.rs.whiteboard.AriesJaxRSWhiteboardConstants.*;
 
 import java.util.Dictionary;
 import java.util.Hashtable;
@@ -291,12 +292,14 @@ public class JaxrsTest {
 
         WebTarget webTarget = client.
             target("http://localhost:8080").
+            path("/test-addon").
             path("test");
 
         ServiceRegistration<?> serviceRegistration = null;
 
         try {
-            serviceRegistration = registerAddon(JAX_RS_RESOURCE, "true");
+            serviceRegistration = registerAddon(
+                JAX_RS_RESOURCE_BASE, "/test-addon");
 
             Response response = webTarget.request().get();
 
@@ -317,6 +320,7 @@ public class JaxrsTest {
 
         WebTarget webTarget = client.
             target("http://localhost:8080").
+            path("/test-addon").
             path("test");
 
         Runnable testCase = () -> {
@@ -325,7 +329,8 @@ public class JaxrsTest {
             ServiceRegistration<?> serviceRegistration = null;
 
             try {
-                serviceRegistration = registerAddon(JAX_RS_RESOURCE, "true");
+                serviceRegistration = registerAddon(
+                    JAX_RS_RESOURCE_BASE, "/test-addon");
 
                 assertEquals(
                     "Hello test",
@@ -349,13 +354,13 @@ public class JaxrsTest {
 
         WebTarget webTarget = client.
             target("http://localhost:8080").
-            path("/test-addon-lifecycle");
+            path("/test-addon");
 
         ServiceRegistration<?> serviceRegistration = null;
 
         try {
             serviceRegistration = registerAddonLifecycle(
-                true, JAX_RS_RESOURCE, "true");
+                true, JAX_RS_RESOURCE_BASE, "/test-addon");
 
             String first = webTarget.request().get().readEntity(String.class);
 
@@ -376,13 +381,13 @@ public class JaxrsTest {
 
         WebTarget webTarget = client.
             target("http://localhost:8080").
-            path("/test-addon-lifecycle");
+            path("/test-addon");
 
         ServiceRegistration<?> serviceRegistration = null;
 
         try {
             serviceRegistration = registerAddonLifecycle(
-                false, JAX_RS_RESOURCE, "true");
+                false, JAX_RS_RESOURCE_BASE, "/test-addon");
 
             String first = webTarget.request().get().readEntity(String.class);
 
@@ -403,6 +408,7 @@ public class JaxrsTest {
 
         WebTarget webTarget = client.
             target("http://localhost:8080").
+            path("/test-addon").
             path("test");
 
         ServiceRegistration<?> filterRegistration = null;
@@ -411,10 +417,10 @@ public class JaxrsTest {
 
         try {
             serviceRegistration = registerAddon(
-                JAX_RS_RESOURCE, true);
+                JAX_RS_RESOURCE_BASE, "/test-addon");
 
             filterRegistration = registerFilter(
-                JAX_RS_EXTENSION, "test-filter");
+                JAX_RS_EXTENSION_NAME, "test-filter");
 
             Response response = webTarget.request().get();
 
@@ -440,13 +446,14 @@ public class JaxrsTest {
 
         WebTarget webTarget = client.
             target("http://localhost:8080").
+            path("/test-addon").
             path("test");
 
         ServiceRegistration<?> serviceRegistration = null;
 
         try {
             serviceRegistration = registerAddon(
-                JAX_RS_RESOURCE, "true");
+                JAX_RS_RESOURCE_BASE, "/test-addon");
 
             assertEquals("Hello test",
                 webTarget.request().get().readEntity(String.class));
@@ -460,7 +467,7 @@ public class JaxrsTest {
                     assertNull(response.getHeaders().getFirst("Filtered"));
 
                     filterRegistration = registerFilter(
-                        JAX_RS_EXTENSION, "test-filter");
+                        JAX_RS_EXTENSION_NAME, "test-filter");
 
                     response = webTarget.request().get();
 
@@ -495,6 +502,7 @@ public class JaxrsTest {
 
         WebTarget webTarget = client.
             target("http://localhost:8080").
+            path("/test-addon").
             path("test");
 
         ServiceRegistration<?> serviceRegistration = null;
@@ -503,7 +511,7 @@ public class JaxrsTest {
 
         try {
             serviceRegistration = registerAddon(
-                JAX_RS_RESOURCE, "true",
+                JAX_RS_RESOURCE_BASE, "/test-addon",
                 JAX_RS_EXTENSION_SELECT, new String[]{
                     "(property one=one)",
                     "(property two=two)",
@@ -648,7 +656,7 @@ public class JaxrsTest {
 
         Dictionary<String, Object> properties = new Hashtable<>();
 
-        properties.put(JAX_RS_EXTENSION, name);
+        properties.put(JAX_RS_EXTENSION_NAME, name);
 
         for (int i = 0; i < keyValues.length; i = i + 2) {
             properties.put(keyValues[i].toString(), keyValues[i + 1]);
