@@ -82,8 +82,7 @@ public class CXFJaxRsServiceRegistrator {
         return properties;
     }
 
-    public void add(
-        ResourceInformation<ServiceReference<?>> resourceInformation) {
+    public void add(ResourceInformation resourceInformation) {
         if (_closed) {
             return;
         }
@@ -115,8 +114,7 @@ public class CXFJaxRsServiceRegistrator {
         _closed = true;
     }
 
-    public void remove(
-        ResourceInformation<ServiceReference<?>> resourceInformation) {
+    public void remove(ResourceInformation resourceInformation) {
         if (_closed) {
             return;
         }
