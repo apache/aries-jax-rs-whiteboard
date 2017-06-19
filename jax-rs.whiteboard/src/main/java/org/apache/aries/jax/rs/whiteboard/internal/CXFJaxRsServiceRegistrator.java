@@ -19,11 +19,9 @@ package org.apache.aries.jax.rs.whiteboard.internal;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeSet;
 
 import javax.ws.rs.core.Application;
 import javax.ws.rs.ext.RuntimeDelegate;
@@ -49,8 +47,7 @@ public class CXFJaxRsServiceRegistrator {
     private final Map<String, Object> _properties;
     private final Collection<Object> _providers = new ArrayList<>();
     private Server _server;
-    private final Collection<ResourceInformation<ServiceReference<?>>>
-        _services = new TreeSet<>(Comparator.reverseOrder());
+    private final Collection<ResourceInformation> _services = new ArrayList<>();
 
     private static final String CXF_ENDPOINT_ADDRESS = "CXF_ENDPOINT_ADDRESS";
 
@@ -196,44 +193,32 @@ public class CXFJaxRsServiceRegistrator {
 
         String address = safeToString(_properties.get(CXF_ENDPOINT_ADDRESS));
 
-        jaxRsServerFactoryBean.setAddress(address);
+        if (address != null) {
+            jaxRsServerFactoryBean.setAddress(address);
+        }
 
         _server = jaxRsServerFactoryBean.create();
 
         _server.start();
     }
 
-    public static class ResourceInformation<T extends Comparable<? super T>>
-        implements Comparable<ResourceInformation<T>> {
-
-        private final String _prefixPath;
-        private final T _comparable;
+    public static class ResourceInformation {
+        private final String prefixPath;
         private final ResourceProvider _resourceProvider;
 
         public ResourceInformation(
-            T comparable, String prefixPath,
-            ResourceProvider resourceProvider) {
+            String prefixPath, ResourceProvider resourceProvider) {
 
-            _comparable = comparable;
-
-            _resourceProvider = resourceProvider;
+            this.prefixPath = prefixPath;
+            this._resourceProvider = resourceProvider;
         }
 
         public String getPrefixPath() {
-            return _prefixPath;
+            return prefixPath;
         }
 
         public ResourceProvider getResourceProvider() {
             return _resourceProvider;
-        }
-
-        @Override
-        public int compareTo(ResourceInformation<T> resourceInformation) {
-            if (resourceInformation == null) {
-                return 1;
-            }
-
-            return _comparable.compareTo(resourceInformation._comparable);
         }
 
     }
