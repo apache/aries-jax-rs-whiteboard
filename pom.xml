@@ -143,6 +143,7 @@
         <module>jax-rs.whiteboard</module>
         <module>jax-rs.itests</module>
         <module>jax-rs.example</module>
+        <module>javax-ws-rs</module>
     </modules>
     <dependencies>
         <dependency>

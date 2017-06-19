@@ -1,0 +1,38 @@
+# Double exports copied from Geronimo to ensure maximal 
+# compatibility
+
+Export-Package:\
+    javax.ws.rs;jaxrs="2.0";version="1.1",\
+    javax.ws.rs;jaxrs="2.0";version="2.0",\
+    javax.ws.rs.client;jaxrs="2.0";version="1.1",\
+	javax.ws.rs.client;jaxrs="2.0";version="2.0",\
+	javax.ws.rs.container;jaxrs="2.0";version="1.1",\
+	javax.ws.rs.container;jaxrs="2.0";version="2.0",\
+	javax.ws.rs.core;jaxrs="2.0";version="1.1",\
+	javax.ws.rs.core;jaxrs="2.0";version="2.0",\
+	javax.ws.rs.ext;jaxrs="2.0";version="1.1",\
+	javax.ws.rs.ext;jaxrs="2.0";version="2.0"
+
+    
+Provide-Capability:\
+    osgi.contract;osgi.contract="JavaJAXRS";version:List<Version>="2,1";\
+    uses:="javax.ws.rs,javax.ws.rs.client,javax.ws.rs.container,javax.ws.rs.core,javax.ws.rs.ext"
+
+# Make the API substitutable with unversioned imports and a contract requirement
+
+Import-Package:\
+    !org.apache.geronimo.*,\
+    javax.ws.rs;version=0.0.0,\
+    javax.ws.rs.client;version=0.0.0,\
+    javax.ws.rs.container;version=0.0.0,\
+    javax.ws.rs.core;version=0.0.0,\
+    javax.ws.rs.ext;version=0.0.0,\
+    *
+
+Require-Capability:\
+    osgi.contract;filter:="(&(osgi.contract=JavaJAXRS)(version=2)(!(version>=2.1)))"
+
+Private-Package:\
+	org.apache.geronimo.osgi.locator
+
+Bundle-SymbolicName: org.apache.aries.jax.rs.javax.ws.rs_2.0
