@@ -2,9 +2,9 @@
 .settings
 .idea
 *.iml
-*/.classpath
-*/.project
-*/.settings/
+.classpath
+.project
+.settings/
 */bin/
 **/build/
 **/generated/
