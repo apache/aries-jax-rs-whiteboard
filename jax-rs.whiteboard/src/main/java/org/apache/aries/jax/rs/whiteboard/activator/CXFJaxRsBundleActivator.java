@@ -18,10 +18,12 @@
 package org.apache.aries.jax.rs.whiteboard.activator;
 
 import javax.servlet.Servlet;
+import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.core.Application;
 import javax.ws.rs.ext.RuntimeDelegate;
 
 import org.apache.aries.jax.rs.whiteboard.internal.CXFJaxRsServiceRegistrator;
+import org.apache.aries.jax.rs.whiteboard.internal.ClientBuilderFactory;
 import org.apache.aries.osgi.functional.OSGi;
 import org.apache.aries.osgi.functional.OSGiResult;
 import org.apache.cxf.Bus;
@@ -57,6 +59,7 @@ public class CXFJaxRsBundleActivator implements BundleActivator {
     private OSGiResult<?> _applicationSingletonsResult;
     private BundleContext _bundleContext;
     private Bus _bus;
+    private ServiceRegistration<ClientBuilder> _clientBuilder;
     private OSGiResult<?> _extensionsResult;
     private OSGiResult<?> _singletonsResult;
 
@@ -121,10 +124,14 @@ public class CXFJaxRsBundleActivator implements BundleActivator {
         );
 
         _singletonsResult = singletons.run(bundleContext);
+
+        _clientBuilder = _bundleContext.registerService(
+            ClientBuilder.class, new ClientBuilderFactory(), null);
     }
 
     @Override
     public void stop(BundleContext context) throws Exception {
+        _clientBuilder.unregister();
         _applicationsResult.close();
         _applicationSingletonsResult.close();
         _extensionsResult.close();
