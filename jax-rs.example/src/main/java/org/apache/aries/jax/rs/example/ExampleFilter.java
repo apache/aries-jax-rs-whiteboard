@@ -18,6 +18,7 @@
 package org.apache.aries.jax.rs.example;
 
 import org.osgi.service.component.annotations.Component;
+import org.osgi.service.jaxrs.whiteboard.JaxRSWhiteboardConstants;
 
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ContainerRequestFilter;
@@ -25,10 +26,10 @@ import javax.ws.rs.ext.Provider;
 import java.io.IOException;
 
 @Component(
-    immediate = true,
     property = {
-        "jaxrs.application.select=(component.name=org.apache.aries.jax.rs.example.ExampleApplication)",
-        "osgi.jaxrs.filter.base=/examples"
+        "osgi.jaxrs.filter.base=/examples",
+        JaxRSWhiteboardConstants.JAX_RS_APPLICATION_SELECT + "=(osgi.jaxrs.name=example-application)",
+        JaxRSWhiteboardConstants.JAX_RS_EXTENSION + "=true"
     }
 )
 @Provider

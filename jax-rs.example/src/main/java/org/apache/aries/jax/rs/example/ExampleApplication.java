@@ -18,6 +18,7 @@
 package org.apache.aries.jax.rs.example;
 
 import org.osgi.service.component.annotations.Component;
+import org.osgi.service.jaxrs.whiteboard.JaxRSWhiteboardConstants;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Produces;
@@ -26,8 +27,10 @@ import java.util.Collections;
 import java.util.Set;
 
 @Component(
-    immediate = true,
-    property = "osgi.jaxrs.application.base=/example-application",
+    property = {
+        JaxRSWhiteboardConstants.JAX_RS_APPLICATION_BASE + "=/example-application",
+        JaxRSWhiteboardConstants.JAX_RS_NAME + "=example-application"
+    },
     service = Application.class
 )
 public class ExampleApplication extends Application {
