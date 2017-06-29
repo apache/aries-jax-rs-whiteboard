@@ -23,6 +23,8 @@ import static org.osgi.service.jaxrs.whiteboard.JaxRSWhiteboardConstants.*;
 import java.util.Dictionary;
 import java.util.Hashtable;
 
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
@@ -51,6 +53,20 @@ import static org.junit.Assert.assertNull;
 
 
 public class JaxrsTest {
+
+    private ServiceTracker<ClientBuilder, ClientBuilder> _clientBuilderTracker;
+
+    @After
+    public void after() {
+        _clientBuilderTracker.close();
+    }
+
+    @Before
+    public void before() {
+        _clientBuilderTracker = new ServiceTracker<>(bundleContext, ClientBuilder.class, null);
+
+        _clientBuilderTracker.open();
+    }
 
     @Test
     public void testApplication() {
@@ -677,18 +693,15 @@ public class JaxrsTest {
     }
 
     private Client createClient() {
-        Thread thread = Thread.currentThread();
-
-        ClassLoader contextClassLoader = thread.getContextClassLoader();
+        ClientBuilder clientBuilder;
 
         try {
-            thread.setContextClassLoader(
-                org.apache.cxf.jaxrs.client.Client.class.getClassLoader());
+            clientBuilder = _clientBuilderTracker.waitForService(5000);
 
-            return ClientBuilder.newClient();
+            return clientBuilder.build();
         }
-        finally {
-            thread.setContextClassLoader(contextClassLoader);
+        catch (InterruptedException ie) {
+            throw new RuntimeException(ie);
         }
     }
 
