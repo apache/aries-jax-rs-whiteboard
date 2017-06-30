@@ -21,6 +21,13 @@
     xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 
     <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+      <groupId>org.apache</groupId>
+      <artifactId>apache</artifactId>
+      <version>18</version>
+    </parent>
+
     <groupId>org.apache.aries.jax.rs</groupId>
     <artifactId>org.apache.aries.jax.rs</artifactId>
     <version>0.0.1-SNAPSHOT</version>
@@ -31,19 +38,11 @@
         <bnd.version>3.4.0-SNAPSHOT</bnd.version>
     </properties>
 
-    <distributionManagement>
-        <repository>
-            <id>apache.releases.https</id>
-            <name>Apache Release Distribution Repository</name>
-            <url>https://repository.apache.org/service/local/staging/deploy/maven2</url>
-        </repository>
-        <snapshotRepository>
-            <id>apache.snapshots.https</id>
-            <name>Apache Development Snapshot Repository</name>
-            <url>https://repository.apache.org/content/repositories/snapshots</url>
-            <uniqueVersion>false</uniqueVersion>
-        </snapshotRepository>
-    </distributionManagement>
+    <scm>
+        <connection>scm:git:git://git.apache.org/aries-jax-rs-whiteboard.git</connection>
+        <developerConnection>scm:git:git://git.apache.org/aries-jax-rs-whiteboard.git</developerConnection>
+        <url>git://git.apache.org/aries-jax-rs-whiteboard.git</url>
+    </scm>
 
     <build>
         <pluginManagement>
