@@ -26,10 +26,12 @@
       <groupId>org.apache</groupId>
       <artifactId>apache</artifactId>
       <version>18</version>
+      <relativePath />
     </parent>
 
     <groupId>org.apache.aries.jax.rs</groupId>
     <artifactId>org.apache.aries.jax.rs</artifactId>
+    <name>JAX-RS Integration Project</name>
     <version>0.0.1-SNAPSHOT</version>
     <packaging>pom</packaging>
     <properties>
@@ -44,28 +46,16 @@
         <url>git://git.apache.org/aries-jax-rs-whiteboard.git</url>
     </scm>
 
+    <modules>
+        <module>javax-ws-rs</module>
+        <module>jax-rs.whiteboard</module>
+        <module>jax-rs.itests</module>
+        <module>jax-rs.example</module>
+    </modules>
+
     <build>
         <pluginManagement>
             <plugins>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-compiler-plugin</artifactId>
-                    <version>3.1</version>
-                    <configuration>
-                        <source>1.8</source>
-                        <target>1.8</target>
-                    </configuration>
-                </plugin>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-jar-plugin</artifactId>
-                    <version>3.0.1</version>
-                    <configuration>
-                        <archive>
-                            <manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
-                        </archive>
-                    </configuration>
-                </plugin>
                 <plugin>
                     <groupId>biz.aQute.bnd</groupId>
                     <artifactId>bnd-baseline-maven-plugin</artifactId>
@@ -111,6 +101,19 @@
                 </plugin>
                 <plugin>
                     <groupId>biz.aQute.bnd</groupId>
+                    <artifactId>bnd-maven-plugin</artifactId>
+                    <version>${bnd.version}</version>
+                    <executions>
+                        <execution>
+                            <id>bnd-process</id>
+                            <goals>
+                                <goal>bnd-process</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+                <plugin>
+                    <groupId>biz.aQute.bnd</groupId>
                     <artifactId>bnd-resolver-maven-plugin</artifactId>
                     <version>${bnd.version}</version>
                     <executions>
@@ -120,19 +123,6 @@
                                 <goal>resolve</goal>
                             </goals>
                             <phase>package</phase>
-                        </execution>
-                    </executions>
-                </plugin>
-                <plugin>
-                    <groupId>biz.aQute.bnd</groupId>
-                    <artifactId>bnd-maven-plugin</artifactId>
-                    <version>${bnd.version}</version>
-                    <executions>
-                        <execution>
-                            <id>bnd-process</id>
-                            <goals>
-                                <goal>bnd-process</goal>
-                            </goals>
                         </execution>
                     </executions>
                 </plugin>
@@ -149,15 +139,107 @@
                         </execution>
                     </executions>
                 </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <version>3.1</version>
+                    <configuration>
+                        <source>1.8</source>
+                        <target>1.8</target>
+                        <encoding>UTF-8</encoding>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-deploy-plugin</artifactId>
+                    <version>2.7</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-gpg-plugin</artifactId>
+                    <version>1.4</version>
+                    <executions>
+                        <execution>
+                            <id>sign-artifacts</id>
+                            <phase>verify</phase>
+                            <goals>
+                                <goal>sign</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-install-plugin</artifactId>
+                    <version>2.5.2</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-jar-plugin</artifactId>
+                    <version>3.0.1</version>
+                    <configuration>
+                        <archive>
+                            <manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
+                        </archive>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-javadoc-plugin</artifactId>
+                    <version>2.10.3</version>
+                    <executions>
+                        <execution>
+                            <id>attach-javadocs</id>
+                            <goals>
+                                <goal>jar</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-release-plugin</artifactId>
+                    <version>2.5.1</version>
+                    <configuration>
+                        <autoVersionSubmodules>true</autoVersionSubmodules>
+                        <pushChanges>false</pushChanges>
+                        <localCheckout>true</localCheckout>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.scm</groupId>
+                    <artifactId>maven-scm-providers-git</artifactId>
+                    <version>(,1.4]</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-surefire-plugin</artifactId>
+                    <version>${surefire.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-surefire-report-plugin</artifactId>
+                    <version>${surefire.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>build-helper-maven-plugin</artifactId>
+                    <version>1.8</version>
+                </plugin>
             </plugins>
         </pluginManagement>
     </build>
-    <modules>
-        <module>javax-ws-rs</module>
-        <module>jax-rs.whiteboard</module>
-        <module>jax-rs.itests</module>
-        <module>jax-rs.example</module>
-    </modules>
+
+    <reporting>
+        <plugins>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>findbugs-maven-plugin</artifactId>
+                <version>2.4.0</version>
+            </plugin>
+        </plugins>
+    </reporting>
+
     <dependencies>
         <dependency>
             <groupId>junit</groupId>
@@ -165,6 +247,7 @@
             <version>4.12</version>
         </dependency>
     </dependencies>
+
     <repositories>
         <repository>
             <id>apache snapshots</id>
@@ -172,13 +255,13 @@
             <layout>default</layout>
         </repository>
         <repository>
-            <id>osgi-releases-and-snapshots</id>
-            <url>https://oss.sonatype.org/content/groups/osgi/</url>
+            <id>bnd-snapshots</id>
+            <url>https://bndtools.ci.cloudbees.com/job/bnd.master/lastSuccessfulBuild/artifact/dist/bundles/</url>
             <layout>default</layout>
         </repository>
         <repository>
-            <id>bnd-snapshots</id>
-            <url>https://bndtools.ci.cloudbees.com/job/bnd.master/lastSuccessfulBuild/artifact/dist/bundles/</url>
+            <id>osgi-releases-and-snapshots</id>
+            <url>https://oss.sonatype.org/content/groups/osgi/</url>
             <layout>default</layout>
         </repository>
     </repositories>
