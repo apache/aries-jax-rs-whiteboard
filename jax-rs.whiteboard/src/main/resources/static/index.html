@@ -1,0 +1,102 @@
+<!doctype html>
+
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+
+    <title>Apache Aries JAX-RS Whiteboard</title>
+    <meta name="description" content="Apache Aries JAX-RS Whiteboard">
+    <meta name="author" content="The ASF">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="css" media="all">
+    <link rel="stylesheet" href="github" media="all">
+</head>
+
+<body>
+    <script src="/highlight"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+
+    <div class="header">
+        <img alt="Apache Aries" class="logo" src="logo">
+
+        <h1>JAX-RS Whiteboard</h1>
+    </div>
+
+    <main role="main">
+        <h2>Welcome to the <code>default</code> Application of the Aries JAX-RS Whiteboard</h2>
+
+        <p>If you want more information about JAX-RS you can find out more about it <a href="http://docs.oracle.com/javaee/7/tutorial/jaxrs.htm#GIEPU">here</a>.
+
+        <p>As you can see there's nothing fancy going on here yet! What you should do now is deploy an <code>javax.ws.rs.core.Application</code> or any JAX-RS resource as an OSGi service. Let's take a look at a couple of examples using the OSGi Declarative Services specification.</p>
+
+        <p>The first example will simply add a resource (a.k.a. an endpoint).</p>
+
+        <pre>
+<code class="java">
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.jaxrs.whiteboard.JaxRSWhiteboardConstants;
+
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+
+@Component(
+    property = {
+        JaxRSWhiteboardConstants.JAX_RS_APPLICATION_SELECT + "=(osgi.jaxrs.name=.default)",
+        JaxRSWhiteboardConstants.JAX_RS_RESOURCE + "=true"
+    },
+    service = ExampleAddon.class
+)
+public class ExampleAddon {
+
+    @GET
+    @Path("/{name}")
+    public String sayHello(@PathParam("name") String name) {
+        return "Hello " + name;
+    }
+
+}
+</code>
+        </pre>
+
+        <p>The next example is an <code>extension</code> which implements a <code>javax.ws.rs.container.ContainerRequestFilter</code>.
+
+        <pre>
+<code class="java">
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.jaxrs.whiteboard.JaxRSWhiteboardConstants;
+
+import javax.ws.rs.container.ContainerRequestContext;
+import javax.ws.rs.container.ContainerRequestFilter;
+import javax.ws.rs.ext.Provider;
+import java.io.IOException;
+
+@Component(
+    property = {
+        JaxRSWhiteboardConstants.JAX_RS_APPLICATION_SELECT + "=(osgi.jaxrs.name=.default)",
+        JaxRSWhiteboardConstants.JAX_RS_EXTENSION + "=true"
+    }
+)
+@Provider
+public class ExampleFilter implements ContainerRequestFilter {
+
+    @Override
+    public void filter(ContainerRequestContext requestContext)
+        throws IOException {
+
+        System.out.println("FILTERED!");
+    }
+
+}
+</code>
+        </pre>
+    </main>
+
+    <footer role="contentinfo">
+        <div>Apache Software Foundation!</div>
+
+        <small>Copyright &copy; <time datetime="2013">2017</time></small>
+    </footer>
+</body>
+</html>

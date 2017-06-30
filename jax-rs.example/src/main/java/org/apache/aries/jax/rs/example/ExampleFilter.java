@@ -27,8 +27,7 @@ import java.io.IOException;
 
 @Component(
     property = {
-        "osgi.jaxrs.filter.base=/examples",
-        JaxRSWhiteboardConstants.JAX_RS_APPLICATION_SELECT + "=(osgi.jaxrs.name=example-application)",
+        JaxRSWhiteboardConstants.JAX_RS_APPLICATION_SELECT + "=(osgi.jaxrs.name=.default)",
         JaxRSWhiteboardConstants.JAX_RS_EXTENSION + "=true"
     }
 )

@@ -24,7 +24,6 @@ import org.apache.cxf.Bus;
 import org.apache.cxf.jaxrs.lifecycle.ResourceProvider;
 import org.apache.cxf.message.Message;
 import org.osgi.framework.Bundle;
-import org.osgi.framework.Constants;
 import org.osgi.framework.ServiceObjects;
 import org.osgi.framework.ServiceReference;
 import org.osgi.framework.wiring.BundleWiring;
@@ -173,6 +172,7 @@ public class Utils {
             }
 
             @Override
+            @SuppressWarnings("unchecked")
             public void releaseInstance(Message m, Object o) {
                 serviceObjects.ungetService((T)o);
             }

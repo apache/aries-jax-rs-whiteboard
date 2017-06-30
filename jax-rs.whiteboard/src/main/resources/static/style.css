@@ -1,0 +1,25 @@
+html,
+body {
+    font-family: Helvetica, Tahoma, sans-serif;
+    font-size: 14px;
+    line-height: 1;
+}
+
+.header {
+    background-color: #393f5a;
+    color: #DCD5E2;
+    height: 100px;
+    position: relative;
+}
+
+.header img {
+    float: left;
+}
+
+.header h1 {
+    bottom: 10px;
+    font-size: 3.3em;
+    left: 260px;
+    margin: 0;
+    position: absolute;
+}

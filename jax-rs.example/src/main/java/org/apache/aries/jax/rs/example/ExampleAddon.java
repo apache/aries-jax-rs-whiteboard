@@ -19,8 +19,9 @@ package org.apache.aries.jax.rs.example;
 
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.jaxrs.whiteboard.JaxRSWhiteboardConstants;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import javax.annotation.PostConstruct;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -29,7 +30,7 @@ import javax.ws.rs.core.UriInfo;
 
 @Component(
     property = {
-        JaxRSWhiteboardConstants.JAX_RS_APPLICATION_SELECT + "=(osgi.jaxrs.name=example-application)",
+        JaxRSWhiteboardConstants.JAX_RS_APPLICATION_SELECT + "=(osgi.jaxrs.name=.default)",
         JaxRSWhiteboardConstants.JAX_RS_RESOURCE + "=true"
     },
     service = ExampleAddon.class
@@ -39,15 +40,16 @@ public class ExampleAddon {
     @GET
     @Path("/{name}")
     public String sayHello(@PathParam("name") String name) {
-        return "Hello " + name;
-    }
+        if (_log.isDebugEnabled()) {
+            _log.debug("URI: " + _uriInfo.getAbsolutePath());
+        }
 
-    @PostConstruct
-    public void init() {
-        System.out.println("URIINFO: " + _uriInfo);
+        return "Hello " + name;
     }
 
     @Context
     UriInfo _uriInfo;
 
+    private static final Logger _log = LoggerFactory.getLogger(
+        ExampleAddon.class);
 }

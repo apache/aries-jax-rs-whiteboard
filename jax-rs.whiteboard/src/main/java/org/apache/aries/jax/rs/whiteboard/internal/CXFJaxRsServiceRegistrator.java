@@ -32,11 +32,10 @@ import javax.ws.rs.ext.RuntimeDelegate;
 
 import org.apache.cxf.Bus;
 import org.apache.cxf.endpoint.Server;
-import org.apache.cxf.endpoint.ServerImpl;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.lifecycle.ResourceProvider;
 import org.apache.cxf.jaxrs.provider.json.JSONProvider;
-import org.apache.cxf.service.factory.ServiceConstructionException;
+import org.apache.cxf.jaxrs.utils.ResourceUtils;
 import org.apache.cxf.service.model.EndpointInfo;
 import org.apache.cxf.transport.Destination;
 import org.apache.cxf.transport.DestinationFactory;
@@ -149,11 +148,8 @@ public class CXFJaxRsServiceRegistrator {
             return;
         }
 
-        RuntimeDelegate runtimeDelegate = RuntimeDelegate.getInstance();
-
-        JAXRSServerFactoryBean jaxRsServerFactoryBean =
-            runtimeDelegate.createEndpoint(
-                _application, JAXRSServerFactoryBean.class);
+        JAXRSServerFactoryBean jaxRsServerFactoryBean = createEndpoint(
+            _application, JAXRSServerFactoryBean.class);
 
         jaxRsServerFactoryBean.setBus(_bus);
         jaxRsServerFactoryBean.setProperties(_properties);
@@ -181,7 +177,7 @@ public class CXFJaxRsServiceRegistrator {
             jaxRsServerFactoryBean.setProvider(provider);
         }
 
-        for (ResourceInformation resourceInformation : _services) {
+        for (ResourceInformation<?> resourceInformation : _services) {
             jaxRsServerFactoryBean.setResourceProvider(
                 resourceInformation.getResourceProvider());
         }
@@ -191,6 +187,16 @@ public class CXFJaxRsServiceRegistrator {
         _server = jaxRsServerFactoryBean.create();
 
         _server.start();
+    }
+
+    public <T> T createEndpoint(Application app, Class<T> endpointType) {
+        JAXRSServerFactoryBean bean = ResourceUtils.createApplication(app, false);
+        if (JAXRSServerFactoryBean.class.isAssignableFrom(endpointType)) {
+            return endpointType.cast(bean);
+        }
+        bean.setStart(false);
+        Server server = bean.create();
+        return endpointType.cast(server);
     }
 
     public static class ResourceInformation<T extends Comparable<? super T>>

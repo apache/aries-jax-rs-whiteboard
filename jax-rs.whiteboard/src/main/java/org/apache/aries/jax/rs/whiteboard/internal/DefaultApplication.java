@@ -15,35 +15,9 @@
  * limitations under the License.
  */
 
-package org.apache.aries.jax.rs.example;
+package org.apache.aries.jax.rs.whiteboard.internal;
 
-import org.osgi.service.component.annotations.Component;
-import org.osgi.service.jaxrs.whiteboard.JaxRSWhiteboardConstants;
-
-import javax.ws.rs.GET;
-import javax.ws.rs.Produces;
 import javax.ws.rs.core.Application;
-import java.util.Collections;
-import java.util.Set;
 
-@Component(
-    property = {
-        JaxRSWhiteboardConstants.JAX_RS_APPLICATION_BASE + "=/example-application",
-        JaxRSWhiteboardConstants.JAX_RS_NAME + "=example-application"
-    },
-    service = Application.class
-)
-public class ExampleApplication extends Application {
-
-    @Override
-    public Set<Object> getSingletons() {
-        return Collections.<Object>singleton(this);
-    }
-
-    @GET
-    @Produces("text/plain")
-    public String sayHello() {
-        return "Hello world";
-    }
-
+public class DefaultApplication extends Application {
 }

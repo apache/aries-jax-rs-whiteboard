@@ -24,6 +24,8 @@ import javax.ws.rs.ext.RuntimeDelegate;
 
 import org.apache.aries.jax.rs.whiteboard.internal.CXFJaxRsServiceRegistrator;
 import org.apache.aries.jax.rs.whiteboard.internal.ClientBuilderFactory;
+import org.apache.aries.jax.rs.whiteboard.internal.DefaultApplication;
+import org.apache.aries.jax.rs.whiteboard.internal.DefaultWeb;
 import org.apache.aries.osgi.functional.OSGi;
 import org.apache.aries.osgi.functional.OSGiResult;
 import org.apache.cxf.Bus;
@@ -36,10 +38,14 @@ import org.osgi.framework.Constants;
 import org.osgi.framework.ServiceReference;
 import org.osgi.framework.ServiceRegistration;
 import org.osgi.framework.wiring.BundleWiring;
+import org.osgi.service.jaxrs.whiteboard.JaxRSWhiteboardConstants;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Dictionary;
 import java.util.HashMap;
 import java.util.Hashtable;
+import java.util.Map;
 
 import static java.lang.String.format;
 import static org.apache.aries.jax.rs.whiteboard.internal.Utils.*;
@@ -55,17 +61,25 @@ import static org.osgi.service.jaxrs.whiteboard.JaxRSWhiteboardConstants.JAX_RS_
 
 public class CXFJaxRsBundleActivator implements BundleActivator {
 
+    private static final Logger _log = LoggerFactory.getLogger(CXFJaxRsBundleActivator.class);
+
     private OSGiResult<?> _applicationsResult;
     private OSGiResult<?> _applicationSingletonsResult;
     private BundleContext _bundleContext;
     private Bus _bus;
     private ServiceRegistration<ClientBuilder> _clientBuilder;
+    private ServiceRegistration<DefaultWeb> _defaultWeb;
     private OSGiResult<?> _extensionsResult;
     private OSGiResult<?> _singletonsResult;
 
     @Override
     public void start(BundleContext bundleContext) throws Exception {
         _bundleContext = bundleContext;
+
+        if (_log.isDebugEnabled()) {
+            _log.debug("Beginning initialization");
+        }
+
         initRuntimeDelegate(bundleContext);
 
         // TODO make the context path of the JAX-RS Whiteboard configurable.
@@ -99,11 +113,13 @@ public class CXFJaxRsBundleActivator implements BundleActivator {
 
         _applicationSingletonsResult = applicationSingletons.run(bundleContext);
 
-        Application defaultApplication = new Application() {};
+        Map<String, Object> properties = new HashMap<>();
+        properties.put(JAX_RS_APPLICATION_BASE, "/");
+        properties.put(JAX_RS_NAME, ".default");
 
         CXFJaxRsServiceRegistrator defaultServiceRegistrator =
             new CXFJaxRsServiceRegistrator(
-                _bus, defaultApplication, new HashMap<>());
+                _bus, new DefaultApplication(), properties);
 
         OSGi<?> extensions =
             serviceReferences(getExtensionFilter()).flatMap(ref ->
@@ -125,6 +141,13 @@ public class CXFJaxRsBundleActivator implements BundleActivator {
 
         _singletonsResult = singletons.run(bundleContext);
 
+        Dictionary<String, Object> dictionary = new Hashtable<>();
+        dictionary.put(JAX_RS_APPLICATION_SELECT, "(osgi.jaxrs.name=.default)");
+        dictionary.put(JAX_RS_RESOURCE, "true");
+        dictionary.put(Constants.SERVICE_RANKING, -1);
+
+        _defaultWeb =  _bundleContext.registerService(
+            DefaultWeb.class, new DefaultWeb(), dictionary);
         _clientBuilder = _bundleContext.registerService(
             ClientBuilder.class, new ClientBuilderFactory(), null);
     }
@@ -132,6 +155,7 @@ public class CXFJaxRsBundleActivator implements BundleActivator {
     @Override
     public void stop(BundleContext context) throws Exception {
         _clientBuilder.unregister();
+        _defaultWeb.unregister();
         _applicationsResult.close();
         _applicationSingletonsResult.close();
         _extensionsResult.close();
@@ -175,17 +199,7 @@ public class CXFJaxRsBundleActivator implements BundleActivator {
      * @param bundleContext
      */
     private void initRuntimeDelegate(BundleContext bundleContext) {
-        Thread thread = Thread.currentThread();
-        ClassLoader oldClassLoader = thread.getContextClassLoader();
-        BundleWiring bundleWiring = bundleContext.getBundle().adapt(
-            BundleWiring.class);
-        thread.setContextClassLoader(bundleWiring.getClassLoader());
-        try {
-            RuntimeDelegate.getInstance();
-        }
-        finally {
-            thread.setContextClassLoader(oldClassLoader);
-        }
+        RuntimeDelegate.setInstance(new org.apache.cxf.jaxrs.impl.RuntimeDelegateImpl());
     }
 
     private ServiceRegistration<Servlet> registerCXFServletService(Bus bus) {

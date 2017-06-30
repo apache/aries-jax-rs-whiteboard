@@ -9,6 +9,8 @@
     </encoder>
   </appender>
 
+  <logger name="org.apache.aries.jax.rs.example" level="debug" />
+
   <root level="error">
     <appender-ref ref="STDOUT" />
   </root>
