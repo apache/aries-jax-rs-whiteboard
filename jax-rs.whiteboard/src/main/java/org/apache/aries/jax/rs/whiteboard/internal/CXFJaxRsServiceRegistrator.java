@@ -28,7 +28,6 @@ import java.util.Set;
 import java.util.TreeSet;
 
 import javax.ws.rs.core.Application;
-import javax.ws.rs.ext.RuntimeDelegate;
 
 import org.apache.cxf.Bus;
 import org.apache.cxf.endpoint.Server;
