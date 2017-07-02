@@ -19,9 +19,13 @@ package org.apache.aries.jax.rs.example;
 
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.jaxrs.whiteboard.JaxRSWhiteboardConstants;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ContainerRequestFilter;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.UriInfo;
 import javax.ws.rs.ext.Provider;
 import java.io.IOException;
 
@@ -38,7 +42,15 @@ public class ExampleFilter implements ContainerRequestFilter {
     public void filter(ContainerRequestContext requestContext)
         throws IOException {
 
-        System.out.println("FILTERED!");
+        if (_log.isDebugEnabled()) {
+            _log.debug("FILTERED: " + _uriInfo.getAbsolutePath());
+        }
     }
+
+    @Context
+    UriInfo _uriInfo;
+
+    private static final Logger _log = LoggerFactory.getLogger(
+        ExampleFilter.class);
 
 }

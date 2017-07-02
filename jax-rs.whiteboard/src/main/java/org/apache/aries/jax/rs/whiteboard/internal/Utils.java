@@ -23,10 +23,8 @@ import org.apache.aries.osgi.functional.OSGi;
 import org.apache.cxf.Bus;
 import org.apache.cxf.jaxrs.lifecycle.ResourceProvider;
 import org.apache.cxf.message.Message;
-import org.osgi.framework.Bundle;
 import org.osgi.framework.ServiceObjects;
 import org.osgi.framework.ServiceReference;
-import org.osgi.framework.wiring.BundleWiring;
 import org.osgi.service.jaxrs.runtime.dto.FailedApplicationDTO;
 
 import javax.ws.rs.core.Application;
@@ -135,22 +133,11 @@ public class Utils {
             CXFJaxRsServiceRegistrator registrator,
             ServiceObjects<T> serviceObjects) {
 
-        Thread thread = Thread.currentThread();
-        ClassLoader contextClassLoader = thread.getContextClassLoader();
-        Bundle bundle = serviceReference.getBundle();
-        BundleWiring bundleWiring = bundle.adapt(BundleWiring.class);
-        ClassLoader classLoader = bundleWiring.getClassLoader();
         ResourceProvider resourceProvider = getResourceProvider(serviceObjects);
-        try {
-            thread.setContextClassLoader(classLoader);
-            ResourceInformation<ServiceReference<?>> resourceInformation =
-                new ResourceInformation<>(serviceReference, resourceProvider);
-            registrator.add(resourceInformation);
-            return just(resourceInformation);
-        }
-        finally {
-            thread.setContextClassLoader(contextClassLoader);
-        }
+        ResourceInformation<ServiceReference<?>> resourceInformation =
+            new ResourceInformation<>(serviceReference, resourceProvider);
+        registrator.add(resourceInformation);
+        return just(resourceInformation);
     }
 
     public static String safeToString(Object object) {
@@ -160,11 +147,7 @@ public class Utils {
     public static <T> ResourceProvider getResourceProvider(
         ServiceObjects<T> serviceObjects) {
 
-        ResourceProvider resourceProvider;
-        T service = serviceObjects.getService();
-        Class<?> serviceClass = service.getClass();
-
-        resourceProvider = new ResourceProvider() {
+        return new ResourceProvider() {
 
             @Override
             public Object getInstance(Message m) {
@@ -179,7 +162,14 @@ public class Utils {
 
             @Override
             public Class<?> getResourceClass() {
-                return serviceClass;
+                T service = serviceObjects.getService();
+
+                try {
+                    return service.getClass();
+                }
+                finally {
+                    serviceObjects.ungetService(service);
+                }
             }
 
             @Override
@@ -187,9 +177,6 @@ public class Utils {
                 return false;
             }
         };
-
-        serviceObjects.ungetService(service);
-        return resourceProvider;
     }
 
     public static void unregisterEndpoint(

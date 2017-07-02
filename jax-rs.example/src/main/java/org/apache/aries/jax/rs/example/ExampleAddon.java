@@ -52,4 +52,5 @@ public class ExampleAddon {
 
     private static final Logger _log = LoggerFactory.getLogger(
         ExampleAddon.class);
+
 }
