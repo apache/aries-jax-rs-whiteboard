@@ -30,7 +30,6 @@ import org.osgi.service.http.runtime.HttpServiceRuntime;
 import org.osgi.service.jaxrs.runtime.JaxRSServiceRuntime;
 
 import javax.servlet.Servlet;
-import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.core.Application;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -79,8 +78,7 @@ public class Whiteboard {
                     whiteboardApplications(bus),
                     whiteBoardApplicationSingletons(),
                     whiteboardExtensions(defaultServiceRegistrator),
-                    whiteboardSingletons(defaultServiceRegistrator),
-                    register(ClientBuilder.class, new ClientBuilderFactory(), null)
+                    whiteboardSingletons(defaultServiceRegistrator)
             ))));
     }
 

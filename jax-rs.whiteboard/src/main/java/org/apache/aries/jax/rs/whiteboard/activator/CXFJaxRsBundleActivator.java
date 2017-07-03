@@ -20,8 +20,10 @@ package org.apache.aries.jax.rs.whiteboard.activator;
 import java.util.Dictionary;
 import java.util.Hashtable;
 
+import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.ext.RuntimeDelegate;
 
+import org.apache.aries.jax.rs.whiteboard.internal.ClientBuilderFactory;
 import org.apache.aries.jax.rs.whiteboard.internal.DefaultWeb;
 import org.apache.aries.jax.rs.whiteboard.internal.Maps;
 import org.apache.aries.osgi.functional.OSGi;
@@ -74,7 +76,8 @@ public class CXFJaxRsBundleActivator implements BundleActivator {
             Constants.SERVICE_PID, "org.apache.aries.jax.rs.whiteboard.default");
 
         _defaultOSGiResult =
-            createWhiteboard(defaultConfiguration).then(
+            register(ClientBuilder.class, new ClientBuilderFactory(), null).then(
+            createWhiteboard(defaultConfiguration)).then(
             registerDefaultWeb()
         ).run(bundleContext);
     }
