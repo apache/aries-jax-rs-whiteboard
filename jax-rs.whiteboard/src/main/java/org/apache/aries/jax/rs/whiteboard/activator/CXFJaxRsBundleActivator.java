@@ -19,20 +19,29 @@ package org.apache.aries.jax.rs.whiteboard.activator;
 
 import java.util.Dictionary;
 import java.util.Hashtable;
-import java.util.concurrent.Executors;
 
 import javax.ws.rs.ext.RuntimeDelegate;
 
-import org.apache.aries.jax.rs.whiteboard.internal.WhiteboardServiceFactory;
+import org.apache.aries.jax.rs.whiteboard.internal.DefaultWeb;
+import org.apache.aries.jax.rs.whiteboard.internal.Maps;
+import org.apache.aries.jax.rs.whiteboard.internal.Whiteboard;
+import org.apache.aries.osgi.functional.OSGi;
+import org.apache.aries.osgi.functional.OSGiResult;
 import org.apache.cxf.jaxrs.impl.RuntimeDelegateImpl;
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.Constants;
-import org.osgi.framework.ServiceRegistration;
-import org.osgi.service.cm.ConfigurationException;
-import org.osgi.service.cm.ManagedServiceFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import static java.lang.String.format;
+import static org.apache.aries.jax.rs.whiteboard.internal.Whiteboard.createWhiteboard;
+import static org.apache.aries.osgi.functional.OSGi.configurations;
+import static org.apache.aries.osgi.functional.OSGi.register;
+import static org.apache.aries.osgi.functional.OSGi.serviceReferences;
+import static org.apache.aries.osgi.functional.OSGi.services;
+import static org.osgi.service.jaxrs.whiteboard.JaxRSWhiteboardConstants.JAX_RS_APPLICATION_SELECT;
+import static org.osgi.service.jaxrs.whiteboard.JaxRSWhiteboardConstants.JAX_RS_RESOURCE;
 
 public class CXFJaxRsBundleActivator implements BundleActivator {
 
@@ -42,9 +51,8 @@ public class CXFJaxRsBundleActivator implements BundleActivator {
         RuntimeDelegate.setInstance(new RuntimeDelegateImpl());
     }
 
-    private ServiceRegistration<ManagedServiceFactory> _serviceRegistration;
-    private WhiteboardServiceFactory _whiteboardServiceFactory;
-    private String _defaultName;
+    private OSGiResult<?> _defaultOSGiResult;
+    private OSGiResult<?> _whiteboardsResult;
 
     @Override
     public void start(BundleContext bundleContext) throws Exception {
@@ -52,31 +60,27 @@ public class CXFJaxRsBundleActivator implements BundleActivator {
             _log.debug("Starting the whiteboard factory");
         }
 
-        _whiteboardServiceFactory = new WhiteboardServiceFactory(bundleContext);
+        OSGi<?> whiteboards =
+            configurations("org.apache.aries.jax.rs.whiteboard").flatMap(configuration ->
+            createWhiteboard(configuration).then(
+            registerDefaultWeb())
+        );
 
-        _defaultName = _whiteboardServiceFactory.getName() + ".default";
-
-        Dictionary<String, Object> properties = new Hashtable<>();
-        properties.put(Constants.SERVICE_PID, _whiteboardServiceFactory.getName());
-
-        _serviceRegistration = bundleContext.registerService(
-            ManagedServiceFactory.class, _whiteboardServiceFactory, properties);
+        _whiteboardsResult = whiteboards.run(bundleContext);
 
         if (_log.isDebugEnabled()) {
             _log.debug("Whiteboard factory started");
         }
 
-        Executors.newSingleThreadExecutor().submit(() -> {
-            try {
-                Dictionary<String, Object> defaultConfiguration = new Hashtable<>();
+        Dictionary<String, Object> defaultConfiguration = new Hashtable<>();
 
-                defaultConfiguration.put(Constants.SERVICE_PID, _defaultName);
+        defaultConfiguration.put(
+            Constants.SERVICE_PID, "org.apache.aries.jax.rs.whiteboard.default");
 
-                _whiteboardServiceFactory.updated(_defaultName, defaultConfiguration);
-            } catch (ConfigurationException ce) {
-                _log.error("Configuration error", ce);
-            }
-        });
+        _defaultOSGiResult =
+            createWhiteboard(defaultConfiguration).then(
+            registerDefaultWeb()
+        ).run(bundleContext);
     }
 
     @Override
@@ -85,13 +89,22 @@ public class CXFJaxRsBundleActivator implements BundleActivator {
             _log.debug("Stopping whiteboard factory");
         }
 
-        _serviceRegistration.unregister();
+        _defaultOSGiResult.close();
 
-        _whiteboardServiceFactory.deleted(_defaultName);
+        _whiteboardsResult.close();
 
         if (_log.isDebugEnabled()) {
             _log.debug("Stopped whiteboard factory");
         }
+    }
+
+    private static OSGi<?> registerDefaultWeb() {
+        Dictionary<String, Object> dictionary = new Hashtable<>();
+        dictionary.put(JAX_RS_APPLICATION_SELECT, "(osgi.jaxrs.name=.default)");
+        dictionary.put(JAX_RS_RESOURCE, "true");
+        dictionary.put(Constants.SERVICE_RANKING, -1);
+
+        return register(DefaultWeb.class, new DefaultWeb(), Maps.from(dictionary));
     }
 
 }
