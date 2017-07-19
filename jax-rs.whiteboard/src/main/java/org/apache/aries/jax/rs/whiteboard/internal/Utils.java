@@ -17,7 +17,6 @@
 
 package org.apache.aries.jax.rs.whiteboard.internal;
 
-import org.apache.aries.jax.rs.whiteboard.internal.CXFJaxRsServiceRegistrator.ResourceInformation;
 import org.apache.aries.osgi.functional.Event;
 import org.apache.aries.osgi.functional.OSGi;
 import org.apache.cxf.Bus;
@@ -127,17 +126,15 @@ public class Utils {
         return program.route(new RepeatInOrderRouter<>());
     }
 
-    public static <T> OSGi<ResourceInformation<ServiceReference<?>>>
+    public static <T> OSGi<ResourceProvider>
         registerEndpoint(
             ServiceReference<?> serviceReference,
             CXFJaxRsServiceRegistrator registrator,
             ServiceObjects<T> serviceObjects) {
 
         ResourceProvider resourceProvider = getResourceProvider(serviceObjects);
-        ResourceInformation<ServiceReference<?>> resourceInformation =
-            new ResourceInformation<>(serviceReference, resourceProvider);
-        registrator.add(resourceInformation);
-        return just(resourceInformation);
+        registrator.add(resourceProvider);
+        return just(resourceProvider);
     }
 
     public static String safeToString(Object object) {
@@ -147,43 +144,16 @@ public class Utils {
     public static <T> ResourceProvider getResourceProvider(
         ServiceObjects<T> serviceObjects) {
 
-        return new ResourceProvider() {
+        ServiceReference<T> serviceReference = serviceObjects.getServiceReference();
 
-            @Override
-            public Object getInstance(Message m) {
-                return serviceObjects.getService();
-            }
-
-            @Override
-            @SuppressWarnings("unchecked")
-            public void releaseInstance(Message m, Object o) {
-                serviceObjects.ungetService((T)o);
-            }
-
-            @Override
-            public Class<?> getResourceClass() {
-                T service = serviceObjects.getService();
-
-                try {
-                    return service.getClass();
-                }
-                finally {
-                    serviceObjects.ungetService(service);
-                }
-            }
-
-            @Override
-            public boolean isSingleton() {
-                return false;
-            }
-        };
+        return new ComparableResourceProvider(serviceReference, serviceObjects);
     }
 
     public static void unregisterEndpoint(
         CXFJaxRsServiceRegistrator registrator,
-        ResourceInformation<ServiceReference<?>> resourceInformation) {
+        ResourceProvider resourceProvider) {
 
-        registrator.remove(resourceInformation);
+        registrator.remove(resourceProvider);
     }
 
     private static class RepeatInOrderRouter<T extends Comparable<? super T>>
@@ -225,6 +195,55 @@ public class Utils {
 
                 _treeSet.clear();
             });
+        }
+
+    }
+
+    public static class ComparableResourceProvider
+        implements ResourceProvider, Comparable<ComparableResourceProvider> {
+
+        private ServiceReference<?> _serviceReference;
+        private final ServiceObjects<?> _serviceObjects;
+
+        public ComparableResourceProvider(
+            ServiceReference<?> serviceReference,
+            ServiceObjects<?> serviceObjects) {
+            _serviceReference = serviceReference;
+
+            _serviceObjects = serviceObjects;
+        }
+
+        @Override
+        public int compareTo(ComparableResourceProvider o) {
+            return _serviceReference.compareTo(o._serviceReference);
+        }
+
+        @Override
+        public Object getInstance(Message m) {
+            return _serviceObjects.getService();
+        }
+
+        @Override
+        @SuppressWarnings("unchecked")
+        public void releaseInstance(Message m, Object o) {
+            ((ServiceObjects)_serviceObjects).ungetService(o);
+        }
+
+        @Override
+        public Class<?> getResourceClass() {
+            Object service = _serviceObjects.getService();
+
+            try {
+                return service.getClass();
+            }
+            finally {
+                ((ServiceObjects)_serviceObjects).ungetService(service);
+            }
+        }
+
+        @Override
+        public boolean isSingleton() {
+            return false;
         }
 
     }

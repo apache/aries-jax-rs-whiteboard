@@ -20,21 +20,24 @@ package org.apache.aries.jax.rs.whiteboard.internal;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeSet;
 
 import javax.ws.rs.core.Application;
 
+import org.apache.aries.jax.rs.whiteboard.internal.Utils.ComparableResourceProvider;
 import org.apache.cxf.Bus;
 import org.apache.cxf.endpoint.Server;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
+import org.apache.cxf.jaxrs.ext.ResourceComparator;
 import org.apache.cxf.jaxrs.lifecycle.ResourceProvider;
+import org.apache.cxf.jaxrs.model.ClassResourceInfo;
+import org.apache.cxf.jaxrs.model.OperationResourceInfo;
 import org.apache.cxf.jaxrs.provider.json.JSONProvider;
 import org.apache.cxf.jaxrs.utils.ResourceUtils;
+import org.apache.cxf.message.Message;
 import org.apache.cxf.service.model.EndpointInfo;
 import org.apache.cxf.transport.Destination;
 import org.apache.cxf.transport.DestinationFactory;
@@ -51,8 +54,7 @@ public class CXFJaxRsServiceRegistrator {
     private final Map<String, Object> _properties;
     private final Collection<Object> _providers = new ArrayList<>();
     private Server _server;
-    private final Collection<ResourceInformation<ServiceReference<?>>>
-        _services = new TreeSet<>(Comparator.reverseOrder());
+    private final Collection<ResourceProvider> _services = new ArrayList<>();
 
     private static final String CXF_ENDPOINT_ADDRESS = "CXF_ENDPOINT_ADDRESS";
 
@@ -81,13 +83,12 @@ public class CXFJaxRsServiceRegistrator {
         return properties;
     }
 
-    public void add(
-        ResourceInformation<ServiceReference<?>> resourceInformation) {
+    public void add(ResourceProvider resourceProvider) {
         if (_closed) {
             return;
         }
 
-        _services.add(resourceInformation);
+        _services.add(resourceProvider);
 
         rewire();
     }
@@ -114,13 +115,12 @@ public class CXFJaxRsServiceRegistrator {
         _closed = true;
     }
 
-    public void remove(
-        ResourceInformation<ServiceReference<?>> resourceInformation) {
+    public void remove(ResourceProvider resourceProvider) {
         if (_closed) {
             return;
         }
 
-        _services.remove(resourceInformation);
+        _services.remove(resourceProvider);
 
         rewire();
     }
@@ -133,6 +133,44 @@ public class CXFJaxRsServiceRegistrator {
         _providers.remove(provider);
 
         rewire();
+    }
+
+    private static class ComparableResourceComparator
+        implements ResourceComparator {
+
+        @Override
+        public int compare(
+            ClassResourceInfo cri1, ClassResourceInfo cri2, Message message) {
+
+            ResourceProvider rp1 = cri1.getResourceProvider();
+            ResourceProvider rp2 = cri2.getResourceProvider();
+
+            if (rp1 instanceof ComparableResourceProvider &&
+                rp2 instanceof ComparableResourceProvider) {
+
+                return -((ComparableResourceProvider) rp1).compareTo(
+                    (ComparableResourceProvider) rp2);
+            }
+
+            if (rp1 instanceof ComparableResourceProvider) {
+                return 1;
+            }
+
+            if (rp2 instanceof ComparableResourceProvider) {
+                return -1;
+            }
+
+            return 0;
+        }
+
+        @Override
+        public int compare(
+            OperationResourceInfo oper1, OperationResourceInfo oper2,
+            Message message) {
+
+            return 0;
+        }
+
     }
 
     protected synchronized void rewire() {
@@ -176,12 +214,14 @@ public class CXFJaxRsServiceRegistrator {
             jaxRsServerFactoryBean.setProvider(provider);
         }
 
-        for (ResourceInformation<?> resourceInformation : _services) {
-            jaxRsServerFactoryBean.setResourceProvider(
-                resourceInformation.getResourceProvider());
+        for (ResourceProvider resourceProvider: _services) {
+            jaxRsServerFactoryBean.setResourceProvider(resourceProvider);
         }
 
         jaxRsServerFactoryBean.setAddress(address);
+
+        jaxRsServerFactoryBean.setResourceComparator(
+            new ComparableResourceComparator());
 
         _server = jaxRsServerFactoryBean.create();
 
@@ -196,35 +236,6 @@ public class CXFJaxRsServiceRegistrator {
         bean.setStart(false);
         Server server = bean.create();
         return endpointType.cast(server);
-    }
-
-    public static class ResourceInformation<T extends Comparable<? super T>>
-        implements Comparable<ResourceInformation<T>> {
-
-        private final T _comparable;
-        private final ResourceProvider _resourceProvider;
-
-        public ResourceInformation(
-            T comparable, ResourceProvider resourceProvider) {
-            _comparable = comparable;
-
-            _resourceProvider = resourceProvider;
-        }
-
-        public ResourceProvider getResourceProvider() {
-            return _resourceProvider;
-        }
-
-        @Override
-        public int compareTo(ResourceInformation<T> resourceInformation) {
-
-            if (resourceInformation == null) {
-                return 1;
-            }
-
-            return _comparable.compareTo(resourceInformation._comparable);
-        }
-
     }
 
     /**
