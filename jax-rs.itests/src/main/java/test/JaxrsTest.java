@@ -36,6 +36,8 @@ import org.osgi.framework.ServiceRegistration;
 import org.osgi.service.jaxrs.runtime.dto.FailedApplicationDTO;
 import org.osgi.util.tracker.ServiceTracker;
 import test.types.TestAddon;
+import test.types.TestAddonConflict;
+import test.types.TestAddonConflict2;
 import test.types.TestAddonLifecycle;
 import test.types.TestApplication;
 import test.types.TestApplicationConflict;
@@ -50,7 +52,6 @@ import javax.ws.rs.core.Response;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
-
 
 public class JaxrsTest {
 
@@ -425,6 +426,55 @@ public class JaxrsTest {
         finally {
             if (applicationRegistration != null) {
                 applicationRegistration.unregister();
+            }
+        }
+    }
+
+    @Test
+    public void testEndpointsOverride() {
+        Client client = createClient();
+
+        WebTarget webTarget = client.
+            target("http://localhost:8080").
+            path("conflict");
+
+        ServiceRegistration<?> serviceRegistration = null;
+        ServiceRegistration<?> serviceRegistration2 = null;
+
+        try {
+            serviceRegistration = registerAddon(new TestAddonConflict());
+
+            Response response = webTarget.request().get();
+
+            assertEquals(
+                "This should say hello1", "hello1",
+                response.readEntity(String.class));
+
+            serviceRegistration2 = registerAddon(
+                new TestAddonConflict2(), "service.ranking", 1);
+
+            response = webTarget.request().get();
+
+            assertEquals(
+                "This should say hello2", "hello2",
+                response.readEntity(String.class));
+
+            serviceRegistration2.unregister();
+
+            serviceRegistration2 = null;
+
+            response = webTarget.request().get();
+
+            assertEquals(
+                "This should say hello1", "hello1",
+                response.readEntity(String.class));
+        }
+        finally {
+            if (serviceRegistration != null) {
+                serviceRegistration.unregister();
+            }
+            if (serviceRegistration2 != null) {
+                serviceRegistration2.unregister();
             }
         }
     }
