@@ -30,6 +30,6 @@ public class AriesJaxRSWhiteboardConstants {
      * The value of this service property must be of type {@code String} and be
      * a valid {@link Filter filter string}.
      */
-    public static final String JAX_RS_APPLICATION_SELECT = "org.apache.aries.jaxrs.extension.select";
+    public static final String JAX_RS_APPLICATION_SELECT = "org.apache.aries.jaxrs.application.select";
 
 }
