@@ -25,6 +25,7 @@ import org.osgi.framework.Constants;
 import org.osgi.framework.Filter;
 import org.osgi.framework.InvalidSyntaxException;
 import org.osgi.framework.ServiceReference;
+import org.osgi.framework.ServiceRegistration;
 import org.osgi.framework.wiring.BundleWiring;
 import org.osgi.service.http.runtime.HttpServiceRuntime;
 import org.osgi.service.jaxrs.runtime.JaxRSServiceRuntime;
@@ -35,7 +36,9 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Dictionary;
 import java.util.HashMap;
+import java.util.Hashtable;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static java.lang.String.format;
 import static org.apache.aries.jax.rs.whiteboard.internal.Utils.cxfRegistrator;
@@ -69,17 +72,20 @@ import static org.osgi.service.jaxrs.whiteboard.JaxRSWhiteboardConstants.JAX_RS_
  */
 public class Whiteboard {
     public static OSGi<Void> createWhiteboard(Dictionary<String, ?> configuration) {
+        AtomicLong changeCount = new AtomicLong();
+
         return
             bundleContext().flatMap(bundleContext ->
             just(createBus(bundleContext, configuration)).flatMap(bus ->
             just(createDefaultJaxRsServiceRegistrator(bus)).flatMap(defaultServiceRegistrator ->
+            registerJaxRSServiceRuntime(bundleContext, bus, Maps.from(configuration)).flatMap(registratorRegistration ->
+            just(new ServiceRegistrationChangeCounter(changeCount, "service.changecount", registratorRegistration)).flatMap(counter ->
                 all(
-                    registerJaxRSServiceRuntime(bundleContext, bus, Maps.from(configuration)),
-                    whiteboardApplications(bus),
-                    whiteBoardApplicationSingletons(),
-                    whiteboardExtensions(defaultServiceRegistrator),
-                    whiteboardSingletons(defaultServiceRegistrator)
-            ))));
+                    countChanges(whiteboardApplications(bus), counter),
+                    countChanges(whiteBoardApplicationSingletons(), counter),
+                    countChanges(whiteboardExtensions(defaultServiceRegistrator), counter),
+                    countChanges(whiteboardSingletons(defaultServiceRegistrator), counter)
+            ))))));
     }
 
     private static OSGi<Collection<String>> bestEffortCalculationOfEnpoints(Filter filter) {
@@ -150,8 +156,9 @@ public class Whiteboard {
         return format("(%s=true)", JAX_RS_RESOURCE);
     }
 
-    private static OSGi<?> registerJaxRSServiceRuntime(
-        BundleContext bundleContext, Bus bus, Map<String, ?> configuration) {
+    private static OSGi<ServiceRegistration<?>>
+        registerJaxRSServiceRuntime(
+            BundleContext bundleContext, Bus bus, Map<String, ?> configuration) {
 
         Map<String, Object> properties = new HashMap<>(configuration);
 
@@ -257,4 +264,61 @@ public class Whiteboard {
             )
         );
     }
+
+    private static <T> OSGi<T> countChanges(
+        OSGi<T> program, ChangeCounter counter) {
+
+        return program.map(t -> {counter.inc(); return t;});
+    }
+
+    private static interface ChangeCounter {
+
+        public void inc();
+
+    }
+
+    private static class ServiceRegistrationChangeCounter
+        implements ChangeCounter{
+
+        private final AtomicLong _atomicLong;
+        private String _property;
+        private ServiceRegistration<?> _serviceRegistration;
+        private final Hashtable<String, Object> _properties;
+
+        public ServiceRegistrationChangeCounter(
+            AtomicLong atomicLong, String property,
+            ServiceRegistration<?> serviceRegistration) {
+
+            _atomicLong = atomicLong;
+            _property = property;
+            _serviceRegistration = serviceRegistration;
+
+            ServiceReference<?> serviceReference =
+                _serviceRegistration.getReference();
+
+            String[] propertyKeys = serviceReference.getPropertyKeys();
+
+            _properties = new Hashtable<>();
+
+            for (int i = 0; i < propertyKeys.length; i++) {
+                String propertyKey = propertyKeys[i];
+
+                _properties.put(
+                    propertyKey, serviceReference.getProperty(propertyKey));
+            }
+        }
+
+        @Override
+        public void inc() {
+            long l = _atomicLong.incrementAndGet();
+
+            Hashtable<String, Object> properties =
+                (Hashtable<String, Object>)_properties.clone();
+
+            properties.put(_property, l);
+
+            _serviceRegistration.setProperties(properties);
+        }
+    }
+
 }

@@ -19,17 +19,26 @@ package test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.osgi.service.jaxrs.whiteboard.JaxRSWhiteboardConstants.JAX_RS_APPLICATION_BASE;
+import static org.osgi.service.jaxrs.whiteboard.JaxRSWhiteboardConstants.JAX_RS_RESOURCE;
 
+import java.util.Arrays;
+import java.util.Dictionary;
 import java.util.Hashtable;
 
 import org.junit.Test;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.FrameworkUtil;
 import org.osgi.framework.ServiceReference;
+import org.osgi.framework.ServiceRegistration;
 import org.osgi.service.cm.Configuration;
 import org.osgi.service.cm.ConfigurationAdmin;
 import org.osgi.service.jaxrs.runtime.JaxRSServiceRuntime;
 import org.osgi.util.tracker.ServiceTracker;
+import test.types.TestApplication;
+
+import javax.ws.rs.core.Application;
 
 public class WhiteboardFactoryTest {
 
@@ -109,6 +118,46 @@ public class WhiteboardFactoryTest {
         finally {
             runtimeTracker.close();
             configTracker.close();
+        }
+    }
+
+    @Test
+    public void testChangeCount() throws Exception {
+        ServiceTracker<JaxRSServiceRuntime, JaxRSServiceRuntime> runtimeTracker =
+            new ServiceTracker<>(
+                bundleContext, JaxRSServiceRuntime.class, null);
+
+        try {
+            runtimeTracker.open();
+
+            JaxRSServiceRuntime runtime = runtimeTracker.waitForService(5000);
+
+            assertNotNull(runtime);
+
+            ServiceReference<JaxRSServiceRuntime> serviceReference = runtimeTracker.getServiceReference();
+
+            Long changeCount = (Long)serviceReference.getProperty("service.changecount");
+
+            Dictionary<String, Object> properties = new Hashtable<>();
+
+            properties.put(JAX_RS_APPLICATION_BASE, "/test-counter");
+
+            ServiceRegistration<?> serviceRegistration =
+                bundleContext.registerService(
+                    Application.class, new TestApplication(), properties);
+
+            assertTrue(
+                changeCount < (Long)runtimeTracker.getServiceReference().getProperty("service.changecount"));
+
+            changeCount = (Long)serviceReference.getProperty("service.changecount");
+
+            serviceRegistration.unregister();
+
+            assertTrue(
+                changeCount < (Long)runtimeTracker.getServiceReference().getProperty("service.changecount"));
+        }
+        finally {
+            runtimeTracker.close();
         }
     }
 
