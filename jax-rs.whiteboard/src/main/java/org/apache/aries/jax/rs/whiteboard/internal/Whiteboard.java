@@ -72,14 +72,12 @@ import static org.osgi.service.jaxrs.whiteboard.JaxRSWhiteboardConstants.JAX_RS_
  */
 public class Whiteboard {
     public static OSGi<Void> createWhiteboard(Dictionary<String, ?> configuration) {
-        AtomicLong changeCount = new AtomicLong();
-
         return
             bundleContext().flatMap(bundleContext ->
             just(createBus(bundleContext, configuration)).flatMap(bus ->
             just(createDefaultJaxRsServiceRegistrator(bus)).flatMap(defaultServiceRegistrator ->
             registerJaxRSServiceRuntime(bundleContext, bus, Maps.from(configuration)).flatMap(registratorRegistration ->
-            just(new ServiceRegistrationChangeCounter(changeCount, "service.changecount", registratorRegistration)).flatMap(counter ->
+            just(new ServiceRegistrationChangeCounter(registratorRegistration)).flatMap(counter ->
                 all(
                     countChanges(whiteboardApplications(bus), counter),
                     countChanges(whiteBoardApplicationSingletons(), counter),
@@ -280,29 +278,22 @@ public class Whiteboard {
     private static class ServiceRegistrationChangeCounter
         implements ChangeCounter{
 
-        private final AtomicLong _atomicLong;
-        private String _property;
+        private static final String changecount = "service.changecount";
+        private final AtomicLong _atomicLong = new AtomicLong();
         private ServiceRegistration<?> _serviceRegistration;
         private final Hashtable<String, Object> _properties;
 
         public ServiceRegistrationChangeCounter(
-            AtomicLong atomicLong, String property,
             ServiceRegistration<?> serviceRegistration) {
 
-            _atomicLong = atomicLong;
-            _property = property;
             _serviceRegistration = serviceRegistration;
 
             ServiceReference<?> serviceReference =
                 _serviceRegistration.getReference();
 
-            String[] propertyKeys = serviceReference.getPropertyKeys();
-
             _properties = new Hashtable<>();
 
-            for (int i = 0; i < propertyKeys.length; i++) {
-                String propertyKey = propertyKeys[i];
-
+            for (String propertyKey : serviceReference.getPropertyKeys()) {
                 _properties.put(
                     propertyKey, serviceReference.getProperty(propertyKey));
             }
@@ -312,10 +303,11 @@ public class Whiteboard {
         public void inc() {
             long l = _atomicLong.incrementAndGet();
 
+            @SuppressWarnings("unchecked")
             Hashtable<String, Object> properties =
                 (Hashtable<String, Object>)_properties.clone();
 
-            properties.put(_property, l);
+            properties.put(changecount, l);
 
             _serviceRegistration.setProperties(properties);
         }
