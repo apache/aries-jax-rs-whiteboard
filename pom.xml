@@ -37,7 +37,7 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <cxf.version>3.1.10</cxf.version>
-        <bnd.version>3.4.0-SNAPSHOT</bnd.version>
+        <bnd.version>3.4.0</bnd.version>
     </properties>
 
     <scm>
@@ -255,21 +255,9 @@
             <layout>default</layout>
         </repository>
         <repository>
-            <id>bnd-snapshots</id>
-            <url>https://bndtools.ci.cloudbees.com/job/bnd.master/lastSuccessfulBuild/artifact/dist/bundles/</url>
-            <layout>default</layout>
-        </repository>
-        <repository>
             <id>osgi-releases-and-snapshots</id>
             <url>https://oss.sonatype.org/content/groups/osgi/</url>
             <layout>default</layout>
         </repository>
     </repositories>
-    <pluginRepositories>
-        <pluginRepository>
-            <id>bnd-snapshots</id>
-            <url>https://bndtools.ci.cloudbees.com/job/bnd.master/lastSuccessfulBuild/artifact/dist/bundles/</url>
-            <layout>default</layout>
-        </pluginRepository>
-    </pluginRepositories>
 </project>
