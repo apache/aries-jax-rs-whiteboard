@@ -224,11 +224,12 @@ public class Utils {
         }
 
         @Override
-        @SuppressWarnings("unchecked")
+        @SuppressWarnings({ "unchecked", "rawtypes" })
         public void releaseInstance(Message m, Object o) {
             ((ServiceObjects)_serviceObjects).ungetService(o);
         }
 
+        @SuppressWarnings({ "rawtypes", "unchecked" })
         @Override
         public Class<?> getResourceClass() {
             Object service = _serviceObjects.getService();

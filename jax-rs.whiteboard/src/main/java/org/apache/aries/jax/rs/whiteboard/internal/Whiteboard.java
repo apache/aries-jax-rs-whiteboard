@@ -117,6 +117,7 @@ public class Whiteboard {
     private static ExtensionManagerBus createBus(BundleContext bundleContext, Dictionary<String, ?> configuration) {
         BundleWiring wiring = bundleContext.getBundle().adapt(BundleWiring.class);
 
+        @SuppressWarnings("unchecked")
         Map<String, Object> properties = Maps.from((Dictionary<String, Object>)configuration);
 
         properties.put("org.apache.cxf.bus.id", configuration.get(Constants.SERVICE_PID));
