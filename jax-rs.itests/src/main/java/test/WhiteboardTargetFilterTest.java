@@ -24,6 +24,9 @@ import static org.junit.Assert.assertTrue;
 import java.util.Dictionary;
 import java.util.Hashtable;
 
+import javax.ws.rs.client.Client;
+import javax.ws.rs.client.WebTarget;
+
 import org.junit.Ignore;
 import org.junit.Test;
 import org.osgi.framework.ServiceRegistration;
@@ -32,11 +35,20 @@ import org.osgi.service.jaxrs.whiteboard.JaxRSWhiteboardConstants;
 import test.types.TestAddon;
 import test.types.TestHelper;
 
-@Ignore
 public class WhiteboardTargetFilterTest extends TestHelper {
 
     @Test
     public void testInvalidTargetFilter() throws Exception {
+        Client client = createClient();
+
+        WebTarget webTarget = client.
+            target("http://localhost:8080").
+            path("extended");
+
+        assertEquals(
+            "This should return nothing", "",
+            webTarget.request().get().readEntity(String.class));
+
         Dictionary<String, Object> properties = new Hashtable<>();
         properties.put(JaxRSWhiteboardConstants.JAX_RS_RESOURCE, "true");
         properties.put(JaxRSWhiteboardConstants.JAX_RS_WHITEBOARD_TARGET, "//");
@@ -45,9 +57,9 @@ public class WhiteboardTargetFilterTest extends TestHelper {
             Object.class, new TestAddon(), properties);
 
         try {
-
-            //System.out.println("blad");
-
+            assertEquals(
+                "This should return nothing", "",
+                webTarget.request().get().readEntity(String.class));
         }
         finally {
             serviceRegistration.unregister();
@@ -56,6 +68,16 @@ public class WhiteboardTargetFilterTest extends TestHelper {
 
     @Test
     public void testNonMatchingFilter() throws Exception {
+        Client client = createClient();
+
+        WebTarget webTarget = client.
+            target("http://localhost:8080").
+            path("extended");
+
+        assertEquals(
+            "This should return nothing", "",
+            webTarget.request().get().readEntity(String.class));
+
         Dictionary<String, Object> properties = new Hashtable<>();
         properties.put(JaxRSWhiteboardConstants.JAX_RS_RESOURCE, "true");
         properties.put(JaxRSWhiteboardConstants.JAX_RS_WHITEBOARD_TARGET, "(crazy=the joker)");
@@ -64,9 +86,40 @@ public class WhiteboardTargetFilterTest extends TestHelper {
             Object.class, new TestAddon(), properties);
 
         try {
+            assertEquals(
+                "This should return nothing", "",
+                webTarget.request().get().readEntity(String.class));
+        }
+        finally {
+            serviceRegistration.unregister();
+        }
+    }
 
-            //System.out.println("blad");
+    @Test
+    public void testMatchingFilter() throws Exception {
+        Client client = createClient();
 
+        WebTarget webTarget = client.
+            target("http://localhost:8080").
+            path("extended");
+
+        assertEquals(
+            "This should return nothing", "",
+            webTarget.request().get().readEntity(String.class));
+
+        Dictionary<String, Object> properties = new Hashtable<>();
+        properties.put(JaxRSWhiteboardConstants.JAX_RS_RESOURCE, "true");
+        properties.put(
+            JaxRSWhiteboardConstants.JAX_RS_WHITEBOARD_TARGET,
+            "(service.pid=org.apache.aries.jax.rs.whiteboard.default)");
+
+        ServiceRegistration<Object> serviceRegistration = bundleContext.registerService(
+            Object.class, new TestAddon(), properties);
+
+        try {
+            assertEquals(
+                "This should say hello", "Hello extended",
+                webTarget.request().get().readEntity(String.class));
         }
         finally {
             serviceRegistration.unregister();
