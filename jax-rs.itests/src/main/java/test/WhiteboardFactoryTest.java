@@ -146,15 +146,17 @@ public class WhiteboardFactoryTest {
                 bundleContext.registerService(
                     Application.class, new TestApplication(), properties);
 
-            assertTrue(
-                changeCount < (Long)runtimeTracker.getServiceReference().getProperty("service.changecount"));
+            Long newCount = (Long)serviceReference.getProperty("service.changecount");
 
-            changeCount = (Long)serviceReference.getProperty("service.changecount");
+            assertTrue(changeCount < newCount);
+
+            changeCount = newCount;
 
             serviceRegistration.unregister();
 
-            assertTrue(
-                changeCount < (Long)runtimeTracker.getServiceReference().getProperty("service.changecount"));
+            newCount = (Long)serviceReference.getProperty("service.changecount");
+
+            assertTrue(changeCount < newCount);
         }
         finally {
             runtimeTracker.close();
