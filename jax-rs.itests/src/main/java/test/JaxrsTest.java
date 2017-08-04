@@ -23,12 +23,8 @@ import static org.osgi.service.jaxrs.whiteboard.JaxRSWhiteboardConstants.*;
 import java.util.Dictionary;
 import java.util.Hashtable;
 
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 import org.osgi.framework.Bundle;
-import org.osgi.framework.BundleContext;
-import org.osgi.framework.FrameworkUtil;
 import org.osgi.framework.PrototypeServiceFactory;
 import org.osgi.framework.ServiceFactory;
 import org.osgi.framework.ServiceRegistration;
@@ -42,9 +38,9 @@ import test.types.TestAddonLifecycle;
 import test.types.TestApplication;
 import test.types.TestApplicationConflict;
 import test.types.TestFilter;
+import test.types.TestHelper;
 
 import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Application;
 import javax.ws.rs.core.Response;
@@ -53,21 +49,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
 
-public class JaxrsTest {
-
-    private ServiceTracker<ClientBuilder, ClientBuilder> _clientBuilderTracker;
-
-    @After
-    public void after() {
-        _clientBuilderTracker.close();
-    }
-
-    @Before
-    public void before() {
-        _clientBuilderTracker = new ServiceTracker<>(bundleContext, ClientBuilder.class, null);
-
-        _clientBuilderTracker.open();
-    }
+public class JaxrsTest extends TestHelper {
 
     @Test
     public void testApplication() {
@@ -103,6 +85,7 @@ public class JaxrsTest {
             target("http://localhost:8080").
             path("test-application");
 
+        @SuppressWarnings("rawtypes")
         ServiceTracker serviceTracker = new ServiceTracker<>(
             bundleContext, FailedApplicationDTO.class, null);
 
@@ -162,6 +145,7 @@ public class JaxrsTest {
             target("http://localhost:8080").
             path("test-application");
 
+        @SuppressWarnings("rawtypes")
         ServiceTracker serviceTracker = new ServiceTracker<>(
             bundleContext, FailedApplicationDTO.class, null);
 
@@ -213,9 +197,6 @@ public class JaxrsTest {
             serviceTracker.close();
         }
     }
-
-    static BundleContext bundleContext = FrameworkUtil.getBundle(
-        JaxrsTest.class).getBundleContext();
 
     @Test
     public void testApplicationReadd() {
@@ -739,19 +720,6 @@ public class JaxrsTest {
             if (serviceRegistration != null) {
                 serviceRegistration.unregister();
             }
-        }
-    }
-
-    private Client createClient() {
-        ClientBuilder clientBuilder;
-
-        try {
-            clientBuilder = _clientBuilderTracker.waitForService(5000);
-
-            return clientBuilder.build();
-        }
-        catch (InterruptedException ie) {
-            throw new RuntimeException(ie);
         }
     }
 
