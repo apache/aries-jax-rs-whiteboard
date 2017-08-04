@@ -78,12 +78,13 @@ public class Whiteboard {
             just(createDefaultJaxRsServiceRegistrator(bus)).flatMap(defaultServiceRegistrator ->
             registerJaxRSServiceRuntime(bundleContext, bus, Maps.from(configuration)).flatMap(registratorRegistration ->
             just(new ServiceRegistrationChangeCounter(registratorRegistration)).flatMap(counter ->
+            just(registratorRegistration.getReference()).flatMap(reference ->
                 all(
-                    countChanges(whiteboardApplications(bus), counter),
-                    countChanges(whiteBoardApplicationSingletons(), counter),
-                    countChanges(whiteboardExtensions(defaultServiceRegistrator), counter),
-                    countChanges(whiteboardSingletons(defaultServiceRegistrator), counter)
-            ))))));
+                    countChanges(whiteboardApplications(reference, bus), counter),
+                    countChanges(whiteBoardApplicationSingletons(reference), counter),
+                    countChanges(whiteboardExtensions(reference, defaultServiceRegistrator), counter),
+                    countChanges(whiteboardSingletons(reference, defaultServiceRegistrator), counter)
+            )))))));
     }
 
     private static OSGi<Collection<String>> bestEffortCalculationOfEnpoints(Filter filter) {
@@ -215,9 +216,10 @@ public class Whiteboard {
         return program;
     }
 
-    private static OSGi<?> whiteBoardApplicationSingletons() {
+    private static OSGi<?> whiteBoardApplicationSingletons(ServiceReference<?> jaxRsRuntimeServiceReference) {
         return
             serviceReferences(format("(%s=*)", JAX_RS_APPLICATION_SELECT)).
+                filter(new TargetFilter<>(jaxRsRuntimeServiceReference)).
                 flatMap(ref ->
             just(ref.getProperty(JAX_RS_APPLICATION_SELECT).toString()).
                 flatMap(applicationFilter ->
@@ -227,10 +229,13 @@ public class Whiteboard {
         )));
     }
 
-    private static OSGi<?> whiteboardApplications(ExtensionManagerBus bus) {
+    private static OSGi<?> whiteboardApplications(
+        ServiceReference<?> jaxRsRuntimeServiceReference, ExtensionManagerBus bus) {
+
         return
             repeatInOrder(
-                serviceReferences(Application.class, getApplicationFilter())).
+                serviceReferences(Application.class, getApplicationFilter()).
+                    filter(new TargetFilter<>(jaxRsRuntimeServiceReference))).
                 flatMap(ref ->
             just(CXFJaxRsServiceRegistrator.getProperties(ref, JAX_RS_APPLICATION_BASE)).
                 flatMap(properties ->
@@ -240,10 +245,12 @@ public class Whiteboard {
     }
 
     private static OSGi<?> whiteboardExtensions(
-        CXFJaxRsServiceRegistrator defaultServiceRegistrator) {
+        ServiceReference<?> jaxRsRuntimeServiceReference, CXFJaxRsServiceRegistrator defaultServiceRegistrator) {
 
         return
-            serviceReferences(getExtensionFilter()).flatMap(ref ->
+            serviceReferences(getExtensionFilter()).
+                filter(new TargetFilter<>(jaxRsRuntimeServiceReference)).
+                flatMap(ref ->
             waitForExtensionDependencies(ref,
                 safeRegisterExtension(ref, defaultServiceRegistrator)
             )
@@ -251,10 +258,11 @@ public class Whiteboard {
     }
 
     private static OSGi<?> whiteboardSingletons(
-        CXFJaxRsServiceRegistrator defaultServiceRegistrator) {
+        ServiceReference<?> jaxRsRuntimeServiceReference, CXFJaxRsServiceRegistrator defaultServiceRegistrator) {
 
         return
             serviceReferences(getSingletonsFilter()).
+                filter(new TargetFilter<>(jaxRsRuntimeServiceReference)).
                 flatMap(serviceReference ->
             waitForExtensionDependencies(serviceReference,
                 safeRegisterEndpoint(
