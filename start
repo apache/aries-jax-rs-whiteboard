@@ -1,5 +1,3 @@
 #!/bin/bash
 
-# This is a https://wedeploy.com start script.
-
 java -jar jax-rs.example/target/example.jar
