@@ -32,7 +32,7 @@ public class TargetFilter<T> implements Predicate<ServiceReference<T>>  {
         }
         catch (InvalidSyntaxException ise) {
             if (_log.isErrorEnabled()) {
-                _log.error("Invalid '{}' syntax in {}", JAX_RS_WHITEBOARD_TARGET, ref, ise);
+                _log.error("Invalid '{}' filter syntax in {}", JAX_RS_WHITEBOARD_TARGET, ref);
             }
 
             return false;

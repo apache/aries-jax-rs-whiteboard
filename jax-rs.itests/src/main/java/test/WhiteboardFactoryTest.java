@@ -20,6 +20,7 @@ package test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.osgi.service.http.whiteboard.HttpWhiteboardConstants.HTTP_WHITEBOARD_SERVLET_PATTERN;
 import static org.osgi.service.jaxrs.whiteboard.JaxRSWhiteboardConstants.JAX_RS_APPLICATION_BASE;
 import static org.osgi.service.jaxrs.whiteboard.JaxRSWhiteboardConstants.JAX_RS_RESOURCE;
 
@@ -29,6 +30,7 @@ import java.util.Hashtable;
 
 import org.junit.Test;
 import org.osgi.framework.BundleContext;
+import org.osgi.framework.Constants;
 import org.osgi.framework.FrameworkUtil;
 import org.osgi.framework.ServiceReference;
 import org.osgi.framework.ServiceRegistration;
@@ -97,10 +99,22 @@ public class WhiteboardFactoryTest {
             Configuration configuration = admin.createFactoryConfiguration(
                 "org.apache.aries.jax.rs.whiteboard", "?");
 
-            configuration.update(new Hashtable<>());
+            Dictionary<String, Object> properties = new Hashtable<>();
+
+            properties.put(
+                HTTP_WHITEBOARD_SERVLET_PATTERN,
+                "/new-whiteboard");
+            properties.put(Constants.SERVICE_RANKING, 1000);
+
+            configuration.update(properties);
 
             do {
                 Thread.sleep(50);
+
+                if (!"/new-whiteboard".equals(
+                        runtimeTracker.getServiceReference().getProperty(HTTP_WHITEBOARD_SERVLET_PATTERN))) {
+                    trackingCount = runtimeTracker.getTrackingCount();
+                }
             }
             while (runtimeTracker.getTrackingCount() <= trackingCount);
 
