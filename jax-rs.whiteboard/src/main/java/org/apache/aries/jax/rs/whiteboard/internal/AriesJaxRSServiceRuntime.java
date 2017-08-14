@@ -17,35 +17,15 @@
 
 package org.apache.aries.jax.rs.whiteboard.internal;
 
-import java.io.IOException;
-
-import javax.servlet.ServletConfig;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-import org.apache.cxf.Bus;
-import org.apache.cxf.transport.servlet.CXFNonSpringServlet;
 import org.osgi.service.jaxrs.runtime.JaxRSServiceRuntime;
 import org.osgi.service.jaxrs.runtime.dto.RequestInfoDTO;
 import org.osgi.service.jaxrs.runtime.dto.RuntimeDTO;
 
-public class AriesJaxRSServiceRuntime
-    extends HttpServlet implements JaxRSServiceRuntime {
+public class AriesJaxRSServiceRuntime implements JaxRSServiceRuntime {
 
     private static final long serialVersionUID = 1L;
 
-    private final Bus _bus;
-    private final CXFNonSpringServlet _cxfNonSpringServlet;
-
-    public AriesJaxRSServiceRuntime(Bus bus) {
-        _bus = bus;
-
-        CXFNonSpringServlet cxfNonSpringServlet = new CXFNonSpringServlet();
-        cxfNonSpringServlet.setBus(_bus);
-
-        _cxfNonSpringServlet = cxfNonSpringServlet;
+    public AriesJaxRSServiceRuntime() {
     }
 
     @Override
@@ -56,19 +36,6 @@ public class AriesJaxRSServiceRuntime
     @Override
     public RuntimeDTO getRuntimeDTO() {
         return null;
-    }
-
-    @Override
-    public void init(ServletConfig config) throws ServletException {
-        _cxfNonSpringServlet.init(config);
-    }
-
-    @Override
-    protected void service(
-            HttpServletRequest request, HttpServletResponse response)
-        throws ServletException, IOException {
-
-        _cxfNonSpringServlet.service(request, response);
     }
 
 }
