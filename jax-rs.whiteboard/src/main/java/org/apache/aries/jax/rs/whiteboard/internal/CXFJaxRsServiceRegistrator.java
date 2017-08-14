@@ -17,13 +17,10 @@
 
 package org.apache.aries.jax.rs.whiteboard.internal;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import javax.ws.rs.core.Application;
 
@@ -38,32 +35,22 @@ import org.apache.cxf.jaxrs.model.OperationResourceInfo;
 import org.apache.cxf.jaxrs.provider.json.JSONProvider;
 import org.apache.cxf.jaxrs.utils.ResourceUtils;
 import org.apache.cxf.message.Message;
-import org.apache.cxf.service.model.EndpointInfo;
-import org.apache.cxf.transport.Destination;
-import org.apache.cxf.transport.DestinationFactory;
-import org.apache.cxf.transport.DestinationFactoryManager;
 import org.osgi.framework.ServiceReference;
-
-import static org.apache.aries.jax.rs.whiteboard.internal.Utils.safeToString;
 
 public class CXFJaxRsServiceRegistrator {
 
     private volatile boolean _closed = false;
     private final Application _application;
     private final Bus _bus;
-    private final Map<String, Object> _properties;
     private final Collection<Object> _providers = new ArrayList<>();
     private Server _server;
     private final Collection<ResourceProvider> _services = new ArrayList<>();
 
     private static final String CXF_ENDPOINT_ADDRESS = "CXF_ENDPOINT_ADDRESS";
 
-    public CXFJaxRsServiceRegistrator(
-        Bus bus, Application application, Map<String, Object> properties) {
-
+    public CXFJaxRsServiceRegistrator(Bus bus, Application application) {
         _bus = bus;
         _application = application;
-        _properties = properties;
 
         rewire();
     }
@@ -189,17 +176,6 @@ public class CXFJaxRsServiceRegistrator {
             _application, JAXRSServerFactoryBean.class);
 
         jaxRsServerFactoryBean.setBus(_bus);
-        jaxRsServerFactoryBean.setProperties(_properties);
-
-        String address = safeToString(_properties.get(CXF_ENDPOINT_ADDRESS));
-
-        DestinationFactoryManager dfm = _bus.getExtension(
-            DestinationFactoryManager.class);
-        DestinationFactory destinationFactory = dfm.getDestinationFactoryForUri(
-            address);
-
-        jaxRsServerFactoryBean.setDestinationFactory(
-            new CXF7409DestinationFactory(destinationFactory));
 
         JSONProvider<Object> jsonProvider = new JSONProvider<>();
 
@@ -218,8 +194,6 @@ public class CXFJaxRsServiceRegistrator {
             jaxRsServerFactoryBean.setResourceProvider(resourceProvider);
         }
 
-        jaxRsServerFactoryBean.setAddress(address);
-
         jaxRsServerFactoryBean.setResourceComparator(
             new ComparableResourceComparator());
 
@@ -236,49 +210,6 @@ public class CXFJaxRsServiceRegistrator {
         bean.setStart(false);
         Server server = bean.create();
         return endpointType.cast(server);
-    }
-
-    /**
-     * This class exists as a workaround for
-     * https://issues.apache.org/jira/browse/CXF-7409
-     */
-    private static class CXF7409DestinationFactory
-        implements DestinationFactory {
-
-        private final DestinationFactory _destinationFactory;
-
-        public CXF7409DestinationFactory(
-            DestinationFactory destinationFactory) {
-
-            _destinationFactory = destinationFactory;
-        }
-
-        @Override
-        public Destination getDestination(
-            EndpointInfo endpointInfo, Bus bus) throws IOException {
-
-            Destination destination = _destinationFactory.getDestination(
-                endpointInfo, bus);
-
-            if (destination.getMessageObserver() != null) {
-                throw new RuntimeException(
-                    "There is already an application running at " +
-                        endpointInfo.getAddress());
-            }
-
-            return destination;
-        }
-
-        @Override
-        public Set<String> getUriPrefixes() {
-            return _destinationFactory.getUriPrefixes();
-        }
-
-        @Override
-        public List<String> getTransportIds() {
-            return _destinationFactory.getTransportIds();
-        }
-
     }
 
 }
