@@ -20,6 +20,7 @@ package org.apache.aries.jax.rs.whiteboard.internal;
 import org.apache.aries.osgi.functional.OSGi;
 import org.apache.cxf.Bus;
 import org.apache.cxf.bus.extension.ExtensionManagerBus;
+import org.apache.cxf.transport.servlet.CXFNonSpringServlet;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.Constants;
 import org.osgi.framework.Filter;
@@ -74,17 +75,16 @@ public class Whiteboard {
     public static OSGi<Void> createWhiteboard(Dictionary<String, ?> configuration) {
         return
             bundleContext().flatMap(bundleContext ->
-            just(createBus(bundleContext, configuration)).flatMap(bus ->
-            just(createDefaultJaxRsServiceRegistrator(bus)).flatMap(defaultServiceRegistrator ->
-            registerJaxRSServiceRuntime(bundleContext, bus, Maps.from(configuration)).flatMap(registratorRegistration ->
+            registerJaxRSServiceRuntime(bundleContext, Maps.from(configuration)).flatMap(registratorRegistration ->
+            createDefaultJaxRsServiceRegistrator(Maps.from(configuration)).flatMap(defaultServiceRegistrator ->
             just(new ServiceRegistrationChangeCounter(registratorRegistration)).flatMap(counter ->
             just(registratorRegistration.getReference()).flatMap(reference ->
                 all(
-                    countChanges(whiteboardApplications(reference, bus), counter),
+                    countChanges(whiteboardApplications(reference, Maps.from(configuration)), counter),
                     countChanges(whiteBoardApplicationSingletons(reference), counter),
                     countChanges(whiteboardExtensions(reference, defaultServiceRegistrator), counter),
                     countChanges(whiteboardSingletons(reference, defaultServiceRegistrator), counter)
-            )))))));
+            ))))));
     }
 
     private static OSGi<Collection<String>> bestEffortCalculationOfEnpoints(Filter filter) {
@@ -117,11 +117,11 @@ public class Whiteboard {
         return new String[]{propertyValue.toString()};
     }
 
-    private static ExtensionManagerBus createBus(BundleContext bundleContext, Dictionary<String, ?> configuration) {
+    private static ExtensionManagerBus createBus(BundleContext bundleContext, Map<String, ?> configuration) {
         BundleWiring wiring = bundleContext.getBundle().adapt(BundleWiring.class);
 
         @SuppressWarnings("unchecked")
-        Map<String, Object> properties = Maps.from((Dictionary<String, Object>)configuration);
+        Map<String, Object> properties = (Map<String, Object>)configuration;
 
         properties.put("org.apache.cxf.bus.id", configuration.get(Constants.SERVICE_PID));
 
@@ -132,15 +132,19 @@ public class Whiteboard {
         return bus;
     }
 
-    private static CXFJaxRsServiceRegistrator createDefaultJaxRsServiceRegistrator(
-        ExtensionManagerBus bus) {
+    private static OSGi<CXFJaxRsServiceRegistrator> createDefaultJaxRsServiceRegistrator(
+        Map<String, ?> configuration) {
 
-        Map<String, Object> properties = new HashMap<>();
-        properties.put(JAX_RS_APPLICATION_BASE, "/");
+        Map<String, Object> properties = new HashMap<>(configuration);
         properties.put(JAX_RS_NAME, ".default");
 
-        return new CXFJaxRsServiceRegistrator(
-            bus, new DefaultApplication(), properties);
+        return
+            bundleContext().flatMap(bundleContext ->
+            just(createBus(bundleContext, configuration)).flatMap(bus ->
+            registerCXFServletService(bus, "", configuration).then(
+            just(
+                new CXFJaxRsServiceRegistrator(bus, new DefaultApplication()))
+            )));
     }
 
     private static String getApplicationFilter() {
@@ -157,21 +161,12 @@ public class Whiteboard {
 
     private static OSGi<ServiceRegistration<?>>
         registerJaxRSServiceRuntime(
-            BundleContext bundleContext, Bus bus, Map<String, ?> configuration) {
+            BundleContext bundleContext, Map<String, ?> configuration) {
 
         Map<String, Object> properties = new HashMap<>(configuration);
 
         properties.putIfAbsent(
             HTTP_WHITEBOARD_TARGET, "(osgi.http.endpoint=*)");
-
-        properties.putIfAbsent(
-            HTTP_WHITEBOARD_CONTEXT_SELECT,
-            format(
-                "(%s=%s)",
-                HTTP_WHITEBOARD_CONTEXT_NAME,
-                HTTP_WHITEBOARD_DEFAULT_CONTEXT_NAME));
-
-        properties.putIfAbsent(HTTP_WHITEBOARD_SERVLET_PATTERN, "/*");
 
         properties.put(Constants.SERVICE_RANKING, -1);
 
@@ -195,8 +190,8 @@ public class Whiteboard {
                 properties.put(JAX_RS_SERVICE_ENDPOINT, endpoints);
 
                 return register(
-                    new String[]{JaxRSServiceRuntime.class.getName(), Servlet.class.getName()},
-                    new AriesJaxRSServiceRuntime(bus), properties);
+                    new String[]{JaxRSServiceRuntime.class.getName()},
+                    new AriesJaxRSServiceRuntime(), properties);
             }
         );
     }
@@ -230,18 +225,27 @@ public class Whiteboard {
     }
 
     private static OSGi<?> whiteboardApplications(
-        ServiceReference<?> jaxRsRuntimeServiceReference, ExtensionManagerBus bus) {
+        ServiceReference<?> jaxRsRuntimeServiceReference,
+        Map<String, ?> configuration) {
 
         return
+            bundleContext().flatMap(bundleContext ->
             repeatInOrder(
                 serviceReferences(Application.class, getApplicationFilter()).
                     filter(new TargetFilter<>(jaxRsRuntimeServiceReference))).
                 flatMap(ref ->
+            just(createBus(bundleContext, configuration)).
+                flatMap(bus ->
             just(CXFJaxRsServiceRegistrator.getProperties(ref, JAX_RS_APPLICATION_BASE)).
                 flatMap(properties ->
             service(ref).flatMap(application ->
-            cxfRegistrator(bus, application, properties)
-        )));
+                all(
+                    cxfRegistrator(bus, application, properties),
+                    registerCXFServletService(
+                        bus, ref.getProperty(JAX_RS_APPLICATION_BASE).toString(),
+                        properties)
+                )
+        )))));
     }
 
     private static OSGi<?> whiteboardExtensions(
@@ -281,6 +285,34 @@ public class Whiteboard {
 
         public void inc();
 
+    }
+
+    private static OSGi<ServiceRegistration<Servlet>> registerCXFServletService(
+        Bus bus, String address, Map<String, ?> configuration) {
+
+        Map<String, Object> properties = new HashMap<>(configuration);
+
+        properties.putIfAbsent(
+            HTTP_WHITEBOARD_TARGET, "(osgi.http.endpoint=*)");
+
+        properties.putIfAbsent(
+            HTTP_WHITEBOARD_CONTEXT_SELECT,
+            format(
+                "(%s=%s)",
+                HTTP_WHITEBOARD_CONTEXT_NAME,
+                HTTP_WHITEBOARD_DEFAULT_CONTEXT_NAME));
+
+        properties.putIfAbsent(HTTP_WHITEBOARD_SERVLET_PATTERN, address + "/*");
+
+        CXFNonSpringServlet cxfNonSpringServlet = createCXFServlet(bus);
+
+        return register(Servlet.class, cxfNonSpringServlet, properties);
+    }
+
+    private static CXFNonSpringServlet createCXFServlet(Bus bus) {
+        CXFNonSpringServlet cxfNonSpringServlet = new CXFNonSpringServlet();
+        cxfNonSpringServlet.setBus(bus);
+        return cxfNonSpringServlet;
     }
 
     private static class ServiceRegistrationChangeCounter

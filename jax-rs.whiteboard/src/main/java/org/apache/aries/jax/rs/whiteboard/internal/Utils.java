@@ -66,7 +66,7 @@ public class Utils {
 
         try {
             CXFJaxRsServiceRegistrator registrator =
-                new CXFJaxRsServiceRegistrator(bus, application, props);
+                new CXFJaxRsServiceRegistrator(bus, application);
 
             return
                 onClose(registrator::close).then(
@@ -77,7 +77,7 @@ public class Utils {
             return register(
                 FailedApplicationDTO.class, new FailedApplicationDTO(), props);
         }
-    };
+    }
 
     public static OSGi<?> safeRegisterGeneric(
         ServiceReference<?> serviceReference,

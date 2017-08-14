@@ -26,6 +26,7 @@ import javax.ws.rs.ext.RuntimeDelegate;
 import org.apache.aries.jax.rs.whiteboard.internal.ClientBuilderFactory;
 import org.apache.aries.jax.rs.whiteboard.internal.DefaultWeb;
 import org.apache.aries.jax.rs.whiteboard.internal.Maps;
+import org.apache.aries.jax.rs.whiteboard.internal.Whiteboard;
 import org.apache.aries.osgi.functional.OSGi;
 import org.apache.aries.osgi.functional.OSGiResult;
 import org.apache.cxf.jaxrs.impl.RuntimeDelegateImpl;
@@ -59,10 +60,8 @@ public class CXFJaxRsBundleActivator implements BundleActivator {
         }
 
         OSGi<?> whiteboards =
-            configurations("org.apache.aries.jax.rs.whiteboard").flatMap(configuration ->
-            createWhiteboard(configuration).then(
-            registerDefaultWeb())
-        );
+            configurations("org.apache.aries.jax.rs.whiteboard").
+                flatMap(Whiteboard::createWhiteboard);
 
         _whiteboardsResult = whiteboards.run(bundleContext);
 
@@ -77,9 +76,8 @@ public class CXFJaxRsBundleActivator implements BundleActivator {
 
         _defaultOSGiResult =
             register(ClientBuilder.class, new ClientBuilderFactory(), null).then(
-            createWhiteboard(defaultConfiguration)).then(
-            registerDefaultWeb()
-        ).run(bundleContext);
+            createWhiteboard(defaultConfiguration))
+        .run(bundleContext);
     }
 
     @Override
