@@ -17,7 +17,6 @@
 
 package test;
 
-import static org.junit.Assert.assertNotNull;
 import static org.osgi.service.jaxrs.whiteboard.JaxRSWhiteboardConstants.*;
 
 import java.util.Dictionary;
@@ -29,8 +28,6 @@ import org.osgi.framework.PrototypeServiceFactory;
 import org.osgi.framework.ServiceFactory;
 import org.osgi.framework.ServiceRegistration;
 
-import org.osgi.service.jaxrs.runtime.dto.FailedApplicationDTO;
-import org.osgi.util.tracker.ServiceTracker;
 import test.types.TestAddon;
 import test.types.TestAddonConflict;
 import test.types.TestAddonConflict2;
@@ -85,12 +82,6 @@ public class JaxrsTest extends TestHelper {
             target("http://localhost:8080").
             path("test-application");
 
-        @SuppressWarnings("rawtypes")
-        ServiceTracker serviceTracker = new ServiceTracker<>(
-            bundleContext, FailedApplicationDTO.class, null);
-
-        serviceTracker.open();
-
         ServiceRegistration<?> serviceRegistration = null;
         ServiceRegistration<?> serviceRegistration2;
 
@@ -103,8 +94,6 @@ public class JaxrsTest extends TestHelper {
                 "Hello application",
                 response.readEntity(String.class));
 
-            assertNull(serviceTracker.getService());
-
             serviceRegistration2 = registerApplication(
                 new TestApplicationConflict(), "service.ranking", -1);
 
@@ -113,15 +102,11 @@ public class JaxrsTest extends TestHelper {
             assertEquals(
                 "Hello application", response.readEntity(String.class));
 
-            assertNotNull(serviceTracker.getService());
-
             assertEquals(
                 Response.Status.NOT_FOUND.getStatusCode(),
                 webTarget.path("conflict").request().get().getStatus());
 
             serviceRegistration2.unregister();
-
-            assertNull(serviceTracker.getService());
 
             response = webTarget.request().get();
 
@@ -132,8 +117,6 @@ public class JaxrsTest extends TestHelper {
             if (serviceRegistration != null) {
                 serviceRegistration.unregister();
             }
-
-            serviceTracker.close();
         }
     }
 
@@ -145,11 +128,6 @@ public class JaxrsTest extends TestHelper {
             target("http://localhost:8080").
             path("test-application");
 
-        @SuppressWarnings("rawtypes")
-        ServiceTracker serviceTracker = new ServiceTracker<>(
-            bundleContext, FailedApplicationDTO.class, null);
-
-        serviceTracker.open();
 
         ServiceRegistration<?> serviceRegistration = null;
         ServiceRegistration<?> serviceRegistration2;
@@ -163,8 +141,6 @@ public class JaxrsTest extends TestHelper {
                 "Hello application",
                 response.readEntity(String.class));
 
-            assertNull(serviceTracker.getService());
-
             serviceRegistration2 = registerApplication(
                 new TestApplicationConflict(), "service.ranking", 1);
 
@@ -174,15 +150,11 @@ public class JaxrsTest extends TestHelper {
                 "Hello application conflict",
                 response.readEntity(String.class));
 
-            assertNotNull(serviceTracker.getService());
-
             assertEquals(
                 "conflict",
                 webTarget.path("conflict").request().get(String.class));
 
             serviceRegistration2.unregister();
-
-            assertNull(serviceTracker.getService());
 
             response = webTarget.request().get();
 
@@ -193,8 +165,6 @@ public class JaxrsTest extends TestHelper {
             if (serviceRegistration != null) {
                 serviceRegistration.unregister();
             }
-
-            serviceTracker.close();
         }
     }
 
