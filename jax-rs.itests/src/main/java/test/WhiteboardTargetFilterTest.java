@@ -46,8 +46,8 @@ public class WhiteboardTargetFilterTest extends TestHelper {
             path("extended");
 
         assertEquals(
-            "This should return nothing", "",
-            webTarget.request().get().readEntity(String.class));
+            "This should return nothing", 404,
+            webTarget.request().get().getStatus());
 
         Dictionary<String, Object> properties = new Hashtable<>();
         properties.put(JaxRSWhiteboardConstants.JAX_RS_RESOURCE, "true");
@@ -58,8 +58,8 @@ public class WhiteboardTargetFilterTest extends TestHelper {
 
         try {
             assertEquals(
-                "This should return nothing", "",
-                webTarget.request().get().readEntity(String.class));
+                "This should return nothing", 404,
+                webTarget.request().get().getStatus());
         }
         finally {
             serviceRegistration.unregister();
@@ -75,8 +75,8 @@ public class WhiteboardTargetFilterTest extends TestHelper {
             path("extended");
 
         assertEquals(
-            "This should return nothing", "",
-            webTarget.request().get().readEntity(String.class));
+            "This should return nothing", 404,
+            webTarget.request().get().getStatus());
 
         Dictionary<String, Object> properties = new Hashtable<>();
         properties.put(JaxRSWhiteboardConstants.JAX_RS_RESOURCE, "true");
@@ -87,8 +87,8 @@ public class WhiteboardTargetFilterTest extends TestHelper {
 
         try {
             assertEquals(
-                "This should return nothing", "",
-                webTarget.request().get().readEntity(String.class));
+                "This should return nothing", 404,
+                webTarget.request().get().getStatus());
         }
         finally {
             serviceRegistration.unregister();
@@ -104,8 +104,8 @@ public class WhiteboardTargetFilterTest extends TestHelper {
             path("extended");
 
         assertEquals(
-            "This should return nothing", "",
-            webTarget.request().get().readEntity(String.class));
+            "This should return nothing", 404,
+            webTarget.request().get().getStatus());
 
         Dictionary<String, Object> properties = new Hashtable<>();
         properties.put(JaxRSWhiteboardConstants.JAX_RS_RESOURCE, "true");
