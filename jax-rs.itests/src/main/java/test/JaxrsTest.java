@@ -313,8 +313,8 @@ public class JaxrsTest extends TestHelper {
                 response.readEntity(String.class));
 
             assertEquals(
-                response.getHeaders().getFirst("Filtered"),
-                "true");
+                "true",
+                response.getHeaders().getFirst("Filtered"));
         }
         finally {
             if (applicationRegistration != null) {
