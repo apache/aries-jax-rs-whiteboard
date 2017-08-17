@@ -17,6 +17,7 @@
 
 package org.apache.aries.jax.rs.whiteboard.internal;
 
+import org.apache.aries.jax.rs.whiteboard.internal.AriesJaxRSServiceRuntime.MutableTuple;
 import org.apache.aries.osgi.functional.OSGi;
 import org.apache.cxf.Bus;
 import org.apache.cxf.bus.extension.ExtensionManagerBus;
@@ -43,6 +44,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import static java.lang.String.format;
 import static org.apache.aries.jax.rs.whiteboard.internal.Utils.deployRegistrator;
+import static org.apache.aries.jax.rs.whiteboard.internal.Utils.onlyGettables;
 import static org.apache.aries.jax.rs.whiteboard.internal.Utils.safeRegisterEndpoint;
 import static org.apache.aries.jax.rs.whiteboard.internal.Utils.safeRegisterExtension;
 import static org.apache.aries.jax.rs.whiteboard.internal.Utils.safeRegisterGeneric;
@@ -229,8 +231,12 @@ public class Whiteboard {
         AriesJaxRSServiceRuntime runtime,
         Map<String, ?> configuration) {
 
-        OSGi<ServiceReference<Application>> applicationsForWhiteboard =
-            getApplicationsForWhiteboard(jaxRsRuntimeServiceReference);
+        OSGi<MutableTuple<Application>> applicationsForWhiteboard =
+            getApplicationsForWhiteboard(jaxRsRuntimeServiceReference).
+                flatMap(
+                    sr -> onlyGettables(
+                        sr, runtime::addNotGettable, runtime::removeNotGettable)
+                );
 
         return
             bundleContext().flatMap(
@@ -242,7 +248,7 @@ public class Whiteboard {
 
     private static OSGi<Void> deployApplication(
         Map<String, ?> configuration, BundleContext bundleContext,
-        AriesJaxRSServiceRuntime.MutableTuple<Application> tuple) {
+        MutableTuple<Application> tuple) {
 
         ExtensionManagerBus bus = createBus(bundleContext, configuration);
 

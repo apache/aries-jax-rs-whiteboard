@@ -17,6 +17,7 @@
 
 package org.apache.aries.jax.rs.whiteboard.internal;
 
+import org.apache.aries.jax.rs.whiteboard.internal.AriesJaxRSServiceRuntime.MutableTuple;
 import org.apache.aries.osgi.functional.Event;
 import org.apache.aries.osgi.functional.OSGi;
 import org.apache.cxf.Bus;
@@ -36,6 +37,7 @@ import java.util.function.Consumer;
 
 import static org.apache.aries.osgi.functional.OSGi.bundleContext;
 import static org.apache.aries.osgi.functional.OSGi.just;
+import static org.apache.aries.osgi.functional.OSGi.nothing;
 import static org.apache.aries.osgi.functional.OSGi.onClose;
 import static org.apache.aries.osgi.functional.OSGi.register;
 
@@ -124,6 +126,39 @@ public class Utils {
         OSGi<T> program) {
 
         return program.route(new RepeatInOrderRouter<>());
+    }
+
+    public static <T> OSGi<MutableTuple<T>> onlyGettables(
+        ServiceReference<T> serviceReference,
+        Consumer<ServiceReference<T>> whenAddedNotGettable,
+        Consumer<ServiceReference<T>> whenLeavingNotGettable) {
+
+        return bundleContext().flatMap(
+            bundleContext -> {
+                T service = null;
+                try {
+                    service = bundleContext.getService(serviceReference);
+                }
+                catch (Exception e){
+                }
+                if (service == null) {
+                    whenAddedNotGettable.accept(serviceReference);
+
+                    return
+                        onClose(
+                            () -> whenLeavingNotGettable.accept(serviceReference)
+                        ).then(
+                            nothing()
+                        );
+                }
+                return
+                    onClose(
+                        () -> bundleContext.ungetService(serviceReference)
+                    ).then(
+                        just(new MutableTuple<>(serviceReference, service)))
+                    ;
+            }
+        );
     }
 
     public static <T> OSGi<ResourceProvider>

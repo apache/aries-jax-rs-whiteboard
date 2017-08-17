@@ -30,7 +30,6 @@ import org.osgi.service.jaxrs.runtime.dto.RuntimeDTO;
 import org.osgi.service.jaxrs.whiteboard.JaxRSWhiteboardConstants;
 
 import javax.ws.rs.core.Application;
-import java.util.Collection;
 import java.util.Comparator;
 import java.util.Objects;
 import java.util.TreeSet;
@@ -47,31 +46,38 @@ public class AriesJaxRSServiceRuntime implements JaxRSServiceRuntime {
     private ConcurrentHashMap<String, TreeSet<Event<MutableTuple<Application>>>>
         _applications = new ConcurrentHashMap<>();
 
-    private Collection<Event<MutableTuple<Application>>>
+    private TreeSet<ServiceReference<Application>>
         _ungettableApplications;
+
     private Comparator<Event<MutableTuple<Application>>>
         _applicationComparator;
-    private BundleContext _bundleContext;
 
     public AriesJaxRSServiceRuntime(BundleContext bundleContext) {
-        _bundleContext = bundleContext;
-
         _applicationComparator = Comparator.comparing(
             Event::getContent);
 
         _applicationComparator = _applicationComparator.reversed();
 
-        _ungettableApplications = new TreeSet<>(_applicationComparator);
+        _ungettableApplications = new TreeSet<>(Comparator.reverseOrder());
+    }
+
+    public boolean addNotGettable(
+        ServiceReference<Application> serviceReference) {
+
+        return _ungettableApplications.add(serviceReference);
+    }
+
+    public boolean removeNotGettable(
+        ServiceReference<Application> serviceReference) {
+
+        return _ungettableApplications.remove(serviceReference);
     }
 
     public OSGi<MutableTuple<Application>> processApplications(
-        OSGi<ServiceReference<Application>> source) {
+        OSGi<MutableTuple<Application>> source) {
 
         return
-            source.map(
-                sr -> new MutableTuple<>(sr, null)
-            ).
-            route(
+            source.route(
                 router -> {
                 router.onIncoming(event -> {
                     MutableTuple<Application>
@@ -79,16 +85,6 @@ public class AriesJaxRSServiceRuntime implements JaxRSServiceRuntime {
 
                     ServiceReference<Application> serviceReference =
                         tuple.getServiceReference();
-
-                    Application application = checkGettable(serviceReference);
-
-                    if (application == null)  {
-                        _ungettableApplications.add(event);
-
-                        return;
-                    }
-
-                    tuple.setService(application);
 
                     String path = serviceReference.getProperty(JAX_RS_APPLICATION_BASE).
                         toString();
@@ -116,13 +112,6 @@ public class AriesJaxRSServiceRuntime implements JaxRSServiceRuntime {
                     ServiceReference<Application> serviceReference =
                         tuple.getServiceReference();
 
-                    boolean ungettable = _ungettableApplications.removeIf(
-                        t -> t.getContent().equals(tuple));
-
-                    if (ungettable) {
-                        return;
-                    }
-
                     String path = serviceReference.getProperty(JAX_RS_APPLICATION_BASE).
                         toString();
 
@@ -147,28 +136,6 @@ public class AriesJaxRSServiceRuntime implements JaxRSServiceRuntime {
                         t -> t.getContent().equals(tuple));
                 });
             });
-    }
-
-    private Application checkGettable(
-        ServiceReference<Application> serviceReference) {
-
-        Application application = null;
-
-        try {
-            application = _bundleContext.getService(
-                serviceReference);
-        }
-        catch (Exception e) {
-        }
-
-        if (application == null) {
-            return null;
-        }
-        else {
-            _bundleContext.ungetService(serviceReference);
-        }
-
-        return application;
     }
 
     @Override
@@ -213,10 +180,6 @@ public class AriesJaxRSServiceRuntime implements JaxRSServiceRuntime {
     private Stream<FailedApplicationDTO> unreferenciableApplications() {
         return _ungettableApplications.stream().
             map(
-                Event::getContent
-            ).map(
-                MutableTuple::getServiceReference
-            ).map(
                 sr -> buildFailedApplicationDTO(
                     DTOConstants.FAILURE_REASON_SERVICE_NOT_GETTABLE,
                     sr)
