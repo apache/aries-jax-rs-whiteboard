@@ -61,7 +61,7 @@ public class Utils {
         );
     }
 
-    public static OSGi<?> cxfRegistrator(
+    public static OSGi<?> deployRegistrator(
         Bus bus, Application application, Map<String, Object> props) {
 
         try {

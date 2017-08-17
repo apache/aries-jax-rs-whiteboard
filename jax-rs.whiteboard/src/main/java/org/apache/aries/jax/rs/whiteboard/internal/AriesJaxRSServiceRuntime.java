@@ -19,6 +19,7 @@ package org.apache.aries.jax.rs.whiteboard.internal;
 
 import org.apache.aries.osgi.functional.Event;
 import org.apache.aries.osgi.functional.OSGi;
+import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
 import org.osgi.service.jaxrs.runtime.JaxRSServiceRuntime;
 import org.osgi.service.jaxrs.runtime.dto.ApplicationDTO;
@@ -29,6 +30,7 @@ import org.osgi.service.jaxrs.runtime.dto.RuntimeDTO;
 import org.osgi.service.jaxrs.whiteboard.JaxRSWhiteboardConstants;
 
 import javax.ws.rs.core.Application;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.Objects;
 import java.util.TreeSet;
@@ -45,12 +47,20 @@ public class AriesJaxRSServiceRuntime implements JaxRSServiceRuntime {
     private ConcurrentHashMap<String, TreeSet<Event<ServiceReference<Application>>>> _applications =
         new ConcurrentHashMap<>();
 
-    private Comparator<Event<ServiceReference<Application>>> _applicationComparator;
+    private Collection<Event<ServiceReference<Application>>>
+        _ungettableApplications;
 
-    public AriesJaxRSServiceRuntime() {
+    private Comparator<Event<ServiceReference<Application>>> _applicationComparator;
+    private BundleContext _bundleContext;
+
+    public AriesJaxRSServiceRuntime(BundleContext bundleContext) {
+        _bundleContext = bundleContext;
+
         _applicationComparator = Comparator.comparing(Event::getContent);
 
         _applicationComparator = _applicationComparator.reversed();
+
+        _ungettableApplications = new TreeSet<>(_applicationComparator);
     }
 
     public OSGi<ServiceReference<Application>> processApplications(
@@ -60,6 +70,12 @@ public class AriesJaxRSServiceRuntime implements JaxRSServiceRuntime {
             router.onIncoming(event -> {
                 ServiceReference<Application> serviceReference =
                     event.getContent();
+
+                if (!checkGettable(serviceReference))  {
+                    _ungettableApplications.add(event);
+
+                    return;
+                }
 
                 String path = serviceReference.getProperty(JAX_RS_APPLICATION_BASE).
                     toString();
@@ -85,6 +101,13 @@ public class AriesJaxRSServiceRuntime implements JaxRSServiceRuntime {
             router.onLeaving(event -> {
                 ServiceReference<Application> serviceReference =
                     event.getContent();
+
+                boolean ungettable = _ungettableApplications.removeIf(
+                    t -> t.getContent().equals(serviceReference));
+
+                if (ungettable) {
+                    return;
+                }
 
                 String path = serviceReference.getProperty(JAX_RS_APPLICATION_BASE).
                     toString();
@@ -112,6 +135,28 @@ public class AriesJaxRSServiceRuntime implements JaxRSServiceRuntime {
         });
     }
 
+    private boolean checkGettable(
+        ServiceReference<Application> serviceReference) {
+
+        Application application = null;
+
+        try {
+            application = _bundleContext.getService(
+                serviceReference);
+        }
+        catch (Exception e) {
+        }
+
+        if (application == null) {
+            return false;
+        }
+        else {
+            _bundleContext.ungetService(serviceReference);
+        }
+
+        return true;
+    }
+
     @Override
     public RequestInfoDTO calculateRequestInfoDTO(String path) {
         return null;
@@ -121,7 +166,23 @@ public class AriesJaxRSServiceRuntime implements JaxRSServiceRuntime {
     public RuntimeDTO getRuntimeDTO() {
         RuntimeDTO runtimeDTO = new RuntimeDTO();
 
-        runtimeDTO.applicationDTOs = _applications.values().stream().
+        runtimeDTO.applicationDTOs = applicationDTOStream().
+            toArray(
+                ApplicationDTO[]::new
+            );
+
+        runtimeDTO.failedApplicationDTOs = Stream.concat(
+            shadowedApplications(),
+            unreferenciableApplications()
+            ).toArray(
+                FailedApplicationDTO[]::new
+            );
+
+        return runtimeDTO;
+    }
+
+    private Stream<ApplicationDTO> applicationDTOStream() {
+        return _applications.values().stream().
             flatMap(
                 tree -> tree.size() > 0 ? Stream.of(tree.first()) : Stream.empty()
             ).filter(
@@ -130,25 +191,32 @@ public class AriesJaxRSServiceRuntime implements JaxRSServiceRuntime {
                 Event::getContent
             ).map(
                 AriesJaxRSServiceRuntime::buildApplicationDTO
-            ).toArray(
-                ApplicationDTO[]::new
             );
+    }
 
-        runtimeDTO.failedApplicationDTOs = _applications.values().stream().
-            flatMap(
-                tree -> tree.size() > 0 ? tree.tailSet(tree.first(), false).stream() : Stream.empty()
-            ).filter(
-                Objects::nonNull
-            ).map(
+    private Stream<FailedApplicationDTO> unreferenciableApplications() {
+        return _ungettableApplications.stream().
+            map(
                 Event::getContent
             ).map(
                 sr -> buildFailedApplicationDTO(
-                    DTOConstants.FAILURE_REASON_SHADOWED_BY_OTHER_SERVICE, sr)
-            ).toArray(
-                FailedApplicationDTO[]::new
-            );
+                    DTOConstants.FAILURE_REASON_SERVICE_NOT_GETTABLE,
+                    sr)
+        );
+    }
 
-        return runtimeDTO;
+    private Stream<FailedApplicationDTO> shadowedApplications() {
+        return _applications.values().stream().flatMap(
+            tree -> tree.size() > 0 ? tree.tailSet(tree.first(), false).stream() : Stream.empty()
+        ).filter(
+            Objects::nonNull
+        ).map(
+            Event::getContent
+        ).map(
+            sr -> buildFailedApplicationDTO(
+                DTOConstants.FAILURE_REASON_SHADOWED_BY_OTHER_SERVICE,
+                sr)
+        );
     }
 
     private static ApplicationDTO buildApplicationDTO(

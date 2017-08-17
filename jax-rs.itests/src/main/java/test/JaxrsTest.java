@@ -31,6 +31,7 @@ import org.osgi.framework.ServiceFactory;
 import org.osgi.framework.ServiceRegistration;
 
 import org.osgi.service.jaxrs.runtime.JaxRSServiceRuntime;
+import org.osgi.service.jaxrs.runtime.dto.DTOConstants;
 import org.osgi.util.tracker.ServiceTracker;
 import test.types.TestAddon;
 import test.types.TestAddonConflict;
@@ -53,6 +54,13 @@ import static org.junit.Assert.assertNull;
 public class JaxrsTest extends TestHelper {
 
     private ServiceTracker<JaxRSServiceRuntime, JaxRSServiceRuntime> _runtimeTracker;
+
+    @After
+    public void tearDown() {
+        if (_runtimeTracker != null) {
+            _runtimeTracker.close();
+        }
+    }
 
     @Test
     public void testApplication() throws InterruptedException {
@@ -86,15 +94,6 @@ public class JaxrsTest extends TestHelper {
                 serviceRegistration.unregister();
             }
         }
-    }
-
-    private JaxRSServiceRuntime getJaxRSServiceRuntime() throws InterruptedException {
-        _runtimeTracker = new ServiceTracker<>(
-            bundleContext, JaxRSServiceRuntime.class, null);
-
-        _runtimeTracker.open();
-
-        return _runtimeTracker.waitForService(5000);
     }
 
     @Test
@@ -141,108 +140,6 @@ public class JaxrsTest extends TestHelper {
                 serviceRegistration.unregister();
             }
         }
-    }
-
-    @Test
-    public void testApplicationOverride() throws InterruptedException {
-        Client client = createClient();
-
-        WebTarget webTarget = client.
-            target("http://localhost:8080").
-            path("test-application");
-
-        JaxRSServiceRuntime runtime = getJaxRSServiceRuntime();
-
-        ServiceRegistration<?> serviceRegistration = null;
-        ServiceRegistration<?> serviceRegistration2;
-
-        try {
-            assertEquals(0, runtime.getRuntimeDTO().applicationDTOs.length);
-            assertEquals(0, runtime.getRuntimeDTO().failedApplicationDTOs.length);
-
-            serviceRegistration = registerApplication(new TestApplication());
-
-            assertEquals(1, runtime.getRuntimeDTO().applicationDTOs.length);
-            assertEquals(0, runtime.getRuntimeDTO().failedApplicationDTOs.length);
-
-            Response response = webTarget.request().get();
-
-            assertEquals(
-                "Hello application",
-                response.readEntity(String.class));
-
-            serviceRegistration2 = registerApplication(
-                new TestApplicationConflict(), "service.ranking", 1);
-
-            assertEquals(1, runtime.getRuntimeDTO().applicationDTOs.length);
-            assertEquals(1, runtime.getRuntimeDTO().failedApplicationDTOs.length);
-
-            response = webTarget.request().get();
-
-            assertEquals(
-                "Hello application conflict",
-                response.readEntity(String.class));
-
-            assertEquals(
-                "conflict",
-                webTarget.path("conflict").request().get(String.class));
-
-            serviceRegistration2.unregister();
-
-            assertEquals(1, runtime.getRuntimeDTO().applicationDTOs.length);
-            assertEquals(0, runtime.getRuntimeDTO().failedApplicationDTOs.length);
-
-            response = webTarget.request().get();
-
-            assertEquals(
-                "Hello application", response.readEntity(String.class));
-        }
-        finally {
-            if (serviceRegistration != null) {
-                serviceRegistration.unregister();
-            }
-        }
-    }
-
-    @Test
-    public void testApplicationReadd() throws InterruptedException {
-        Client client = createClient();
-
-        WebTarget webTarget = client.
-            target("http://localhost:8080").
-            path("/test-application");
-
-        JaxRSServiceRuntime runtime = getJaxRSServiceRuntime();
-
-        Runnable testCase = () -> {
-            assertEquals(0, runtime.getRuntimeDTO().applicationDTOs.length);
-
-            assertEquals(404, webTarget.request().get().getStatus());
-
-            ServiceRegistration<?> serviceRegistration = null;
-
-            try {
-                serviceRegistration = registerApplication(new TestApplication());
-
-                assertEquals(
-                    "Hello application",
-                    webTarget.
-                        request().
-                        get().
-                        readEntity(String.class));
-
-                assertEquals(1, runtime.getRuntimeDTO().applicationDTOs.length);
-            }
-            finally {
-                if (serviceRegistration != null) {
-                    serviceRegistration.unregister();
-                }
-            }
-        };
-
-        testCase.run();
-
-        testCase.run();
     }
 
     @Test
@@ -333,6 +230,67 @@ public class JaxrsTest extends TestHelper {
     }
 
     @Test
+    public void testApplicationOverride() throws InterruptedException {
+        Client client = createClient();
+
+        WebTarget webTarget = client.
+            target("http://localhost:8080").
+            path("test-application");
+
+        JaxRSServiceRuntime runtime = getJaxRSServiceRuntime();
+
+        ServiceRegistration<?> serviceRegistration = null;
+        ServiceRegistration<?> serviceRegistration2;
+
+        try {
+            assertEquals(0, runtime.getRuntimeDTO().applicationDTOs.length);
+            assertEquals(0, runtime.getRuntimeDTO().failedApplicationDTOs.length);
+
+            serviceRegistration = registerApplication(new TestApplication());
+
+            assertEquals(1, runtime.getRuntimeDTO().applicationDTOs.length);
+            assertEquals(0, runtime.getRuntimeDTO().failedApplicationDTOs.length);
+
+            Response response = webTarget.request().get();
+
+            assertEquals(
+                "Hello application",
+                response.readEntity(String.class));
+
+            serviceRegistration2 = registerApplication(
+                new TestApplicationConflict(), "service.ranking", 1);
+
+            assertEquals(1, runtime.getRuntimeDTO().applicationDTOs.length);
+            assertEquals(1, runtime.getRuntimeDTO().failedApplicationDTOs.length);
+
+            response = webTarget.request().get();
+
+            assertEquals(
+                "Hello application conflict",
+                response.readEntity(String.class));
+
+            assertEquals(
+                "conflict",
+                webTarget.path("conflict").request().get(String.class));
+
+            serviceRegistration2.unregister();
+
+            assertEquals(1, runtime.getRuntimeDTO().applicationDTOs.length);
+            assertEquals(0, runtime.getRuntimeDTO().failedApplicationDTOs.length);
+
+            response = webTarget.request().get();
+
+            assertEquals(
+                "Hello application", response.readEntity(String.class));
+        }
+        finally {
+            if (serviceRegistration != null) {
+                serviceRegistration.unregister();
+            }
+        }
+    }
+
+    @Test
     public void testApplicationProviderExtension() {
         Client client = createClient();
 
@@ -388,7 +346,7 @@ public class JaxrsTest extends TestHelper {
                 "Hello application",
                 webTarget.request().get().readEntity(String.class));
 
-            Runnable testCase = () ->  {
+            Runnable testCase = () -> {
                 Response response = webTarget.request().get();
 
                 assertNull(response.getHeaders().getFirst("Filtered"));
@@ -423,6 +381,47 @@ public class JaxrsTest extends TestHelper {
                 applicationRegistration.unregister();
             }
         }
+    }
+
+    @Test
+    public void testApplicationReadd() throws InterruptedException {
+        Client client = createClient();
+
+        WebTarget webTarget = client.
+            target("http://localhost:8080").
+            path("/test-application");
+
+        JaxRSServiceRuntime runtime = getJaxRSServiceRuntime();
+
+        Runnable testCase = () -> {
+            assertEquals(0, runtime.getRuntimeDTO().applicationDTOs.length);
+
+            assertEquals(404, webTarget.request().get().getStatus());
+
+            ServiceRegistration<?> serviceRegistration = null;
+
+            try {
+                serviceRegistration = registerApplication(new TestApplication());
+
+                assertEquals(
+                    "Hello application",
+                    webTarget.
+                        request().
+                        get().
+                        readEntity(String.class));
+
+                assertEquals(1, runtime.getRuntimeDTO().applicationDTOs.length);
+            }
+            finally {
+                if (serviceRegistration != null) {
+                    serviceRegistration.unregister();
+                }
+            }
+        };
+
+        testCase.run();
+
+        testCase.run();
     }
 
     @Test
@@ -475,6 +474,131 @@ public class JaxrsTest extends TestHelper {
     }
 
     @Test
+    public void testGettableAndNotGettableApplication() throws InterruptedException {
+        Client client = createClient();
+
+        WebTarget webTarget = client.
+            target("http://localhost:8080").
+            path("test-application");
+
+        JaxRSServiceRuntime runtime = getJaxRSServiceRuntime();
+
+        assertEquals(0, runtime.getRuntimeDTO().applicationDTOs.length);
+        assertEquals(0, runtime.getRuntimeDTO().failedApplicationDTOs.length);
+
+        ServiceRegistration<Application> serviceRegistration =
+            registerApplication(new TestApplication());
+
+        assertEquals(1, runtime.getRuntimeDTO().applicationDTOs.length);
+        assertEquals(0, runtime.getRuntimeDTO().failedApplicationDTOs.length);
+
+        assertEquals(
+            "Hello application",
+            webTarget.request().get().readEntity(String.class));
+
+        ServiceRegistration<Application> ungettableServiceRegistration =
+            registerUngettableApplication("service.ranking", 1);
+
+        assertEquals(1, runtime.getRuntimeDTO().applicationDTOs.length);
+        assertEquals(1, runtime.getRuntimeDTO().failedApplicationDTOs.length);
+
+        assertEquals(
+            DTOConstants.FAILURE_REASON_SERVICE_NOT_GETTABLE,
+            runtime.getRuntimeDTO().failedApplicationDTOs[0].failureReason);
+
+        assertEquals(
+            "Hello application",
+            webTarget.request().get().readEntity(String.class));
+
+        serviceRegistration.unregister();
+
+        assertEquals(0, runtime.getRuntimeDTO().applicationDTOs.length);
+        assertEquals(1, runtime.getRuntimeDTO().failedApplicationDTOs.length);
+
+        assertEquals(404, webTarget.request().get().getStatus());
+
+        ungettableServiceRegistration.unregister();
+
+        assertEquals(0, runtime.getRuntimeDTO().applicationDTOs.length);
+        assertEquals(0, runtime.getRuntimeDTO().failedApplicationDTOs.length);
+    }
+
+    @Test
+    public void testGettableAndShadowedNotGettableApplication()
+        throws InterruptedException {
+
+        Client client = createClient();
+
+        WebTarget webTarget = client.
+            target("http://localhost:8080").
+            path("test-application");
+
+        JaxRSServiceRuntime runtime = getJaxRSServiceRuntime();
+
+        assertEquals(0, runtime.getRuntimeDTO().applicationDTOs.length);
+        assertEquals(0, runtime.getRuntimeDTO().failedApplicationDTOs.length);
+
+        ServiceRegistration<Application> serviceRegistration =
+            registerApplication(new TestApplication());
+
+        assertEquals(1, runtime.getRuntimeDTO().applicationDTOs.length);
+        assertEquals(0, runtime.getRuntimeDTO().failedApplicationDTOs.length);
+
+        assertEquals(
+            "Hello application",
+            webTarget.request().get().readEntity(String.class));
+
+        ServiceRegistration<Application> ungettableServiceRegistration =
+            registerUngettableApplication("service.ranking", -1);
+
+        assertEquals(1, runtime.getRuntimeDTO().applicationDTOs.length);
+        assertEquals(1, runtime.getRuntimeDTO().failedApplicationDTOs.length);
+
+        assertEquals(
+            DTOConstants.FAILURE_REASON_SERVICE_NOT_GETTABLE,
+            runtime.getRuntimeDTO().failedApplicationDTOs[0].failureReason);
+
+        assertEquals(
+            "Hello application",
+            webTarget.request().get().readEntity(String.class));
+
+        serviceRegistration.unregister();
+
+        assertEquals(0, runtime.getRuntimeDTO().applicationDTOs.length);
+        assertEquals(1, runtime.getRuntimeDTO().failedApplicationDTOs.length);
+
+        assertEquals(404, webTarget.request().get().getStatus());
+
+        ungettableServiceRegistration.unregister();
+
+        assertEquals(0, runtime.getRuntimeDTO().applicationDTOs.length);
+        assertEquals(0, runtime.getRuntimeDTO().failedApplicationDTOs.length);
+    }
+
+    @Test
+    public void testNotGettableApplication() throws InterruptedException {
+        JaxRSServiceRuntime runtime = getJaxRSServiceRuntime();
+
+        assertEquals(0, runtime.getRuntimeDTO().applicationDTOs.length);
+        assertEquals(0, runtime.getRuntimeDTO().failedApplicationDTOs.length);
+
+        ServiceRegistration<Application> serviceRegistration =
+            registerUngettableApplication();
+
+        assertEquals(0, runtime.getRuntimeDTO().applicationDTOs.length);
+        assertEquals(1, runtime.getRuntimeDTO().failedApplicationDTOs.length);
+
+        assertEquals(
+            DTOConstants.FAILURE_REASON_SERVICE_NOT_GETTABLE,
+            runtime.getRuntimeDTO().failedApplicationDTOs[0].failureReason);
+
+        serviceRegistration.unregister();
+
+        assertEquals(0, runtime.getRuntimeDTO().applicationDTOs.length);
+        assertEquals(0, runtime.getRuntimeDTO().failedApplicationDTOs.length);
+    }
+
+    @Test
     public void testStandaloneEndPoint() {
         Client client = createClient();
 
@@ -500,6 +624,32 @@ public class JaxrsTest extends TestHelper {
         }
     }
 
+    @Test
+    public void testStandaloneEndPointPrototypeLifecycle() {
+        Client client = createClient();
+
+        WebTarget webTarget = client.
+            target("http://localhost:8080").
+            path("/test-addon-lifecycle");
+
+        ServiceRegistration<?> serviceRegistration = null;
+
+        try {
+            serviceRegistration = registerAddonLifecycle(
+                false, JAX_RS_RESOURCE, "true");
+
+            String first = webTarget.request().get().readEntity(String.class);
+
+            String second = webTarget.request().get().readEntity(String.class);
+
+            assertNotEquals("This should be different", first, second);
+        }
+        finally {
+            if (serviceRegistration != null) {
+                serviceRegistration.unregister();
+            }
+        }
+    }
 
     @Test
     public void testStandaloneEndPointReadd() {
@@ -561,24 +711,57 @@ public class JaxrsTest extends TestHelper {
     }
 
     @Test
-    public void testStandaloneEndPointPrototypeLifecycle() {
+    public void testStandaloneEndpointWithExtensionsDependencies() {
         Client client = createClient();
 
         WebTarget webTarget = client.
             target("http://localhost:8080").
-            path("/test-addon-lifecycle");
+            path("test");
 
         ServiceRegistration<?> serviceRegistration = null;
+        ServiceRegistration<?> extensionRegistration1;
+        ServiceRegistration<?> extensionRegistration2;
 
         try {
-            serviceRegistration = registerAddonLifecycle(
-                false, JAX_RS_RESOURCE, "true");
+            serviceRegistration = registerAddon(
+                new TestAddon(),
+                JAX_RS_EXTENSION_SELECT, new String[]{
+                    "(property one=one)",
+                    "(property two=two)",
+                });
 
-            String first = webTarget.request().get().readEntity(String.class);
+            assertEquals(404, webTarget.request().get().getStatus());
 
-            String second = webTarget.request().get().readEntity(String.class);
+            extensionRegistration1 = registerExtension(
+                "aExtension", "property one", "one");
 
-            assertNotEquals("This should be different", first, second);
+            assertEquals(404, webTarget.request().get().getStatus());
+
+            extensionRegistration2 = registerExtension(
+                "anotherExtension", "property two", "two");
+
+            Response response = webTarget.request().get();
+
+            assertEquals(
+                "This should say hello", "Hello test",
+                response.readEntity(String.class));
+
+            extensionRegistration1.unregister();
+
+            assertEquals(404, webTarget.request().get().getStatus());
+
+            extensionRegistration1 = registerExtension(
+                "aExtension", "property one", "one");
+
+            assertEquals(
+                "This should say hello", "Hello test",
+                response.readEntity(String.class));
+
+            extensionRegistration2.unregister();
+
+            assertEquals(404, webTarget.request().get().getStatus());
+
+            extensionRegistration1.unregister();
         }
         finally {
             if (serviceRegistration != null) {
@@ -677,67 +860,16 @@ public class JaxrsTest extends TestHelper {
         }
     }
 
-    @Test
-    public void testStandaloneEndpointWithExtensionsDependencies() {
-        Client client = createClient();
+    private JaxRSServiceRuntime getJaxRSServiceRuntime() throws InterruptedException {
+        _runtimeTracker = new ServiceTracker<>(
+            bundleContext, JaxRSServiceRuntime.class, null);
 
-        WebTarget webTarget = client.
-            target("http://localhost:8080").
-            path("test");
+        _runtimeTracker.open();
 
-        ServiceRegistration<?> serviceRegistration = null;
-        ServiceRegistration<?> extensionRegistration1;
-        ServiceRegistration<?> extensionRegistration2;
-
-        try {
-            serviceRegistration = registerAddon(
-                new TestAddon(),
-                JAX_RS_EXTENSION_SELECT, new String[]{
-                    "(property one=one)",
-                    "(property two=two)",
-                });
-
-            assertEquals(404, webTarget.request().get().getStatus());
-
-            extensionRegistration1 = registerExtension(
-                "aExtension", "property one", "one");
-
-            assertEquals(404, webTarget.request().get().getStatus());
-
-            extensionRegistration2 = registerExtension(
-                "anotherExtension", "property two", "two");
-
-            Response response = webTarget.request().get();
-
-            assertEquals(
-                "This should say hello", "Hello test",
-                response.readEntity(String.class));
-
-            extensionRegistration1.unregister();
-
-            assertEquals(404, webTarget.request().get().getStatus());
-
-            extensionRegistration1 = registerExtension(
-                "aExtension", "property one", "one");
-
-            assertEquals(
-                "This should say hello", "Hello test",
-                response.readEntity(String.class));
-
-            extensionRegistration2.unregister();
-
-            assertEquals(404, webTarget.request().get().getStatus());
-
-            extensionRegistration1.unregister();
-        }
-        finally {
-            if (serviceRegistration != null) {
-                serviceRegistration.unregister();
-            }
-        }
+        return _runtimeTracker.waitForService(5000);
     }
 
-    private ServiceRegistration<?> registerAddon(Object instance, Object ... keyValues) {
+    private ServiceRegistration<?> registerAddon(Object instance, Object... keyValues) {
         Dictionary<String, Object> properties = new Hashtable<>();
 
         properties.put(JAX_RS_RESOURCE, "true");
@@ -751,7 +883,7 @@ public class JaxrsTest extends TestHelper {
     }
 
     private ServiceRegistration<?> registerAddonLifecycle(
-        boolean singleton, Object ... keyValues) {
+        boolean singleton, Object... keyValues) {
 
         Dictionary<String, Object> properties = new Hashtable<>();
 
@@ -762,8 +894,7 @@ public class JaxrsTest extends TestHelper {
         if (singleton) {
             return bundleContext.registerService(
                 Object.class, new TestAddonLifecycle(), properties);
-        }
-        else {
+        } else {
             PrototypeServiceFactory<Object> prototypeServiceFactory =
                 new PrototypeServiceFactory<Object>() {
                     @Override
@@ -782,13 +913,13 @@ public class JaxrsTest extends TestHelper {
                 };
 
             return bundleContext.registerService(
-                Object.class, (ServiceFactory<?>)prototypeServiceFactory,
+                Object.class, (ServiceFactory<?>) prototypeServiceFactory,
                 properties);
         }
     }
 
     private ServiceRegistration<Application> registerApplication(
-        Application application, Object ... keyValues) {
+        Application application, Object... keyValues) {
 
         Dictionary<String, Object> properties = new Hashtable<>();
 
@@ -802,22 +933,23 @@ public class JaxrsTest extends TestHelper {
             Application.class, application, properties);
     }
 
-    private ServiceRegistration<?> registerFilter(Object ... keyValues) {
-
-        TestFilter testFilter = new TestFilter();
+    private ServiceRegistration<Application> registerApplication(
+        ServiceFactory<Application> serviceFactory, Object... keyValues) {
 
         Dictionary<String, Object> properties = new Hashtable<>();
+
+        properties.put(JAX_RS_APPLICATION_BASE, "/test-application");
 
         for (int i = 0; i < keyValues.length; i = i + 2) {
             properties.put(keyValues[i].toString(), keyValues[i + 1]);
         }
 
         return bundleContext.registerService(
-            Object.class, testFilter, properties);
+            Application.class, serviceFactory, properties);
     }
 
     private ServiceRegistration<?> registerExtension(
-        String name, Object ... keyValues) {
+        String name, Object... keyValues) {
 
         TestFilter testFilter = new TestFilter();
 
@@ -833,11 +965,41 @@ public class JaxrsTest extends TestHelper {
             Object.class, testFilter, properties);
     }
 
-    @After
-    public void tearDown() {
-        if (_runtimeTracker != null) {
-            _runtimeTracker.close();
+    private ServiceRegistration<?> registerFilter(Object... keyValues) {
+
+        TestFilter testFilter = new TestFilter();
+
+        Dictionary<String, Object> properties = new Hashtable<>();
+
+        for (int i = 0; i < keyValues.length; i = i + 2) {
+            properties.put(keyValues[i].toString(), keyValues[i + 1]);
         }
+
+        return bundleContext.registerService(
+            Object.class, testFilter, properties);
+    }
+
+    private ServiceRegistration<Application> registerUngettableApplication(
+        Object... keyValues) {
+
+        return registerApplication(
+            new ServiceFactory<Application>() {
+                @Override
+                public Application getService(
+                    Bundle bundle,
+                    ServiceRegistration<Application> serviceRegistration) {
+
+                    return null;
+                }
+
+                @Override
+                public void ungetService(
+                    Bundle bundle,
+                    ServiceRegistration<Application> serviceRegistration,
+                    Application application) {
+
+                }
+            }, keyValues);
     }
 
 }
