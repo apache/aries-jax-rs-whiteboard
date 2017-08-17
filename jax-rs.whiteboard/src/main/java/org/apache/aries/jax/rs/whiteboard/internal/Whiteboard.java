@@ -43,7 +43,6 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import static java.lang.String.format;
 import static org.apache.aries.jax.rs.whiteboard.internal.Utils.cxfRegistrator;
-import static org.apache.aries.jax.rs.whiteboard.internal.Utils.repeatInOrder;
 import static org.apache.aries.jax.rs.whiteboard.internal.Utils.safeRegisterEndpoint;
 import static org.apache.aries.jax.rs.whiteboard.internal.Utils.safeRegisterExtension;
 import static org.apache.aries.jax.rs.whiteboard.internal.Utils.safeRegisterGeneric;
@@ -73,14 +72,16 @@ import static org.osgi.service.jaxrs.whiteboard.JaxRSWhiteboardConstants.JAX_RS_
  */
 public class Whiteboard {
     public static OSGi<Void> createWhiteboard(Dictionary<String, ?> configuration) {
+        AriesJaxRSServiceRuntime runtime = new AriesJaxRSServiceRuntime();
+
         return
             bundleContext().flatMap(bundleContext ->
-            registerJaxRSServiceRuntime(bundleContext, Maps.from(configuration)).flatMap(registratorRegistration ->
+            registerJaxRSServiceRuntime(runtime, bundleContext, Maps.from(configuration)).flatMap(runtimeResgistration ->
             createDefaultJaxRsServiceRegistrator(Maps.from(configuration)).flatMap(defaultServiceRegistrator ->
-            just(new ServiceRegistrationChangeCounter(registratorRegistration)).flatMap(counter ->
-            just(registratorRegistration.getReference()).flatMap(reference ->
+            just(new ServiceRegistrationChangeCounter(runtimeResgistration)).flatMap(counter ->
+            just(runtimeResgistration.getReference()).flatMap(reference ->
                 all(
-                    countChanges(whiteboardApplications(reference, Maps.from(configuration)), counter),
+                    countChanges(whiteboardApplications(reference, runtime, Maps.from(configuration)), counter),
                     countChanges(whiteBoardApplicationSingletons(reference), counter),
                     countChanges(whiteboardExtensions(reference, defaultServiceRegistrator), counter),
                     countChanges(whiteboardSingletons(reference, defaultServiceRegistrator), counter)
@@ -161,6 +162,7 @@ public class Whiteboard {
 
     private static OSGi<ServiceRegistration<?>>
         registerJaxRSServiceRuntime(
+            JaxRSServiceRuntime runtime,
             BundleContext bundleContext, Map<String, ?> configuration) {
 
         Map<String, Object> properties = new HashMap<>(configuration);
@@ -189,9 +191,7 @@ public class Whiteboard {
             bestEffortCalculationOfEnpoints(filter).flatMap(endpoints -> {
                 properties.put(JAX_RS_SERVICE_ENDPOINT, endpoints);
 
-                return register(
-                    new String[]{JaxRSServiceRuntime.class.getName()},
-                    new AriesJaxRSServiceRuntime(), properties);
+                return register(JaxRSServiceRuntime.class, runtime, properties);
             }
         );
     }
@@ -226,26 +226,27 @@ public class Whiteboard {
 
     private static OSGi<?> whiteboardApplications(
         ServiceReference<?> jaxRsRuntimeServiceReference,
+        AriesJaxRSServiceRuntime runtime,
         Map<String, ?> configuration) {
 
         return
-            bundleContext().flatMap(bundleContext ->
-            repeatInOrder(
+            bundleContext().flatMap(
+                bundleContext -> runtime.processApplications(
                 serviceReferences(Application.class, getApplicationFilter()).
-                    filter(new TargetFilter<>(jaxRsRuntimeServiceReference))).
-                flatMap(ref ->
-            just(createBus(bundleContext, configuration)).
-                flatMap(bus ->
-            just(CXFJaxRsServiceRegistrator.getProperties(ref, JAX_RS_APPLICATION_BASE)).
-                flatMap(properties ->
-            service(ref).flatMap(application ->
-                all(
-                    cxfRegistrator(bus, application, properties),
-                    registerCXFServletService(
-                        bus, ref.getProperty(JAX_RS_APPLICATION_BASE).toString(),
-                        properties)
-                )
-        )))));
+                filter(new TargetFilter<>(jaxRsRuntimeServiceReference))).flatMap(
+                ref ->
+                    just(createBus(bundleContext, configuration)).
+                        flatMap(bus ->
+                    just(CXFJaxRsServiceRegistrator.getProperties(ref, JAX_RS_APPLICATION_BASE)).
+                        flatMap(properties ->
+                    service(ref).flatMap(application ->
+                        all(
+                            cxfRegistrator(bus, application, properties),
+                            registerCXFServletService(
+                                bus, ref.getProperty(JAX_RS_APPLICATION_BASE).toString(),
+                                properties)
+                        )
+                )))));
     }
 
     private static OSGi<?> whiteboardExtensions(
