@@ -24,8 +24,6 @@ import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.ext.RuntimeDelegate;
 
 import org.apache.aries.jax.rs.whiteboard.internal.ClientBuilderFactory;
-import org.apache.aries.jax.rs.whiteboard.internal.DefaultWeb;
-import org.apache.aries.jax.rs.whiteboard.internal.Maps;
 import org.apache.aries.jax.rs.whiteboard.internal.Whiteboard;
 import org.apache.aries.osgi.functional.OSGi;
 import org.apache.aries.osgi.functional.OSGiResult;
@@ -39,8 +37,6 @@ import org.slf4j.LoggerFactory;
 import static org.apache.aries.jax.rs.whiteboard.internal.Whiteboard.createWhiteboard;
 import static org.apache.aries.osgi.functional.OSGi.configurations;
 import static org.apache.aries.osgi.functional.OSGi.register;
-import static org.osgi.service.jaxrs.whiteboard.JaxRSWhiteboardConstants.JAX_RS_APPLICATION_SELECT;
-import static org.osgi.service.jaxrs.whiteboard.JaxRSWhiteboardConstants.JAX_RS_RESOURCE;
 
 public class CXFJaxRsBundleActivator implements BundleActivator {
 
@@ -93,15 +89,6 @@ public class CXFJaxRsBundleActivator implements BundleActivator {
         if (_log.isDebugEnabled()) {
             _log.debug("Stopped whiteboard factory");
         }
-    }
-
-    private static OSGi<?> registerDefaultWeb() {
-        Dictionary<String, Object> dictionary = new Hashtable<>();
-        dictionary.put(JAX_RS_APPLICATION_SELECT, "(osgi.jaxrs.name=.default)");
-        dictionary.put(JAX_RS_RESOURCE, "true");
-        dictionary.put(Constants.SERVICE_RANKING, -1);
-
-        return register(DefaultWeb.class, new DefaultWeb(), Maps.from(dictionary));
     }
 
 }
