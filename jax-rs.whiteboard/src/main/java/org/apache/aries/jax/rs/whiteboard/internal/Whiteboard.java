@@ -46,7 +46,6 @@ import static org.apache.aries.jax.rs.whiteboard.internal.Utils.deployRegistrato
 import static org.apache.aries.jax.rs.whiteboard.internal.Utils.safeRegisterEndpoint;
 import static org.apache.aries.jax.rs.whiteboard.internal.Utils.safeRegisterExtension;
 import static org.apache.aries.jax.rs.whiteboard.internal.Utils.safeRegisterGeneric;
-import static org.apache.aries.jax.rs.whiteboard.internal.Utils.service;
 import static org.apache.aries.osgi.functional.OSGi.all;
 import static org.apache.aries.osgi.functional.OSGi.bundleContext;
 import static org.apache.aries.osgi.functional.OSGi.just;
@@ -80,12 +79,12 @@ public class Whiteboard {
             registerJaxRSServiceRuntime(runtime, bundleContext, Maps.from(configuration)).flatMap(runtimeResgistration ->
             createDefaultJaxRsServiceRegistrator(Maps.from(configuration)).flatMap(defaultServiceRegistrator ->
             just(new ServiceRegistrationChangeCounter(runtimeResgistration)).flatMap(counter ->
-            just(runtimeResgistration.getReference()).flatMap(reference ->
+            just(runtimeResgistration.getReference()).flatMap(runtimeRegistration ->
                 all(
-                    countChanges(whiteboardApplications(reference, runtime, Maps.from(configuration)), counter),
-                    countChanges(whiteBoardApplicationSingletons(reference), counter),
-                    countChanges(whiteboardExtensions(reference, defaultServiceRegistrator), counter),
-                    countChanges(whiteboardSingletons(reference, defaultServiceRegistrator), counter)
+                    countChanges(whiteboardApplications(runtimeRegistration, runtime, Maps.from(configuration)), counter),
+                    countChanges(whiteBoardApplicationSingletons(runtimeRegistration), counter),
+                    countChanges(whiteboardExtensions(runtimeRegistration, defaultServiceRegistrator), counter),
+                    countChanges(whiteboardSingletons(runtimeRegistration, defaultServiceRegistrator), counter)
             )))))));
     }
 
@@ -243,22 +242,23 @@ public class Whiteboard {
 
     private static OSGi<Void> deployApplication(
         Map<String, ?> configuration, BundleContext bundleContext,
-        ServiceReference<Application> ref) {
+        AriesJaxRSServiceRuntime.MutableTuple<Application> tuple) {
 
         ExtensionManagerBus bus = createBus(bundleContext, configuration);
+
+        ServiceReference<Application> serviceReference = tuple.getServiceReference();
+
         Map<String, Object> properties =
             CXFJaxRsServiceRegistrator.getProperties(
-                ref, JAX_RS_APPLICATION_BASE);
+                serviceReference, JAX_RS_APPLICATION_BASE);
 
-        return service(ref).flatMap(
-            application ->
-                all(
-                    deployRegistrator(bus, application, properties),
-                    registerCXFServletService(
-                        bus, ref.getProperty(JAX_RS_APPLICATION_BASE).toString(),
-                        properties)
-                )
-            );
+        return all(
+            deployRegistrator(bus, tuple.getSecond(), properties),
+            registerCXFServletService(
+                bus, serviceReference.getProperty(JAX_RS_APPLICATION_BASE).toString(),
+                properties)
+        );
+
     }
 
     private static OSGi<ServiceReference<Application>>

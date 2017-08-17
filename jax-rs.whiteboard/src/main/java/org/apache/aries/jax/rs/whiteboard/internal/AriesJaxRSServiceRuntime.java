@@ -44,98 +44,112 @@ public class AriesJaxRSServiceRuntime implements JaxRSServiceRuntime {
 
     private static final long serialVersionUID = 1L;
 
-    private ConcurrentHashMap<String, TreeSet<Event<ServiceReference<Application>>>> _applications =
-        new ConcurrentHashMap<>();
+    private ConcurrentHashMap<String, TreeSet<Event<MutableTuple<Application>>>>
+        _applications = new ConcurrentHashMap<>();
 
-    private Collection<Event<ServiceReference<Application>>>
+    private Collection<Event<MutableTuple<Application>>>
         _ungettableApplications;
-
-    private Comparator<Event<ServiceReference<Application>>> _applicationComparator;
+    private Comparator<Event<MutableTuple<Application>>>
+        _applicationComparator;
     private BundleContext _bundleContext;
 
     public AriesJaxRSServiceRuntime(BundleContext bundleContext) {
         _bundleContext = bundleContext;
 
-        _applicationComparator = Comparator.comparing(Event::getContent);
+        _applicationComparator = Comparator.comparing(
+            Event::getContent);
 
         _applicationComparator = _applicationComparator.reversed();
 
         _ungettableApplications = new TreeSet<>(_applicationComparator);
     }
 
-    public OSGi<ServiceReference<Application>> processApplications(
+    public OSGi<MutableTuple<Application>> processApplications(
         OSGi<ServiceReference<Application>> source) {
 
-        return source.route(router -> {
-            router.onIncoming(event -> {
-                ServiceReference<Application> serviceReference =
-                    event.getContent();
+        return
+            source.map(
+                sr -> new MutableTuple<>(sr, null)
+            ).
+            route(
+                router -> {
+                router.onIncoming(event -> {
+                    MutableTuple<Application>
+                        tuple = event.getContent();
 
-                if (!checkGettable(serviceReference))  {
-                    _ungettableApplications.add(event);
+                    ServiceReference<Application> serviceReference =
+                        tuple.getServiceReference();
 
-                    return;
-                }
+                    Application application = checkGettable(serviceReference);
 
-                String path = serviceReference.getProperty(JAX_RS_APPLICATION_BASE).
-                    toString();
+                    if (application == null)  {
+                        _ungettableApplications.add(event);
 
-                TreeSet<Event<ServiceReference<Application>>> applicationReferences =
-                    _applications.computeIfAbsent(
-                        path, __ -> new TreeSet<>(_applicationComparator));
+                        return;
+                    }
 
-                Event<ServiceReference<Application>> first =
-                    applicationReferences.size() > 0 ?
-                        applicationReferences.first() : null;
+                    tuple.setService(application);
 
-                if (first == null || _applicationComparator.compare(event, first) < 0) {
-                    if (first != null) {
+                    String path = serviceReference.getProperty(JAX_RS_APPLICATION_BASE).
+                        toString();
+
+                    TreeSet<Event<MutableTuple<Application>>> applicationReferences =
+                        _applications.computeIfAbsent(
+                            path, __ -> new TreeSet<>(_applicationComparator));
+
+                    Event<MutableTuple<Application>> first =
+                        applicationReferences.size() > 0 ? applicationReferences.first() : null;
+
+                    if (first == null || _applicationComparator.compare(event, first) < 0) {
+                        if (first != null) {
+                            router.signalLeave(first);
+                        }
+
+                        router.signalAdd(event);
+                    }
+
+                    applicationReferences.add(event);
+                });
+                router.onLeaving(event -> {
+                    MutableTuple<Application> tuple = event.getContent();
+
+                    ServiceReference<Application> serviceReference =
+                        tuple.getServiceReference();
+
+                    boolean ungettable = _ungettableApplications.removeIf(
+                        t -> t.getContent().equals(tuple));
+
+                    if (ungettable) {
+                        return;
+                    }
+
+                    String path = serviceReference.getProperty(JAX_RS_APPLICATION_BASE).
+                        toString();
+
+                    TreeSet<Event<MutableTuple<Application>>>
+                        applicationReferences = _applications.get(path);
+
+                    Event<MutableTuple<Application>> first =
+                        applicationReferences.first();
+
+                    if (tuple.equals(first.getContent())) {
                         router.signalLeave(first);
+
+                        Event<MutableTuple<Application>> second =
+                            applicationReferences.higher(first);
+
+                        if (second != null) {
+                            router.signalAdd(second);
+                        }
                     }
 
-                    router.signalAdd(event);
-                }
-
-                applicationReferences.add(event);
+                    applicationReferences.removeIf(
+                        t -> t.getContent().equals(tuple));
+                });
             });
-            router.onLeaving(event -> {
-                ServiceReference<Application> serviceReference =
-                    event.getContent();
-
-                boolean ungettable = _ungettableApplications.removeIf(
-                    t -> t.getContent().equals(serviceReference));
-
-                if (ungettable) {
-                    return;
-                }
-
-                String path = serviceReference.getProperty(JAX_RS_APPLICATION_BASE).
-                    toString();
-
-                TreeSet<Event<ServiceReference<Application>>>
-                    applicationReferences = _applications.get(path);
-
-                Event<ServiceReference<Application>> first =
-                    applicationReferences.first();
-
-                if (serviceReference.equals(first.getContent())) {
-                    router.signalLeave(first);
-
-                    Event<ServiceReference<Application>> second =
-                        applicationReferences.higher(first);
-
-                    if (second != null) {
-                        router.signalAdd(second);
-                    }
-                }
-
-                applicationReferences.removeIf(
-                    t -> t.getContent().equals(serviceReference));
-            });
-        });
     }
 
-    private boolean checkGettable(
+    private Application checkGettable(
         ServiceReference<Application> serviceReference) {
 
         Application application = null;
@@ -148,13 +162,13 @@ public class AriesJaxRSServiceRuntime implements JaxRSServiceRuntime {
         }
 
         if (application == null) {
-            return false;
+            return null;
         }
         else {
             _bundleContext.ungetService(serviceReference);
         }
 
-        return true;
+        return application;
     }
 
     @Override
@@ -190,6 +204,8 @@ public class AriesJaxRSServiceRuntime implements JaxRSServiceRuntime {
             ).map(
                 Event::getContent
             ).map(
+                MutableTuple::getServiceReference
+            ).map(
                 AriesJaxRSServiceRuntime::buildApplicationDTO
             );
     }
@@ -198,6 +214,8 @@ public class AriesJaxRSServiceRuntime implements JaxRSServiceRuntime {
         return _ungettableApplications.stream().
             map(
                 Event::getContent
+            ).map(
+                MutableTuple::getServiceReference
             ).map(
                 sr -> buildFailedApplicationDTO(
                     DTOConstants.FAILURE_REASON_SERVICE_NOT_GETTABLE,
@@ -212,6 +230,8 @@ public class AriesJaxRSServiceRuntime implements JaxRSServiceRuntime {
             Objects::nonNull
         ).map(
             Event::getContent
+        ).map(
+            MutableTuple::getServiceReference
         ).map(
             sr -> buildFailedApplicationDTO(
                 DTOConstants.FAILURE_REASON_SHADOWED_BY_OTHER_SERVICE,
@@ -263,6 +283,50 @@ public class AriesJaxRSServiceRuntime implements JaxRSServiceRuntime {
 
         return "jax-rs-application-" +
             serviceReference.getProperty("service.id").toString();
+    }
+
+    public static class MutableTuple<T> implements Comparable<MutableTuple<T>> {
+
+        private final ServiceReference<T> _serviceReference;
+        private T _service;
+
+        public MutableTuple(ServiceReference<T> a, T service) {
+            _serviceReference = a;
+            _service = service;
+        }
+
+        @Override
+        public int compareTo(MutableTuple<T> o) {
+            return _serviceReference.compareTo(o._serviceReference);
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            MutableTuple<?> that = (MutableTuple<?>) o;
+
+            return _serviceReference.equals(that._serviceReference);
+        }
+
+        @Override
+        public int hashCode() {
+            return _serviceReference.hashCode();
+        }
+
+        public ServiceReference<T> getServiceReference() {
+            return _serviceReference;
+        }
+
+        public T getSecond() {
+            return _service;
+        }
+
+        public void setService(T service) {
+            _service = service;
+        }
+
     }
 
 }
