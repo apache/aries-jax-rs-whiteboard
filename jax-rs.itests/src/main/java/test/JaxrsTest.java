@@ -17,17 +17,21 @@
 
 package test;
 
+import static org.junit.Assert.assertNotNull;
 import static org.osgi.service.jaxrs.whiteboard.JaxRSWhiteboardConstants.*;
 
 import java.util.Dictionary;
 import java.util.Hashtable;
 
+import org.junit.After;
 import org.junit.Test;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.PrototypeServiceFactory;
 import org.osgi.framework.ServiceFactory;
 import org.osgi.framework.ServiceRegistration;
 
+import org.osgi.service.jaxrs.runtime.JaxRSServiceRuntime;
+import org.osgi.util.tracker.ServiceTracker;
 import test.types.TestAddon;
 import test.types.TestAddonConflict;
 import test.types.TestAddonConflict2;
@@ -48,13 +52,23 @@ import static org.junit.Assert.assertNull;
 
 public class JaxrsTest extends TestHelper {
 
+    private ServiceTracker<JaxRSServiceRuntime, JaxRSServiceRuntime> _runtimeTracker;
+
     @Test
-    public void testApplication() {
+    public void testApplication() throws InterruptedException {
         ServiceRegistration<?> serviceRegistration = null;
 
         try {
+            JaxRSServiceRuntime runtime = getJaxRSServiceRuntime();
+
+            assertEquals(0, runtime.getRuntimeDTO().applicationDTOs.length);
+
+            assertNotNull(runtime);
+
             serviceRegistration = registerApplication(
                 new TestApplication());
+
+            assertEquals(1, runtime.getRuntimeDTO().applicationDTOs.length);
 
             Client client = createClient();
 
@@ -72,6 +86,15 @@ public class JaxrsTest extends TestHelper {
                 serviceRegistration.unregister();
             }
         }
+    }
+
+    private JaxRSServiceRuntime getJaxRSServiceRuntime() throws InterruptedException {
+        _runtimeTracker = new ServiceTracker<>(
+            bundleContext, JaxRSServiceRuntime.class, null);
+
+        _runtimeTracker.open();
+
+        return _runtimeTracker.waitForService(5000);
     }
 
     @Test
@@ -121,19 +144,26 @@ public class JaxrsTest extends TestHelper {
     }
 
     @Test
-    public void testApplicationOverride() {
+    public void testApplicationOverride() throws InterruptedException {
         Client client = createClient();
 
         WebTarget webTarget = client.
             target("http://localhost:8080").
             path("test-application");
 
+        JaxRSServiceRuntime runtime = getJaxRSServiceRuntime();
 
         ServiceRegistration<?> serviceRegistration = null;
         ServiceRegistration<?> serviceRegistration2;
 
         try {
+            assertEquals(0, runtime.getRuntimeDTO().applicationDTOs.length);
+            assertEquals(0, runtime.getRuntimeDTO().failedApplicationDTOs.length);
+
             serviceRegistration = registerApplication(new TestApplication());
+
+            assertEquals(1, runtime.getRuntimeDTO().applicationDTOs.length);
+            assertEquals(0, runtime.getRuntimeDTO().failedApplicationDTOs.length);
 
             Response response = webTarget.request().get();
 
@@ -143,6 +173,9 @@ public class JaxrsTest extends TestHelper {
 
             serviceRegistration2 = registerApplication(
                 new TestApplicationConflict(), "service.ranking", 1);
+
+            assertEquals(1, runtime.getRuntimeDTO().applicationDTOs.length);
+            assertEquals(1, runtime.getRuntimeDTO().failedApplicationDTOs.length);
 
             response = webTarget.request().get();
 
@@ -155,6 +188,9 @@ public class JaxrsTest extends TestHelper {
                 webTarget.path("conflict").request().get(String.class));
 
             serviceRegistration2.unregister();
+
+            assertEquals(1, runtime.getRuntimeDTO().applicationDTOs.length);
+            assertEquals(0, runtime.getRuntimeDTO().failedApplicationDTOs.length);
 
             response = webTarget.request().get();
 
@@ -169,14 +205,18 @@ public class JaxrsTest extends TestHelper {
     }
 
     @Test
-    public void testApplicationReadd() {
+    public void testApplicationReadd() throws InterruptedException {
         Client client = createClient();
 
         WebTarget webTarget = client.
             target("http://localhost:8080").
             path("/test-application");
 
+        JaxRSServiceRuntime runtime = getJaxRSServiceRuntime();
+
         Runnable testCase = () -> {
+            assertEquals(0, runtime.getRuntimeDTO().applicationDTOs.length);
+
             assertEquals(404, webTarget.request().get().getStatus());
 
             ServiceRegistration<?> serviceRegistration = null;
@@ -190,6 +230,8 @@ public class JaxrsTest extends TestHelper {
                         request().
                         get().
                         readEntity(String.class));
+
+                assertEquals(1, runtime.getRuntimeDTO().applicationDTOs.length);
             }
             finally {
                 if (serviceRegistration != null) {
@@ -239,7 +281,7 @@ public class JaxrsTest extends TestHelper {
     }
 
     @Test
-    public void testApplicationEndpointExtensionReadd() {
+    public void testApplicationEndpointExtensionReadd() throws InterruptedException {
         Client client = createClient();
 
         WebTarget webTarget = client.
@@ -249,7 +291,11 @@ public class JaxrsTest extends TestHelper {
 
         ServiceRegistration<?> applicationRegistration = null;
 
+        JaxRSServiceRuntime jaxRSServiceRuntime = getJaxRSServiceRuntime();
+
         try {
+
+
             applicationRegistration = registerApplication(
                 new TestApplication());
 
@@ -312,9 +358,7 @@ public class JaxrsTest extends TestHelper {
                 "Hello application",
                 response.readEntity(String.class));
 
-            assertEquals(
-                "true",
-                response.getHeaders().getFirst("Filtered"));
+            assertEquals("true", response.getHeaders().getFirst("Filtered"));
         }
         finally {
             if (applicationRegistration != null) {
@@ -787,6 +831,13 @@ public class JaxrsTest extends TestHelper {
 
         return bundleContext.registerService(
             Object.class, testFilter, properties);
+    }
+
+    @After
+    public void tearDown() {
+        if (_runtimeTracker != null) {
+            _runtimeTracker.close();
+        }
     }
 
 }
