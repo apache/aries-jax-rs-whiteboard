@@ -17,7 +17,6 @@
 
 package org.apache.aries.jax.rs.whiteboard.internal;
 
-import org.apache.aries.jax.rs.whiteboard.internal.AriesJaxRSServiceRuntime.MutableTuple;
 import org.apache.aries.osgi.functional.Event;
 import org.apache.aries.osgi.functional.OSGi;
 import org.apache.cxf.Bus;
@@ -31,9 +30,12 @@ import javax.ws.rs.core.Application;
 import javax.ws.rs.ext.Provider;
 import java.util.Comparator;
 import java.util.Map;
+import java.util.NavigableSet;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 import static org.apache.aries.osgi.functional.OSGi.bundleContext;
 import static org.apache.aries.osgi.functional.OSGi.just;
@@ -234,6 +236,73 @@ public class Utils {
 
     }
 
+    public static <K, T extends Comparable<? super T>> OSGi<T> highestPer(
+        Function<T, K> keySupplier, OSGi<T> program,
+        Consumer<T> onAddingShadowed, Consumer<T> onRemovedShadowed) {
+
+        ConcurrentHashMap<K, TreeSet<Event<T>>> map = new ConcurrentHashMap<>();
+
+        return program.route(
+            router -> {
+                router.onIncoming(e -> {
+                    K key = keySupplier.apply(e.getContent());
+
+                    Comparator<Event<T>> comparator = Comparator.comparing(
+                        Event::getContent);
+
+                    NavigableSet<Event<T>> set = map.computeIfAbsent(
+                        key, __ -> new TreeSet<>(comparator));
+
+                    Event<T> last = set.size() > 0 ? set.last() : null;
+
+                    boolean higher =
+                        (last == null) || (comparator.compare(e, last) > 0);
+
+                    if (higher) {
+                        if (last != null) {
+                            router.signalLeave(last);
+
+                            onAddingShadowed.accept(last.getContent());
+                        }
+
+                        router.signalAdd(e);
+                    }
+                    else {
+                        onAddingShadowed.accept(e.getContent());
+                    }
+
+                    set.add(e);
+                });
+                router.onLeaving(e -> {
+                    T content = e.getContent();
+
+                    K key = keySupplier.apply(content);
+
+                    TreeSet<Event<T>> set = map.get(key);
+
+                    Event<T> last = set.last();
+
+                    if (content.equals(last.getContent())) {
+                        router.signalLeave(e);
+
+                        Event<T> penultimate = set.lower(last);
+
+                        if (penultimate != null) {
+                            router.signalAdd(penultimate);
+
+                            onRemovedShadowed.accept(penultimate.getContent());
+                        }
+                    }
+                    else {
+                        onRemovedShadowed.accept(content);
+                    }
+
+                    set.removeIf(t -> t.getContent().equals(content));
+                });
+            }
+        );
+    }
+
     public static class ComparableResourceProvider
         implements ResourceProvider, Comparable<ComparableResourceProvider> {
 
@@ -284,4 +353,47 @@ public class Utils {
 
     }
 
+    public static class MutableTuple<T> implements Comparable<MutableTuple<T>> {
+
+        private final ServiceReference<T> _serviceReference;
+        private T _service;
+
+        public MutableTuple(ServiceReference<T> a, T service) {
+            _serviceReference = a;
+            _service = service;
+        }
+
+        @Override
+        public int compareTo(MutableTuple<T> o) {
+            return _serviceReference.compareTo(o._serviceReference);
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            MutableTuple<?> that = (MutableTuple<?>) o;
+
+            return _serviceReference.equals(that._serviceReference);
+        }
+
+        @Override
+        public int hashCode() {
+            return _serviceReference.hashCode();
+        }
+
+        public ServiceReference<T> getServiceReference() {
+            return _serviceReference;
+        }
+
+        public T getSecond() {
+            return _service;
+        }
+
+        public void setService(T service) {
+            _service = service;
+        }
+
+    }
 }

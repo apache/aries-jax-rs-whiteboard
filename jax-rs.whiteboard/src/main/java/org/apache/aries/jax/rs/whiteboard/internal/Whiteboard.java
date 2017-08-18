@@ -17,7 +17,7 @@
 
 package org.apache.aries.jax.rs.whiteboard.internal;
 
-import org.apache.aries.jax.rs.whiteboard.internal.AriesJaxRSServiceRuntime.MutableTuple;
+import org.apache.aries.jax.rs.whiteboard.internal.Utils.MutableTuple;
 import org.apache.aries.osgi.functional.OSGi;
 import org.apache.cxf.Bus;
 import org.apache.cxf.bus.extension.ExtensionManagerBus;
@@ -41,9 +41,11 @@ import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Function;
 
 import static java.lang.String.format;
 import static org.apache.aries.jax.rs.whiteboard.internal.Utils.deployRegistrator;
+import static org.apache.aries.jax.rs.whiteboard.internal.Utils.highestPer;
 import static org.apache.aries.jax.rs.whiteboard.internal.Utils.onlyGettables;
 import static org.apache.aries.jax.rs.whiteboard.internal.Utils.safeRegisterEndpoint;
 import static org.apache.aries.jax.rs.whiteboard.internal.Utils.safeRegisterExtension;
@@ -72,6 +74,9 @@ import static org.osgi.service.jaxrs.whiteboard.JaxRSWhiteboardConstants.JAX_RS_
  * @author Carlos Sierra Andrés
  */
 public class Whiteboard {
+
+    public static final Function<MutableTuple<Application>, String> APPLICATION_BASE = ((Function<MutableTuple<Application>, ServiceReference<Application>>) Utils.MutableTuple::getServiceReference).andThen(Whiteboard::getApplicationBase);
+
     public static OSGi<Void> createWhiteboard(Dictionary<String, ?> configuration) {
 
 
@@ -231,40 +236,56 @@ public class Whiteboard {
         AriesJaxRSServiceRuntime runtime,
         Map<String, ?> configuration) {
 
-        OSGi<MutableTuple<Application>> applicationsForWhiteboard =
-            getApplicationsForWhiteboard(jaxRsRuntimeServiceReference).
-                flatMap(
-                    sr -> onlyGettables(
-                        sr, runtime::addNotGettable, runtime::removeNotGettable)
-                );
+        OSGi<MutableTuple<Application>> gettableAplicationForWhiteboard =
+            getApplicationsForWhiteboard(jaxRsRuntimeServiceReference).flatMap(
+                sr -> onlyGettables(
+                    sr, runtime::addNotGettable, runtime::removeNotGettable)
+            );
+
+        OSGi<MutableTuple<Application>> highestRankedPerPath = highestPer(
+            APPLICATION_BASE,
+            gettableAplicationForWhiteboard,
+            t -> runtime.addShadowedApplication(t.getServiceReference()),
+            t -> runtime.removeShadowedApplication(t.getServiceReference())
+        );
 
         return
             bundleContext().flatMap(
-                bundleContext ->
-                    runtime.processApplications(applicationsForWhiteboard).flatMap(
-                        ref -> deployApplication(
-                            configuration, bundleContext, ref)));
+                bundleContext -> highestRankedPerPath.flatMap(
+                    ref -> deployApplication(configuration, bundleContext, ref)
+                ).map(
+                    MutableTuple::getServiceReference).
+                foreach(
+                    sr -> runtime.setApplicationForPath(
+                            getApplicationBase(sr), sr),
+                    sr -> runtime.unsetApplicationForPath(
+                        getApplicationBase(sr))
+                )
+            );
     }
 
-    private static OSGi<Void> deployApplication(
+    private static OSGi<MutableTuple<Application>> deployApplication(
         Map<String, ?> configuration, BundleContext bundleContext,
         MutableTuple<Application> tuple) {
 
         ExtensionManagerBus bus = createBus(bundleContext, configuration);
 
-        ServiceReference<Application> serviceReference = tuple.getServiceReference();
+        ServiceReference<Application> serviceReference =
+            tuple.getServiceReference();
 
         Map<String, Object> properties =
             CXFJaxRsServiceRegistrator.getProperties(
                 serviceReference, JAX_RS_APPLICATION_BASE);
 
-        return all(
-            deployRegistrator(bus, tuple.getSecond(), properties),
-            registerCXFServletService(
-                bus, serviceReference.getProperty(JAX_RS_APPLICATION_BASE).toString(),
-                properties)
-        );
-
+        return
+            all(
+                deployRegistrator(bus, tuple.getSecond(), properties),
+                registerCXFServletService(
+                    bus, getApplicationBase(serviceReference),
+                    properties)).
+            then(
+                just(tuple)
+            );
     }
 
     private static OSGi<ServiceReference<Application>>
@@ -383,5 +404,13 @@ public class Whiteboard {
             _serviceRegistration.setProperties(properties);
         }
     }
+
+    public static String getApplicationBase(
+        ServiceReference<Application> serviceReference) {
+
+        return serviceReference.getProperty(JAX_RS_APPLICATION_BASE).toString();
+    }
+
+
 
 }
