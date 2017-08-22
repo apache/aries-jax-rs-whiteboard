@@ -80,12 +80,12 @@ public class CXFJaxRsServiceRegistrator {
         rewire();
     }
 
-    public void addProvider(Object provider) {
+    public void addProvider(Utils.ServiceTuple<?> tuple) {
         if (_closed) {
             return;
         }
 
-        _providers.add(provider);
+        _providers.add(tuple.getService());
 
         rewire();
     }
@@ -112,12 +112,12 @@ public class CXFJaxRsServiceRegistrator {
         rewire();
     }
 
-    public void removeProvider(Object provider) {
+    public void removeProvider(Utils.ServiceTuple<?> tuple) {
         if (_closed) {
             return;
         }
 
-        _providers.remove(provider);
+        _providers.remove(tuple.getService());
 
         rewire();
     }

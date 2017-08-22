@@ -188,11 +188,7 @@ public class JaxrsTest extends TestHelper {
 
         ServiceRegistration<?> applicationRegistration = null;
 
-        JaxRSServiceRuntime jaxRSServiceRuntime = getJaxRSServiceRuntime();
-
         try {
-
-
             applicationRegistration = registerApplication(
                 new TestApplication());
 
@@ -306,7 +302,8 @@ public class JaxrsTest extends TestHelper {
             applicationRegistration = registerApplication(
                 new TestApplication());
 
-            filterRegistration = registerFilter(
+            filterRegistration = registerExtension(
+                "filter",
                 JAX_RS_APPLICATION_SELECT,
                 "(" + JAX_RS_APPLICATION_BASE + "=/test-application)");
 
@@ -354,7 +351,8 @@ public class JaxrsTest extends TestHelper {
                 ServiceRegistration<?> filterRegistration = null;
 
                 try {
-                    filterRegistration = registerFilter(
+                    filterRegistration = registerExtension(
+                        "Filter",
                         JAX_RS_APPLICATION_SELECT,
                         "(" + JAX_RS_APPLICATION_BASE + "=/test-application)");
 
@@ -785,8 +783,8 @@ public class JaxrsTest extends TestHelper {
         try {
             serviceRegistration = registerAddon(new TestAddon());
 
-            filterRegistration = registerFilter(
-                JAX_RS_EXTENSION, "test-filter");
+            filterRegistration = registerExtension(
+                "Filter", JAX_RS_EXTENSION, "test-filter");
 
             Response response = webTarget.request().get();
 
@@ -830,8 +828,8 @@ public class JaxrsTest extends TestHelper {
 
                     assertNull(response.getHeaders().getFirst("Filtered"));
 
-                    filterRegistration = registerFilter(
-                        JAX_RS_EXTENSION, "test-filter");
+                    filterRegistration = registerExtension(
+                        "Filter", JAX_RS_EXTENSION, "test-filter");
 
                     response = webTarget.request().get();
 
@@ -955,7 +953,8 @@ public class JaxrsTest extends TestHelper {
 
         Dictionary<String, Object> properties = new Hashtable<>();
 
-        properties.put(JAX_RS_EXTENSION, name);
+        properties.put(JAX_RS_EXTENSION, true);
+        properties.put(JAX_RS_NAME, name);
 
         for (int i = 0; i < keyValues.length; i = i + 2) {
             properties.put(keyValues[i].toString(), keyValues[i + 1]);
@@ -965,7 +964,7 @@ public class JaxrsTest extends TestHelper {
             Object.class, testFilter, properties);
     }
 
-    private ServiceRegistration<?> registerFilter(Object... keyValues) {
+    /*private ServiceRegistration<?> registerFilter(Object... keyValues) {
 
         TestFilter testFilter = new TestFilter();
 
@@ -977,7 +976,7 @@ public class JaxrsTest extends TestHelper {
 
         return bundleContext.registerService(
             Object.class, testFilter, properties);
-    }
+    }*/
 
     private ServiceRegistration<Application> registerUngettableApplication(
         Object... keyValues) {

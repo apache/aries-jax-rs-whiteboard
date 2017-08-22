@@ -17,18 +17,20 @@
 
 package org.apache.aries.jax.rs.whiteboard.internal;
 
-import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
 import org.osgi.service.jaxrs.runtime.JaxRSServiceRuntime;
 import org.osgi.service.jaxrs.runtime.dto.ApplicationDTO;
 import org.osgi.service.jaxrs.runtime.dto.DTOConstants;
+import org.osgi.service.jaxrs.runtime.dto.ExtensionDTO;
 import org.osgi.service.jaxrs.runtime.dto.FailedApplicationDTO;
+import org.osgi.service.jaxrs.runtime.dto.FailedExtensionDTO;
+import org.osgi.service.jaxrs.runtime.dto.FailedResourceDTO;
 import org.osgi.service.jaxrs.runtime.dto.RequestInfoDTO;
+import org.osgi.service.jaxrs.runtime.dto.ResourceDTO;
 import org.osgi.service.jaxrs.runtime.dto.RuntimeDTO;
 import org.osgi.service.jaxrs.whiteboard.JaxRSWhiteboardConstants;
 
 import javax.ws.rs.core.Application;
-import java.util.Comparator;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
@@ -43,26 +45,55 @@ public class AriesJaxRSServiceRuntime implements JaxRSServiceRuntime {
     private ConcurrentHashMap<String, ServiceReference<Application>>
         _applications = new ConcurrentHashMap<>();
 
+    private ConcurrentHashMap<String, Set<ServiceReference<?>>>
+        _applicationEndpoints = new ConcurrentHashMap<>();
+
+    private ConcurrentHashMap<String, Set<ServiceReference<?>>>
+        _applicationExtensions = new ConcurrentHashMap<>();
+
     private TreeSet<ServiceReference<Application>>
-        _ungettableApplications;
+        _ungettableApplications = new TreeSet<>();
 
     private Set<ServiceReference<Application>> _shadowedApplications =
         new TreeSet<>();
 
-    public AriesJaxRSServiceRuntime(BundleContext bundleContext) {
-        _ungettableApplications = new TreeSet<>(Comparator.reverseOrder());
-    }
+    private TreeSet<ServiceReference<?>> _ungettableEndpoints = new TreeSet<>();
+    private TreeSet<ServiceReference<?>> _ungettableExtensions = new TreeSet<>();
 
-    public boolean addNotGettable(
+    public boolean addNotGettableApplication(
         ServiceReference<Application> serviceReference) {
 
         return _ungettableApplications.add(serviceReference);
     }
 
-    public boolean removeNotGettable(
+    public <T> void addNotGettableExtension(
+        ServiceReference<T> serviceReference) {
+
+        _ungettableExtensions.add(serviceReference);
+    }
+
+    public boolean removeNotGettableApplication(
         ServiceReference<Application> serviceReference) {
 
         return _ungettableApplications.remove(serviceReference);
+    }
+
+    public <T> boolean removeNotGettableEndpoint(
+        ServiceReference<T> serviceReference) {
+
+        return _ungettableEndpoints.remove(serviceReference);
+    }
+
+    public <T> boolean addNotGettableEndpoint(
+        ServiceReference<T> serviceReference) {
+
+        return _ungettableEndpoints.add(serviceReference);
+    }
+
+    public <T> void removeNotGettableExtension(
+        ServiceReference<T> serviceReference) {
+
+        _ungettableExtensions.remove(serviceReference);
     }
 
     public ServiceReference<Application> setApplicationForPath(
@@ -87,6 +118,61 @@ public class AriesJaxRSServiceRuntime implements JaxRSServiceRuntime {
         return _shadowedApplications.remove(serviceReference);
     }
 
+    public void addApplicationEndpoint(
+        String applicationName, ServiceReference<?> endpointServiceReference) {
+
+        _applicationEndpoints.computeIfAbsent(
+            applicationName, __ -> new TreeSet<>());
+
+        _applicationEndpoints.computeIfPresent(
+            applicationName,
+            (__, set) -> {
+                set.add(endpointServiceReference);
+
+                return set;
+            });
+    }
+
+    public void removeApplicationEndpoint(
+        String applicationName, ServiceReference<?> endpointServiceReference) {
+
+        _applicationEndpoints.computeIfPresent(
+            applicationName,
+            (__, set) -> {
+                set.remove(endpointServiceReference);
+
+                return set;
+            });
+    }
+
+    public void addApplicationExtension(
+        String applicationName,
+        ServiceReference<?> extensionServiceReference) {
+
+        _applicationExtensions.computeIfAbsent(
+            applicationName, __ -> new TreeSet<>());
+
+        _applicationExtensions.computeIfPresent(
+            applicationName,
+            (__, set) -> {
+                set.add(extensionServiceReference);
+
+                return set;
+            });
+    }
+
+    public void removeApplicationExtension(
+        String applicationName, ServiceReference<?> extensionServiceReference) {
+
+        _applicationExtensions.computeIfPresent(
+            applicationName,
+            (__, set) -> {
+                set.remove(extensionServiceReference);
+
+                return set;
+            });
+    }
+
     @Override
     public RequestInfoDTO calculateRequestInfoDTO(String path) {
         return null;
@@ -102,23 +188,69 @@ public class AriesJaxRSServiceRuntime implements JaxRSServiceRuntime {
             );
 
         runtimeDTO.failedApplicationDTOs = Stream.concat(
-            shadowedApplications(),
-            unreferenciableApplications()
+            shadowedApplicationsDTOStream(),
+            unreferenciableApplicationsDTOStream()
             ).toArray(
                 FailedApplicationDTO[]::new
             );
 
+        runtimeDTO.failedResourceDTOs = unreferenciableEndpointsDTOStream().map(
+            sr -> buildFailedResourceDTO(
+                DTOConstants.FAILURE_REASON_SERVICE_NOT_GETTABLE, sr)
+        ).toArray(
+            FailedResourceDTO[]::new
+        );
+
+        runtimeDTO.failedExtensionDTOs = unreferenciableExtensionsDTOStream().map(
+            sr -> buildFailedExtensionDTO(
+                DTOConstants.FAILURE_REASON_SERVICE_NOT_GETTABLE, sr)
+        ).toArray(
+            FailedExtensionDTO[]::new
+        );
+
         return runtimeDTO;
+    }
+
+    private FailedExtensionDTO buildFailedExtensionDTO(
+        int reason, ServiceReference<?> serviceReference) {
+
+        FailedExtensionDTO failedExtensionDTO = new FailedExtensionDTO();
+
+        populateExtensionDTO(failedExtensionDTO, serviceReference);
+
+        failedExtensionDTO.failureReason = reason;
+
+        return failedExtensionDTO;
+    }
+
+    private Stream<ServiceReference<?>> unreferenciableExtensionsDTOStream() {
+        return _ungettableExtensions.stream();
+    }
+
+    private FailedResourceDTO buildFailedResourceDTO(
+        int reason, ServiceReference<?> serviceReference) {
+
+        FailedResourceDTO failedResourceDTO = new FailedResourceDTO();
+
+        populateResourceDTO(failedResourceDTO, serviceReference);
+
+        failedResourceDTO.failureReason = reason;
+
+        return failedResourceDTO;
+    }
+
+    private Stream<ServiceReference<?>> unreferenciableEndpointsDTOStream() {
+        return _ungettableEndpoints.stream();
     }
 
     private Stream<ApplicationDTO> applicationDTOStream() {
         return _applications.values().stream().
             map(
-                AriesJaxRSServiceRuntime::buildApplicationDTO
+                this::buildApplicationDTO
             );
     }
 
-    private Stream<FailedApplicationDTO> unreferenciableApplications() {
+    private Stream<FailedApplicationDTO> unreferenciableApplicationsDTOStream() {
         return _ungettableApplications.stream().
             map(
                 sr -> buildFailedApplicationDTO(
@@ -127,7 +259,7 @@ public class AriesJaxRSServiceRuntime implements JaxRSServiceRuntime {
         );
     }
 
-    private Stream<FailedApplicationDTO> shadowedApplications() {
+    private Stream<FailedApplicationDTO> shadowedApplicationsDTOStream() {
         return _shadowedApplications.stream().
             map(sr -> buildFailedApplicationDTO(
                 DTOConstants.FAILURE_REASON_SHADOWED_BY_OTHER_SERVICE,
@@ -135,14 +267,79 @@ public class AriesJaxRSServiceRuntime implements JaxRSServiceRuntime {
         );
     }
 
-    private static ApplicationDTO buildApplicationDTO(
+    private ApplicationDTO buildApplicationDTO(
         ServiceReference<Application> serviceReference) {
 
         ApplicationDTO applicationDTO = new ApplicationDTO(){};
 
         applicationDTO.name = getApplicationName(serviceReference);
+        applicationDTO.base = Whiteboard.getApplicationBase(serviceReference);
+        applicationDTO.serviceId = (Long)serviceReference.getProperty(
+            "service.id");
+
+        applicationDTO.resourceDTOs = getApplicationEndpointsStream(
+            applicationDTO.name).toArray(
+                ResourceDTO[]::new
+            );
+
+        applicationDTO.extensionDTOs = getApplicationExtensionsStream(
+            applicationDTO.name).toArray(
+                ExtensionDTO[]::new
+            );
 
         return applicationDTO;
+    }
+
+    private Stream<ResourceDTO> getApplicationEndpointsStream(String name) {
+
+        Set<ServiceReference<?>> applicationEndpoints =
+            _applicationEndpoints.get(name);
+
+        Stream<ServiceReference<?>> applicationEndpointStream =
+            applicationEndpoints != null ?
+                applicationEndpoints.stream() :
+                Stream.empty();
+
+        return
+            applicationEndpointStream.map(
+                sr -> populateResourceDTO(new ResourceDTO(){}, sr)
+            );
+    }
+
+    private Stream<ExtensionDTO> getApplicationExtensionsStream(String name) {
+
+        Set<ServiceReference<?>> applicationExtensions =
+            _applicationEndpoints.get(name);
+
+        Stream<ServiceReference<?>> applicationExtensionStream =
+            applicationExtensions != null ?
+                applicationExtensions.stream() :
+                Stream.empty();
+
+        return
+            applicationExtensionStream.map(
+                sr -> populateExtensionDTO(new ExtensionDTO(){}, sr)
+            );
+    }
+
+    private static ResourceDTO populateResourceDTO(
+        ResourceDTO resourceDTO, ServiceReference<?> serviceReference) {
+
+        resourceDTO.name = serviceReference.getProperty(JAX_RS_NAME).toString();
+        resourceDTO.serviceId = (Long)serviceReference.getProperty(
+            "service.id");
+
+        return resourceDTO;
+    }
+
+    private static ExtensionDTO populateExtensionDTO(
+        ExtensionDTO extensionDTO, ServiceReference<?> serviceReference) {
+
+        extensionDTO.name = serviceReference.getProperty(JAX_RS_NAME).toString();
+        extensionDTO.serviceId = (Long)serviceReference.getProperty(
+            "service.id");
+
+        return extensionDTO;
     }
 
     private static FailedApplicationDTO buildFailedApplicationDTO(
@@ -162,8 +359,8 @@ public class AriesJaxRSServiceRuntime implements JaxRSServiceRuntime {
         return failedApplicationDTO;
     }
 
-    private static String getApplicationName(
-        ServiceReference<Application> serviceReference) {
+    public static String getApplicationName(
+        ServiceReference<?> serviceReference) {
 
         Object property = serviceReference.getProperty(JAX_RS_NAME);
 
@@ -174,10 +371,10 @@ public class AriesJaxRSServiceRuntime implements JaxRSServiceRuntime {
         return property.toString();
     }
 
-    private static String generateApplicationName(
-        ServiceReference<Application> serviceReference) {
+    public static String generateApplicationName(
+        ServiceReference<?> serviceReference) {
 
-        return "jax-rs-application-" +
+        return ".jax-rs-application-" +
             serviceReference.getProperty("service.id").toString();
     }
 

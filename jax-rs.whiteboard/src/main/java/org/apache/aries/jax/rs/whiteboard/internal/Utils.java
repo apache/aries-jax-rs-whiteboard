@@ -27,7 +27,6 @@ import org.osgi.framework.ServiceReference;
 import org.osgi.service.jaxrs.runtime.dto.FailedApplicationDTO;
 
 import javax.ws.rs.core.Application;
-import javax.ws.rs.ext.Provider;
 import java.util.Comparator;
 import java.util.Map;
 import java.util.NavigableSet;
@@ -85,43 +84,79 @@ public class Utils {
 
     public static OSGi<?> safeRegisterGeneric(
         ServiceReference<?> serviceReference,
-        CXFJaxRsServiceRegistrator registrator) {
+        String applicationName,
+        CXFJaxRsServiceRegistrator registrator,
+        AriesJaxRSServiceRuntime runtime) {
 
-        return bundleContext().flatMap(bundleContext -> {
-            Object service = bundleContext.getService(serviceReference);
-            Class<?> serviceClass = service.getClass();
-            bundleContext.ungetService(serviceReference);
-            if (serviceClass.isAnnotationPresent(Provider.class)) {
-                return safeRegisterExtension(serviceReference, registrator);
-            }
-            else {
-                return safeRegisterEndpoint(serviceReference, registrator);
-            }
-        });
+        if (isExtension(serviceReference)) {
+            return safeRegisterExtension(
+                serviceReference, applicationName, registrator, runtime);
+        }
+        else {
+            return safeRegisterEndpoint(
+                serviceReference, applicationName, registrator, runtime);
+        }
+    }
+
+    private static boolean isExtension(ServiceReference<?> serviceReference) {
+        Object extensionProperty = serviceReference.getProperty(
+            "osgi.jaxrs.extension");
+
+        return
+            (extensionProperty != null) &&
+            (extensionProperty instanceof Boolean) &&
+            ((boolean) extensionProperty);
     }
 
     public static OSGi<?> safeRegisterExtension(
         ServiceReference<?> serviceReference,
-        CXFJaxRsServiceRegistrator registrator) {
+        String applicationName, CXFJaxRsServiceRegistrator registrator,
+        AriesJaxRSServiceRuntime runtime) {
 
         return
-            service(serviceReference).flatMap(extension ->
-            onClose(() -> registrator.removeProvider(extension)).
-                foreach(ign ->
-            registrator.addProvider(extension)
-        ));
+            onlyGettables(
+                just(serviceReference),
+                runtime::addNotGettableExtension,
+                runtime::removeNotGettableExtension
+            ).foreach(
+                registrator::addProvider,
+                registrator::removeProvider
+            ).foreach(
+                __ -> runtime.addApplicationExtension(
+                    applicationName, serviceReference),
+                __ -> runtime.removeApplicationExtension(
+                    applicationName, serviceReference)
+            );
     }
 
     public static <T> OSGi<?> safeRegisterEndpoint(
-        ServiceReference<T> ref, CXFJaxRsServiceRegistrator registrator) {
+        ServiceReference<T> serviceReference,
+        String applicationName,
+        CXFJaxRsServiceRegistrator registrator,
+        AriesJaxRSServiceRuntime runtime) {
 
         return
-            bundleContext().flatMap(bundleContext ->
-            serviceObjects(ref).flatMap(service ->
-            registerEndpoint(ref, registrator, service).
-                flatMap(serviceInformation ->
-            onClose(() ->
-                unregisterEndpoint(registrator, serviceInformation)))));
+            onlyGettables(
+                just(serviceReference),
+                runtime::addNotGettableEndpoint,
+                runtime::removeNotGettableEndpoint
+            ).flatMap(
+                tuple -> serviceObjects(serviceReference).flatMap(
+                    serviceObjects -> registerEndpoint(
+                        registrator, serviceObjects).flatMap(
+                            resourceProvider ->
+                                onClose(
+                                    () -> unregisterEndpoint(
+                                        registrator, resourceProvider)
+                                )
+                    )
+                )
+            ).foreach(
+                __ -> runtime.addApplicationEndpoint(
+                    applicationName, serviceReference),
+                __ -> runtime.removeApplicationEndpoint(
+                    applicationName, serviceReference)
+            );
     }
 
     public static <T extends Comparable<? super T>> OSGi<T> repeatInOrder(
@@ -130,14 +165,15 @@ public class Utils {
         return program.route(new RepeatInOrderRouter<>());
     }
 
-    public static <T> OSGi<MutableTuple<T>> onlyGettables(
-        ServiceReference<T> serviceReference,
+    public static <T> OSGi<ServiceTuple<T>> onlyGettables(
+        OSGi<ServiceReference<T>> program,
         Consumer<ServiceReference<T>> whenAddedNotGettable,
         Consumer<ServiceReference<T>> whenLeavingNotGettable) {
 
-        return bundleContext().flatMap(
-            bundleContext -> {
+        return bundleContext().flatMap(bundleContext ->
+            program.flatMap(serviceReference -> {
                 T service = null;
+
                 try {
                     service = bundleContext.getService(serviceReference);
                 }
@@ -148,7 +184,8 @@ public class Utils {
 
                     return
                         onClose(
-                            () -> whenLeavingNotGettable.accept(serviceReference)
+                            () -> whenLeavingNotGettable.accept(
+                                serviceReference)
                         ).then(
                             nothing()
                         );
@@ -157,15 +194,14 @@ public class Utils {
                     onClose(
                         () -> bundleContext.ungetService(serviceReference)
                     ).then(
-                        just(new MutableTuple<>(serviceReference, service)))
-                    ;
+                        just(new ServiceTuple<>(serviceReference, service))
+                    );
             }
-        );
+        ));
     }
 
     public static <T> OSGi<ResourceProvider>
         registerEndpoint(
-            ServiceReference<?> serviceReference,
             CXFJaxRsServiceRegistrator registrator,
             ServiceObjects<T> serviceObjects) {
 
@@ -353,18 +389,18 @@ public class Utils {
 
     }
 
-    public static class MutableTuple<T> implements Comparable<MutableTuple<T>> {
+    public static class ServiceTuple<T> implements Comparable<ServiceTuple<T>> {
 
         private final ServiceReference<T> _serviceReference;
-        private T _service;
+        private final T _service;
 
-        public MutableTuple(ServiceReference<T> a, T service) {
+        public ServiceTuple(ServiceReference<T> a, T service) {
             _serviceReference = a;
             _service = service;
         }
 
         @Override
-        public int compareTo(MutableTuple<T> o) {
+        public int compareTo(ServiceTuple<T> o) {
             return _serviceReference.compareTo(o._serviceReference);
         }
 
@@ -373,7 +409,7 @@ public class Utils {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
 
-            MutableTuple<?> that = (MutableTuple<?>) o;
+            ServiceTuple<?> that = (ServiceTuple<?>) o;
 
             return _serviceReference.equals(that._serviceReference);
         }
@@ -387,13 +423,9 @@ public class Utils {
             return _serviceReference;
         }
 
-        public T getSecond() {
+        public T getService() {
             return _service;
         }
-
-        public void setService(T service) {
-            _service = service;
-        }
-
     }
+
 }

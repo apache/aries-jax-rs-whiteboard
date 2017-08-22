@@ -43,4 +43,4 @@
 	org.osgi.service.http;version='[1.2.1,1.2.2)',\
 	org.osgi.service.http.whiteboard;version='[1.0.0,1.0.1)'
 
-#-runvm: "-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005"
+-runvm: "-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005"
