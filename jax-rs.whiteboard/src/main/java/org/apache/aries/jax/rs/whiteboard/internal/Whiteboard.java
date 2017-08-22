@@ -44,7 +44,9 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 
 import static java.lang.String.format;
+import static org.apache.aries.jax.rs.whiteboard.internal.AriesJaxRSServiceRuntime.getApplicationName;
 import static org.apache.aries.jax.rs.whiteboard.internal.Utils.deployRegistrator;
+import static org.apache.aries.jax.rs.whiteboard.internal.Utils.getProperties;
 import static org.apache.aries.jax.rs.whiteboard.internal.Utils.highestPer;
 import static org.apache.aries.jax.rs.whiteboard.internal.Utils.onlyGettables;
 import static org.apache.aries.jax.rs.whiteboard.internal.Utils.safeRegisterEndpoint;
@@ -75,7 +77,8 @@ import static org.osgi.service.jaxrs.whiteboard.JaxRSWhiteboardConstants.JAX_RS_
  */
 public class Whiteboard {
 
-    public static final Function<ServiceTuple<Application>, String> APPLICATION_BASE = ((Function<ServiceTuple<Application>, ServiceReference<Application>>) ServiceTuple::getServiceReference).andThen(Whiteboard::getApplicationBase);
+    public static final Function<ServiceTuple<Application>, String> APPLICATION_BASE = ((Function<ServiceTuple<Application>, ServiceReference<Application>>) ServiceTuple::getServiceReference).andThen(Utils::getProperties).andThen(Whiteboard::getApplicationBase);
+    public static final String DEFAULT_NAME = ".default";
 
     public static OSGi<Void> createWhiteboard(Dictionary<String, ?> configuration) {
         AriesJaxRSServiceRuntime runtime = new AriesJaxRSServiceRuntime();
@@ -84,15 +87,15 @@ public class Whiteboard {
 
         return
             bundleContext().flatMap(bundleContext ->
-            registerJaxRSServiceRuntime(runtime, bundleContext, configurationMap).flatMap(runtimeResgistration ->
-            createDefaultJaxRsServiceRegistrator(configurationMap).flatMap(defaultServiceRegistrator ->
-            just(new ServiceRegistrationChangeCounter(runtimeResgistration)).flatMap(counter ->
-            just(runtimeResgistration.getReference()).flatMap(runtimeRegistration ->
+            registerJaxRSServiceRuntime(runtime, bundleContext, configurationMap).flatMap(runtimeRegistration ->
+            createDefaultJaxRsServiceRegistrator(configurationMap, runtime).flatMap(defaultServiceRegistrator ->
+            just(new ServiceRegistrationChangeCounter(runtimeRegistration)).flatMap(counter ->
+            just(runtimeRegistration.getReference()).flatMap(runtimeReference ->
                 all(
-                    countChanges(whiteboardApplications(runtimeRegistration, runtime, Maps.from(configuration)), counter),
-                    countChanges(whiteBoardApplicationSingletons(runtimeRegistration, runtime), counter),
-                    countChanges(whiteboardExtensions(runtimeRegistration, defaultServiceRegistrator, runtime), counter),
-                    countChanges(whiteboardSingletons(runtimeRegistration, defaultServiceRegistrator, runtime), counter)
+                    countChanges(whiteboardApplications(runtimeReference, runtime, Maps.from(configuration)), counter),
+                    countChanges(whiteBoardApplicationSingletons(runtimeReference, runtime), counter),
+                    countChanges(whiteboardExtensions(runtimeReference, defaultServiceRegistrator, runtime), counter),
+                    countChanges(whiteboardSingletons(runtimeReference, defaultServiceRegistrator, runtime), counter)
             ))))));
     }
 
@@ -147,18 +150,22 @@ public class Whiteboard {
     }
 
     private static OSGi<CXFJaxRsServiceRegistrator>
-        createDefaultJaxRsServiceRegistrator(Map<String, ?> configuration) {
+        createDefaultJaxRsServiceRegistrator(
+            Map<String, ?> configuration, AriesJaxRSServiceRuntime runtime) {
 
         Map<String, Object> properties = new HashMap<>(configuration);
         properties.put(JAX_RS_NAME, ".default");
+        properties.put(JAX_RS_APPLICATION_BASE, "/");
+        properties.put("service.id", (long)-1);
 
         return
             bundleContext().flatMap(bundleContext ->
             just(createBus(bundleContext, configuration)).flatMap(bus ->
-            registerCXFServletService(bus, "", configuration).then(
-            just(
-                new CXFJaxRsServiceRegistrator(bus, new DefaultApplication()))
-            )));
+            registerCXFServletService(bus, "", configuration).foreach(
+                __ -> runtime.setApplicationForPath("/", properties),
+                __ -> runtime.unsetApplicationForPath("/")).then(
+            just(new CXFJaxRsServiceRegistrator(bus, new DefaultApplication()))
+        )));
     }
 
     private static String getApplicationFilter() {
@@ -237,7 +244,7 @@ public class Whiteboard {
                 CXFJaxRsServiceRegistrator.class, applicationFilter).
                 flatMap(registratorReference ->
             just(
-                AriesJaxRSServiceRuntime.getApplicationName(registratorReference)).
+                getApplicationName(getProperties(registratorReference))).
                 flatMap(applicationName ->
             waitForExtensionDependencies(ref,
                 service(registratorReference).flatMap(registrator ->
@@ -267,12 +274,13 @@ public class Whiteboard {
                 bundleContext -> highestRankedPerPath.flatMap(
                     ref -> deployApplication(configuration, bundleContext, ref)
                 ).map(
-                    ServiceTuple::getServiceReference).
-                foreach(
-                    sr -> runtime.setApplicationForPath(
-                            getApplicationBase(sr), sr),
-                    sr -> runtime.unsetApplicationForPath(
-                        getApplicationBase(sr))
+                    ServiceTuple::getServiceReference
+                ).map(
+                    Utils::getProperties
+                ).foreach(
+                    p -> runtime.setApplicationForPath(
+                        getApplicationBase(p), p),
+                    p -> runtime.unsetApplicationForPath(getApplicationBase(p))
                 )
             );
     }
@@ -286,20 +294,18 @@ public class Whiteboard {
         ServiceReference<Application> serviceReference =
             tuple.getServiceReference();
 
-        Map<String, Object> properties =
-            CXFJaxRsServiceRegistrator.getProperties(
-                serviceReference, JAX_RS_APPLICATION_BASE);
+        Map<String, Object> properties = getProperties(serviceReference);
 
         properties.computeIfAbsent(
             JAX_RS_NAME,
             (__) -> AriesJaxRSServiceRuntime.generateApplicationName(
-                tuple.getServiceReference()));
+                properties));
 
         return
             all(
                 deployRegistrator(bus, tuple.getService(), properties),
                 registerCXFServletService(
-                    bus, getApplicationBase(serviceReference), properties)).
+                    bus, getApplicationBase(properties), properties)).
             then(
                 just(tuple)
             );
@@ -310,10 +316,8 @@ public class Whiteboard {
             ServiceReference<?> jaxRsRuntimeServiceReference) {
 
         return
-            serviceReferences(
-                Application.class, getApplicationFilter()).
-            filter(
-                new TargetFilter<>(jaxRsRuntimeServiceReference));
+            serviceReferences(Application.class, getApplicationFilter()).
+            filter(new TargetFilter<>(jaxRsRuntimeServiceReference));
     }
 
     private static OSGi<?> whiteboardExtensions(
@@ -327,7 +331,10 @@ public class Whiteboard {
                 flatMap(ref ->
             waitForExtensionDependencies(ref,
                 safeRegisterExtension(
-                    ref, ".default", defaultServiceRegistrator, runtime)
+                    ref, DEFAULT_NAME, defaultServiceRegistrator, runtime)
+            ).foreach(
+                __ -> runtime.addApplicationExtension(DEFAULT_NAME, ref),
+                __ -> runtime.removeApplicationExtension(DEFAULT_NAME, ref)
             )
         );
     }
@@ -340,11 +347,15 @@ public class Whiteboard {
         return
             serviceReferences(getSingletonsFilter()).
                 filter(new TargetFilter<>(jaxRsRuntimeServiceReference)).
-                flatMap(serviceReference ->
-            waitForExtensionDependencies(serviceReference,
+                flatMap(ref ->
+            waitForExtensionDependencies(
+                ref,
                 safeRegisterEndpoint(
-                    serviceReference, ".default", defaultServiceRegistrator,
+                    ref, DEFAULT_NAME, defaultServiceRegistrator,
                     runtime)
+            ).foreach(
+                __ -> runtime.addApplicationEndpoint(DEFAULT_NAME, ref),
+                __ -> runtime.removeApplicationExtension(DEFAULT_NAME, ref)
             )
         );
     }
@@ -428,9 +439,9 @@ public class Whiteboard {
     }
 
     public static String getApplicationBase(
-        ServiceReference<Application> serviceReference) {
+        Map<String, Object> properties) {
 
-        return serviceReference.getProperty(JAX_RS_APPLICATION_BASE).toString();
+        return properties.get(JAX_RS_APPLICATION_BASE).toString();
     }
 
 

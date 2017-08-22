@@ -19,8 +19,6 @@ package org.apache.aries.jax.rs.whiteboard.internal;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
 
 import javax.ws.rs.core.Application;
 
@@ -35,7 +33,6 @@ import org.apache.cxf.jaxrs.model.OperationResourceInfo;
 import org.apache.cxf.jaxrs.provider.json.JSONProvider;
 import org.apache.cxf.jaxrs.utils.ResourceUtils;
 import org.apache.cxf.message.Message;
-import org.osgi.framework.ServiceReference;
 
 public class CXFJaxRsServiceRegistrator {
 
@@ -46,28 +43,11 @@ public class CXFJaxRsServiceRegistrator {
     private Server _server;
     private final Collection<ResourceProvider> _services = new ArrayList<>();
 
-    private static final String CXF_ENDPOINT_ADDRESS = "CXF_ENDPOINT_ADDRESS";
-
     public CXFJaxRsServiceRegistrator(Bus bus, Application application) {
         _bus = bus;
         _application = application;
 
         rewire();
-    }
-
-    public static Map<String, Object> getProperties(
-        ServiceReference<?> sref, String addressKey) {
-
-        String[] propertyKeys = sref.getPropertyKeys();
-        Map<String, Object> properties = new HashMap<>(propertyKeys.length);
-
-        for (String key : propertyKeys) {
-            properties.put(key, sref.getProperty(key));
-        }
-
-        properties.put(
-            CXF_ENDPOINT_ADDRESS, sref.getProperty(addressKey).toString());
-        return properties;
     }
 
     public void add(ResourceProvider resourceProvider) {

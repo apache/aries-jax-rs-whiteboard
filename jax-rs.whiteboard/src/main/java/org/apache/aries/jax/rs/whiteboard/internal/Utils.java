@@ -28,6 +28,7 @@ import org.osgi.service.jaxrs.runtime.dto.FailedApplicationDTO;
 
 import javax.ws.rs.core.Application;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.NavigableSet;
 import java.util.SortedSet;
@@ -46,6 +47,17 @@ import static org.apache.aries.osgi.functional.OSGi.register;
  * @author Carlos Sierra Andrés
  */
 public class Utils {
+
+    public static Map<String, Object> getProperties(ServiceReference<?> sref) {
+        String[] propertyKeys = sref.getPropertyKeys();
+        Map<String, Object> properties = new HashMap<>(propertyKeys.length);
+
+        for (String key : propertyKeys) {
+            properties.put(key, sref.getProperty(key));
+        }
+
+        return properties;
+    }
 
     public static <T> OSGi<T> service(ServiceReference<T> serviceReference) {
         return

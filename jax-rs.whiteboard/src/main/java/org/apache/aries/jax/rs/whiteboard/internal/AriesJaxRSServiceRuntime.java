@@ -31,18 +31,20 @@ import org.osgi.service.jaxrs.runtime.dto.RuntimeDTO;
 import org.osgi.service.jaxrs.whiteboard.JaxRSWhiteboardConstants;
 
 import javax.ws.rs.core.Application;
+import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
 
+import static org.apache.aries.jax.rs.whiteboard.internal.Utils.getProperties;
 import static org.osgi.service.jaxrs.whiteboard.JaxRSWhiteboardConstants.JAX_RS_NAME;
 
 public class AriesJaxRSServiceRuntime implements JaxRSServiceRuntime {
 
     private static final long serialVersionUID = 1L;
 
-    private ConcurrentHashMap<String, ServiceReference<Application>>
+    private ConcurrentHashMap<String, Map<String, Object>>
         _applications = new ConcurrentHashMap<>();
 
     private ConcurrentHashMap<String, Set<ServiceReference<?>>>
@@ -96,13 +98,13 @@ public class AriesJaxRSServiceRuntime implements JaxRSServiceRuntime {
         _ungettableExtensions.remove(serviceReference);
     }
 
-    public ServiceReference<Application> setApplicationForPath(
-        String path, ServiceReference<Application> serviceReference) {
+    public Map<String, Object> setApplicationForPath(
+        String path, Map<String, Object> properties) {
 
-        return _applications.put(path, serviceReference);
+        return _applications.put(path, properties);
     }
 
-    public ServiceReference<Application> unsetApplicationForPath(String path) {
+    public Map<String, Object> unsetApplicationForPath(String path) {
         return _applications.remove(path);
     }
 
@@ -268,14 +270,13 @@ public class AriesJaxRSServiceRuntime implements JaxRSServiceRuntime {
     }
 
     private ApplicationDTO buildApplicationDTO(
-        ServiceReference<Application> serviceReference) {
+        Map<String, Object> properties) {
 
         ApplicationDTO applicationDTO = new ApplicationDTO(){};
 
-        applicationDTO.name = getApplicationName(serviceReference);
-        applicationDTO.base = Whiteboard.getApplicationBase(serviceReference);
-        applicationDTO.serviceId = (Long)serviceReference.getProperty(
-            "service.id");
+        applicationDTO.name = getApplicationName(properties);
+        applicationDTO.base = Whiteboard.getApplicationBase(properties);
+        applicationDTO.serviceId = (Long)properties.get("service.id");
 
         applicationDTO.resourceDTOs = getApplicationEndpointsStream(
             applicationDTO.name).toArray(
@@ -351,7 +352,7 @@ public class AriesJaxRSServiceRuntime implements JaxRSServiceRuntime {
             JaxRSWhiteboardConstants.JAX_RS_NAME);
 
         failedApplicationDTO.name = nameProperty == null ?
-            generateApplicationName(serviceReference) :
+            generateApplicationName(getProperties(serviceReference)) :
             nameProperty.toString();
 
         failedApplicationDTO.failureReason = reason;
@@ -359,23 +360,22 @@ public class AriesJaxRSServiceRuntime implements JaxRSServiceRuntime {
         return failedApplicationDTO;
     }
 
-    public static String getApplicationName(
-        ServiceReference<?> serviceReference) {
+    public static String getApplicationName(Map<String, Object> properties) {
 
-        Object property = serviceReference.getProperty(JAX_RS_NAME);
+        Object property = properties.get(JAX_RS_NAME);
 
         if (property == null) {
-            return generateApplicationName(serviceReference);
+            return generateApplicationName(properties);
         }
 
         return property.toString();
     }
 
     public static String generateApplicationName(
-        ServiceReference<?> serviceReference) {
+        Map<String, Object> properties) {
 
         return ".jax-rs-application-" +
-            serviceReference.getProperty("service.id").toString();
+            properties.get("service.id").toString();
     }
 
 }
