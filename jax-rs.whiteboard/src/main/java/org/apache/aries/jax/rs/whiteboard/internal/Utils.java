@@ -48,6 +48,12 @@ import static org.apache.aries.osgi.functional.OSGi.register;
  */
 public class Utils {
 
+    public static String generateApplicationName(
+        PropertyHolder propertyHolder) {
+
+        return ".generated.for." + propertyHolder.get("service.id");
+    }
+
     public static Map<String, Object> getProperties(ServiceReference<?> sref) {
         String[] propertyKeys = sref.getPropertyKeys();
         Map<String, Object> properties = new HashMap<>(propertyKeys.length);
@@ -77,11 +83,12 @@ public class Utils {
     }
 
     public static OSGi<?> deployRegistrator(
-        Bus bus, Application application, Map<String, Object> props) {
+        Bus bus, ServiceTuple<Application> tuple, Map<String, Object> props,
+        AriesJaxRSServiceRuntime runtime) {
 
         try {
             CXFJaxRsServiceRegistrator registrator =
-                new CXFJaxRsServiceRegistrator(bus, application);
+                new CXFJaxRsServiceRegistrator(bus, tuple.getService());
 
             return
                 onClose(registrator::close).then(
@@ -89,8 +96,16 @@ public class Utils {
             );
         }
         catch (Exception e) {
-            return register(
-                FailedApplicationDTO.class, new FailedApplicationDTO(), props);
+            ServiceReference<Application> serviceReference =
+                tuple.getServiceReference();
+
+            runtime.addErroredApplication(serviceReference);
+
+            return onClose(
+                () -> runtime.removeErroredApplication(serviceReference)
+            ).then(
+                nothing()
+            );
         }
     }
 
@@ -438,6 +453,10 @@ public class Utils {
         public T getService() {
             return _service;
         }
+    }
+
+    public interface PropertyHolder {
+        Object get(String propertyName);
     }
 
 }

@@ -17,6 +17,7 @@
 
 package org.apache.aries.jax.rs.whiteboard.internal;
 
+import org.apache.aries.jax.rs.whiteboard.internal.Utils.PropertyHolder;
 import org.osgi.framework.ServiceReference;
 import org.osgi.service.jaxrs.runtime.JaxRSServiceRuntime;
 import org.osgi.service.jaxrs.runtime.dto.ApplicationDTO;
@@ -37,7 +38,7 @@ import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
 
-import static org.apache.aries.jax.rs.whiteboard.internal.Utils.getProperties;
+import static org.apache.aries.jax.rs.whiteboard.internal.Utils.generateApplicationName;
 import static org.osgi.service.jaxrs.whiteboard.JaxRSWhiteboardConstants.JAX_RS_NAME;
 
 public class AriesJaxRSServiceRuntime implements JaxRSServiceRuntime {
@@ -59,8 +60,17 @@ public class AriesJaxRSServiceRuntime implements JaxRSServiceRuntime {
     private Set<ServiceReference<Application>> _shadowedApplications =
         new TreeSet<>();
 
+    private Set<ServiceReference<Application>> _erroredApplications =
+        new TreeSet<>();
+
     private TreeSet<ServiceReference<?>> _ungettableEndpoints = new TreeSet<>();
     private TreeSet<ServiceReference<?>> _ungettableExtensions = new TreeSet<>();
+
+    public void addErroredApplication(
+        ServiceReference<Application> serviceReference) {
+
+        _erroredApplications.add(serviceReference);
+    }
 
     public boolean addNotGettableApplication(
         ServiceReference<Application> serviceReference) {
@@ -72,6 +82,12 @@ public class AriesJaxRSServiceRuntime implements JaxRSServiceRuntime {
         ServiceReference<T> serviceReference) {
 
         _ungettableExtensions.add(serviceReference);
+    }
+
+    public void removeErroredApplication(
+        ServiceReference<Application> serviceReference) {
+
+        _erroredApplications.remove(serviceReference);
     }
 
     public boolean removeNotGettableApplication(
@@ -191,7 +207,9 @@ public class AriesJaxRSServiceRuntime implements JaxRSServiceRuntime {
 
         runtimeDTO.failedApplicationDTOs = Stream.concat(
             shadowedApplicationsDTOStream(),
-            unreferenciableApplicationsDTOStream()
+            Stream.concat(
+                unreferenciableApplicationsDTOStream(),
+                erroredApplicationsDTOStream())
             ).toArray(
                 FailedApplicationDTO[]::new
             );
@@ -211,6 +229,13 @@ public class AriesJaxRSServiceRuntime implements JaxRSServiceRuntime {
         );
 
         return runtimeDTO;
+    }
+
+    private Stream<FailedApplicationDTO> erroredApplicationsDTOStream() {
+        return _erroredApplications.stream().map(
+            sr -> buildFailedApplicationDTO(
+                DTOConstants.FAILURE_REASON_UNKNOWN, sr)
+        );
     }
 
     private FailedExtensionDTO buildFailedExtensionDTO(
@@ -274,8 +299,8 @@ public class AriesJaxRSServiceRuntime implements JaxRSServiceRuntime {
 
         ApplicationDTO applicationDTO = new ApplicationDTO(){};
 
-        applicationDTO.name = getApplicationName(properties);
-        applicationDTO.base = Whiteboard.getApplicationBase(properties);
+        applicationDTO.name = getApplicationName(properties::get);
+        applicationDTO.base = Whiteboard.getApplicationBase(properties::get);
         applicationDTO.serviceId = (Long)properties.get("service.id");
 
         applicationDTO.resourceDTOs = getApplicationEndpointsStream(
@@ -352,7 +377,7 @@ public class AriesJaxRSServiceRuntime implements JaxRSServiceRuntime {
             JaxRSWhiteboardConstants.JAX_RS_NAME);
 
         failedApplicationDTO.name = nameProperty == null ?
-            generateApplicationName(getProperties(serviceReference)) :
+            generateApplicationName(serviceReference::getProperty) :
             nameProperty.toString();
 
         failedApplicationDTO.failureReason = reason;
@@ -360,7 +385,7 @@ public class AriesJaxRSServiceRuntime implements JaxRSServiceRuntime {
         return failedApplicationDTO;
     }
 
-    public static String getApplicationName(Map<String, Object> properties) {
+    public static String getApplicationName(PropertyHolder properties) {
 
         Object property = properties.get(JAX_RS_NAME);
 
@@ -369,13 +394,6 @@ public class AriesJaxRSServiceRuntime implements JaxRSServiceRuntime {
         }
 
         return property.toString();
-    }
-
-    public static String generateApplicationName(
-        Map<String, Object> properties) {
-
-        return ".jax-rs-application-" +
-            properties.get("service.id").toString();
     }
 
 }

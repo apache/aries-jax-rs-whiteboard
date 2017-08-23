@@ -22,6 +22,7 @@ import static org.osgi.service.jaxrs.whiteboard.JaxRSWhiteboardConstants.*;
 
 import java.util.Dictionary;
 import java.util.Hashtable;
+import java.util.Set;
 
 import org.junit.After;
 import org.junit.Test;
@@ -32,6 +33,7 @@ import org.osgi.framework.ServiceRegistration;
 
 import org.osgi.service.jaxrs.runtime.JaxRSServiceRuntime;
 import org.osgi.service.jaxrs.runtime.dto.DTOConstants;
+import org.osgi.service.jaxrs.runtime.dto.RuntimeDTO;
 import org.osgi.util.tracker.ServiceTracker;
 import test.types.TestAddon;
 import test.types.TestAddonConflict;
@@ -69,9 +71,9 @@ public class JaxrsTest extends TestHelper {
         try {
             JaxRSServiceRuntime runtime = getJaxRSServiceRuntime();
 
-            assertEquals(1, runtime.getRuntimeDTO().applicationDTOs.length);
-
             assertNotNull(runtime);
+
+            assertEquals(1, runtime.getRuntimeDTO().applicationDTOs.length);
 
             serviceRegistration = registerApplication(
                 new TestApplication());
@@ -94,6 +96,51 @@ public class JaxrsTest extends TestHelper {
                 serviceRegistration.unregister();
             }
         }
+    }
+
+    @Test
+    public void testApplicationWithError() throws InterruptedException {
+        JaxRSServiceRuntime runtime = getJaxRSServiceRuntime();
+
+        assertNotNull(runtime);
+
+        RuntimeDTO runtimeDTO = runtime.getRuntimeDTO();
+
+        assertEquals(1, runtimeDTO.applicationDTOs.length);
+        assertEquals(0, runtimeDTO.failedExtensionDTOs.length);
+
+        ServiceRegistration<?> serviceRegistration = registerApplication(
+            new TestApplication() {
+
+                @Override
+                public Set<Object> getSingletons() {
+                    throw new RuntimeException();
+                }
+
+            });
+
+        runtimeDTO = runtime.getRuntimeDTO();
+
+        assertEquals(1, runtimeDTO.applicationDTOs.length);
+        assertEquals(1, runtimeDTO.failedApplicationDTOs.length);
+        assertEquals(
+            DTOConstants.FAILURE_REASON_UNKNOWN,
+            runtimeDTO.failedApplicationDTOs[0].failureReason);
+
+        Client client = createClient();
+
+        WebTarget webTarget = client.
+            target("http://localhost:8080").
+            path("/test-application");
+
+        assertEquals(404, webTarget.request().get().getStatus());
+
+        serviceRegistration.unregister();
+
+        runtimeDTO = runtime.getRuntimeDTO();
+
+        assertEquals(1, runtimeDTO.applicationDTOs.length);
+        assertEquals(0, runtimeDTO.failedApplicationDTOs.length);
     }
 
     @Test
