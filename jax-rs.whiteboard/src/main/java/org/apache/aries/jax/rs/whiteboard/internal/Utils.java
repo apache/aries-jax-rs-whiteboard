@@ -24,7 +24,7 @@ import org.apache.cxf.jaxrs.lifecycle.ResourceProvider;
 import org.apache.cxf.message.Message;
 import org.osgi.framework.ServiceObjects;
 import org.osgi.framework.ServiceReference;
-import org.osgi.service.jaxrs.runtime.dto.FailedApplicationDTO;
+import org.osgi.service.jaxrs.whiteboard.JaxRSWhiteboardConstants;
 
 import javax.ws.rs.core.Application;
 import java.util.Comparator;
@@ -36,6 +36,7 @@ import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 import static org.apache.aries.osgi.functional.OSGi.bundleContext;
 import static org.apache.aries.osgi.functional.OSGi.just;
@@ -136,9 +137,20 @@ public class Utils {
     }
 
     public static OSGi<?> safeRegisterExtension(
-        ServiceReference<?> serviceReference,
-        String applicationName, CXFJaxRsServiceRegistrator registrator,
+        ServiceReference<?> serviceReference, String applicationName,
+        CXFJaxRsServiceRegistrator registrator,
         AriesJaxRSServiceRuntime runtime) {
+
+        Map<String, Object> properties = getProperties(serviceReference);
+
+        properties.put(
+            JaxRSWhiteboardConstants.JAX_RS_NAME, applicationName);
+        properties.put(
+            "original.objectClass",
+            serviceReference.getProperty("objectClass"));
+
+        properties.remove(JaxRSWhiteboardConstants.JAX_RS_EXTENSION);
+        properties.remove(JaxRSWhiteboardConstants.JAX_RS_RESOURCE);
 
         return
             onlyGettables(
@@ -153,6 +165,10 @@ public class Utils {
                     applicationName, serviceReference),
                 __ -> runtime.removeApplicationExtension(
                     applicationName, serviceReference)
+            ).then(
+                register(
+                    ApplicationExtensionRegistration.class,
+                    new ApplicationExtensionRegistration(){}, properties)
             );
     }
 
@@ -458,5 +474,7 @@ public class Utils {
     public interface PropertyHolder {
         Object get(String propertyName);
     }
+
+    public interface ApplicationExtensionRegistration {}
 
 }

@@ -17,6 +17,7 @@
 
 package org.apache.aries.jax.rs.whiteboard.internal;
 
+import org.apache.aries.jax.rs.whiteboard.internal.Utils.ApplicationExtensionRegistration;
 import org.apache.aries.jax.rs.whiteboard.internal.Utils.PropertyHolder;
 import org.apache.aries.jax.rs.whiteboard.internal.Utils.ServiceTuple;
 import org.apache.aries.osgi.functional.OSGi;
@@ -79,7 +80,12 @@ import static org.osgi.service.jaxrs.whiteboard.JaxRSWhiteboardConstants.JAX_RS_
  */
 public class Whiteboard {
 
-    public static final Function<ServiceTuple<Application>, String> APPLICATION_BASE = ((Function<ServiceTuple<Application>, ServiceReference<Application>>) ServiceTuple::getServiceReference).andThen(sr -> getApplicationBase(sr::getProperty));
+    public static final Function<ServiceTuple<Application>, String>
+        APPLICATION_BASE =
+        ((Function<ServiceTuple<Application>, ServiceReference<Application>>)
+            ServiceTuple::getServiceReference).andThen(
+                sr -> getApplicationBase(sr::getProperty));
+
     public static final String DEFAULT_NAME = ".default";
 
     public static OSGi<Void> createWhiteboard(Dictionary<String, ?> configuration) {
@@ -118,7 +124,11 @@ public class Whiteboard {
     }
 
     private static String buildExtensionFilter(String filter) {
-        return String.format("(&%s%s)", getExtensionFilter(), filter);
+        filter = filter.replace("(objectClass=", "(original.objectClass=");
+
+        return String.format(
+            "(&(objectClass=%s)%s)",
+            ApplicationExtensionRegistration.class.getName(), filter);
     }
 
     private static String[] canonicalize(Object propertyValue) {
@@ -174,11 +184,11 @@ public class Whiteboard {
         return format("(%s=*)", JAX_RS_APPLICATION_BASE);
     }
 
-    private static String getExtensionFilter() {
-        return format("(%s=*)", JAX_RS_EXTENSION);
+    private static String getExtensionsFilter() {
+        return format("(%s=true)", JAX_RS_EXTENSION);
     }
 
-    private static String getSingletonsFilter() {
+    private static String getResourcesFilter() {
         return format("(%s=true)", JAX_RS_RESOURCE);
     }
 
@@ -219,7 +229,8 @@ public class Whiteboard {
     }
 
     private static OSGi<?> waitForExtensionDependencies(
-        ServiceReference<?> serviceReference, OSGi<?> program) {
+        ServiceReference<?> serviceReference, AriesJaxRSServiceRuntime runtime,
+        OSGi<?> program) {
 
         String[] extensionDependencies = canonicalize(
             serviceReference.getProperty(JAX_RS_EXTENSION_SELECT));
@@ -237,10 +248,12 @@ public class Whiteboard {
         ServiceReference<?> jaxRsRuntimeServiceReference,
         AriesJaxRSServiceRuntime runtime) {
         return
-            serviceReferences(format("(%s=*)", JAX_RS_APPLICATION_SELECT)).
+            serviceReferences(getApplicationSingletonsFilter()).
                 filter(new TargetFilter<>(jaxRsRuntimeServiceReference)).
-                flatMap(ref ->
-            just(ref.getProperty(JAX_RS_APPLICATION_SELECT).toString()).
+                flatMap(endpointReference ->
+            just(endpointReference.
+                    getProperty(JAX_RS_APPLICATION_SELECT).
+                    toString()).
                 flatMap(applicationFilter ->
             serviceReferences(
                 CXFJaxRsServiceRegistrator.class, applicationFilter).
@@ -248,10 +261,17 @@ public class Whiteboard {
             just(
                 getApplicationName(registratorReference::getProperty)).
                 flatMap(applicationName ->
-            waitForExtensionDependencies(ref,
+            waitForExtensionDependencies(endpointReference, runtime,
                 service(registratorReference).flatMap(registrator ->
-                safeRegisterGeneric(ref, applicationName, registrator, runtime)
+                safeRegisterGeneric(
+                    endpointReference, applicationName, registrator, runtime)
         ))))));
+    }
+
+    private static String getApplicationSingletonsFilter() {
+        return format(
+            "(&(|%s%s)(%s=*))", getExtensionsFilter(), getResourcesFilter(),
+            JAX_RS_APPLICATION_SELECT);
     }
 
     private static OSGi<?> whiteboardApplications(
@@ -327,10 +347,10 @@ public class Whiteboard {
         AriesJaxRSServiceRuntime runtime) {
 
         return
-            serviceReferences(getExtensionFilter()).
+            serviceReferences(getExtensionsFilter()).
                 filter(new TargetFilter<>(jaxRsRuntimeServiceReference)).
                 flatMap(ref ->
-            waitForExtensionDependencies(ref,
+            waitForExtensionDependencies(ref, runtime,
                 safeRegisterExtension(
                     ref, DEFAULT_NAME, defaultServiceRegistrator, runtime)
             ).foreach(
@@ -346,14 +366,13 @@ public class Whiteboard {
         AriesJaxRSServiceRuntime runtime) {
 
         return
-            serviceReferences(getSingletonsFilter()).
+            serviceReferences(getResourcesFilter()).
                 filter(new TargetFilter<>(jaxRsRuntimeServiceReference)).
                 flatMap(ref ->
             waitForExtensionDependencies(
-                ref,
+                ref, runtime,
                 safeRegisterEndpoint(
-                    ref, DEFAULT_NAME, defaultServiceRegistrator,
-                    runtime)
+                    ref, DEFAULT_NAME, defaultServiceRegistrator, runtime)
             ).foreach(
                 __ -> runtime.addApplicationEndpoint(DEFAULT_NAME, ref),
                 __ -> runtime.removeApplicationExtension(DEFAULT_NAME, ref)

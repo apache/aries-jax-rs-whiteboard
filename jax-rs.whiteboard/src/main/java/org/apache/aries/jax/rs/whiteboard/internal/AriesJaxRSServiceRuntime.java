@@ -351,7 +351,7 @@ public class AriesJaxRSServiceRuntime implements JaxRSServiceRuntime {
     private static ResourceDTO populateResourceDTO(
         ResourceDTO resourceDTO, ServiceReference<?> serviceReference) {
 
-        resourceDTO.name = serviceReference.getProperty(JAX_RS_NAME).toString();
+        resourceDTO.name = getApplicationName(serviceReference::getProperty);
         resourceDTO.serviceId = (Long)serviceReference.getProperty(
             "service.id");
 

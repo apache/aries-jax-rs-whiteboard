@@ -25,6 +25,7 @@ import java.util.Hashtable;
 import java.util.Set;
 
 import org.junit.After;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.PrototypeServiceFactory;
@@ -836,8 +837,7 @@ public class JaxrsTest extends TestHelper {
         try {
             serviceRegistration = registerAddon(new TestAddon());
 
-            filterRegistration = registerExtension(
-                "Filter", JAX_RS_EXTENSION, "test-filter");
+            filterRegistration = registerExtension("Filter");
 
             Response response = webTarget.request().get();
 
@@ -881,8 +881,7 @@ public class JaxrsTest extends TestHelper {
 
                     assertNull(response.getHeaders().getFirst("Filtered"));
 
-                    filterRegistration = registerExtension(
-                        "Filter", JAX_RS_EXTENSION, "test-filter");
+                    filterRegistration = registerExtension("Filter");
 
                     response = webTarget.request().get();
 
