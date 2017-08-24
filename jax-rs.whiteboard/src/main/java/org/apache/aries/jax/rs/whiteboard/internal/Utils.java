@@ -36,7 +36,6 @@ import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.function.Supplier;
 
 import static org.apache.aries.osgi.functional.OSGi.bundleContext;
 import static org.apache.aries.osgi.functional.OSGi.just;
@@ -148,9 +147,6 @@ public class Utils {
         properties.put(
             "original.objectClass",
             serviceReference.getProperty("objectClass"));
-
-        properties.remove(JaxRSWhiteboardConstants.JAX_RS_EXTENSION);
-        properties.remove(JaxRSWhiteboardConstants.JAX_RS_RESOURCE);
 
         return
             onlyGettables(

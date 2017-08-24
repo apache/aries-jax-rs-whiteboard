@@ -32,6 +32,7 @@ import org.osgi.service.jaxrs.runtime.dto.RuntimeDTO;
 import org.osgi.service.jaxrs.whiteboard.JaxRSWhiteboardConstants;
 
 import javax.ws.rs.core.Application;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
@@ -39,6 +40,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
 
 import static org.apache.aries.jax.rs.whiteboard.internal.Utils.generateApplicationName;
+import static org.apache.aries.jax.rs.whiteboard.internal.Whiteboard.getApplicationBase;
 import static org.osgi.service.jaxrs.whiteboard.JaxRSWhiteboardConstants.JAX_RS_NAME;
 
 public class AriesJaxRSServiceRuntime implements JaxRSServiceRuntime {
@@ -65,6 +67,21 @@ public class AriesJaxRSServiceRuntime implements JaxRSServiceRuntime {
 
     private TreeSet<ServiceReference<?>> _ungettableEndpoints = new TreeSet<>();
     private TreeSet<ServiceReference<?>> _ungettableExtensions = new TreeSet<>();
+
+    private TreeSet<ServiceReference<?>> _dependentServices = new TreeSet<>();
+    private Map<String, Object> _defaultApplicationProperties;
+
+    public void addDependentService(ServiceReference<?> serviceReference) {
+        _dependentServices.add(serviceReference);
+    }
+
+    public void clearDefaultApplication() {
+        _defaultApplicationProperties = Collections.emptyMap();
+    }
+
+    public void removeDependentService(ServiceReference<?> serviceReference) {
+        _dependentServices.remove(serviceReference);
+    }
 
     public void addErroredApplication(
         ServiceReference<Application> serviceReference) {
@@ -118,6 +135,12 @@ public class AriesJaxRSServiceRuntime implements JaxRSServiceRuntime {
         String path, Map<String, Object> properties) {
 
         return _applications.put(path, properties);
+    }
+
+    public void setDefaultApplication(Map<String, Object> properties) {
+        _defaultApplicationProperties = properties;
+
+        _applications.put(getApplicationBase(properties::get), properties);
     }
 
     public Map<String, Object> unsetApplicationForPath(String path) {
@@ -200,6 +223,9 @@ public class AriesJaxRSServiceRuntime implements JaxRSServiceRuntime {
     public RuntimeDTO getRuntimeDTO() {
         RuntimeDTO runtimeDTO = new RuntimeDTO();
 
+        runtimeDTO.defaultApplication = buildApplicationDTO(
+            _defaultApplicationProperties);
+
         runtimeDTO.applicationDTOs = applicationDTOStream().
             toArray(
                 ApplicationDTO[]::new
@@ -214,12 +240,12 @@ public class AriesJaxRSServiceRuntime implements JaxRSServiceRuntime {
                 FailedApplicationDTO[]::new
             );
 
-        runtimeDTO.failedResourceDTOs = unreferenciableEndpointsDTOStream().map(
-            sr -> buildFailedResourceDTO(
-                DTOConstants.FAILURE_REASON_SERVICE_NOT_GETTABLE, sr)
-        ).toArray(
-            FailedResourceDTO[]::new
-        );
+        runtimeDTO.failedResourceDTOs =
+            Stream.concat(
+                unreferenciableEndpointsDTOStream(), dependentServiceStreamDTO()
+            ).toArray(
+                FailedResourceDTO[]::new
+            );
 
         runtimeDTO.failedExtensionDTOs = unreferenciableExtensionsDTOStream().map(
             sr -> buildFailedExtensionDTO(
@@ -229,6 +255,12 @@ public class AriesJaxRSServiceRuntime implements JaxRSServiceRuntime {
         );
 
         return runtimeDTO;
+    }
+
+    private Stream<FailedResourceDTO> dependentServiceStreamDTO() {
+        return _dependentServices.stream().map(
+            sr -> buildFailedResourceDTO(
+                DTOConstants.FAILURE_REASON_REQUIRED_EXTENSIONS_UNAVAILABLE, sr));
     }
 
     private Stream<FailedApplicationDTO> erroredApplicationsDTOStream() {
@@ -266,12 +298,15 @@ public class AriesJaxRSServiceRuntime implements JaxRSServiceRuntime {
         return failedResourceDTO;
     }
 
-    private Stream<ServiceReference<?>> unreferenciableEndpointsDTOStream() {
-        return _ungettableEndpoints.stream();
+    private Stream<FailedResourceDTO> unreferenciableEndpointsDTOStream() {
+        return _ungettableEndpoints.stream().map(
+            sr -> buildFailedResourceDTO(
+                DTOConstants.FAILURE_REASON_SERVICE_NOT_GETTABLE, sr));
     }
 
     private Stream<ApplicationDTO> applicationDTOStream() {
         return _applications.values().stream().
+            filter(p -> !(".default".equals(p.get(JAX_RS_NAME)))).
             map(
                 this::buildApplicationDTO
             );
@@ -300,7 +335,7 @@ public class AriesJaxRSServiceRuntime implements JaxRSServiceRuntime {
         ApplicationDTO applicationDTO = new ApplicationDTO(){};
 
         applicationDTO.name = getApplicationName(properties::get);
-        applicationDTO.base = Whiteboard.getApplicationBase(properties::get);
+        applicationDTO.base = getApplicationBase(properties::get);
         applicationDTO.serviceId = (Long)properties.get("service.id");
 
         applicationDTO.resourceDTOs = getApplicationEndpointsStream(
@@ -335,7 +370,7 @@ public class AriesJaxRSServiceRuntime implements JaxRSServiceRuntime {
     private Stream<ExtensionDTO> getApplicationExtensionsStream(String name) {
 
         Set<ServiceReference<?>> applicationExtensions =
-            _applicationEndpoints.get(name);
+            _applicationExtensions.get(name);
 
         Stream<ServiceReference<?>> applicationExtensionStream =
             applicationExtensions != null ?

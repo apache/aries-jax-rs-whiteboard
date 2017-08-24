@@ -54,6 +54,7 @@ import static org.apache.aries.jax.rs.whiteboard.internal.Utils.highestPer;
 import static org.apache.aries.jax.rs.whiteboard.internal.Utils.onlyGettables;
 import static org.apache.aries.jax.rs.whiteboard.internal.Utils.safeRegisterGeneric;
 import static org.apache.aries.jax.rs.whiteboard.internal.Utils.service;
+import static org.apache.aries.osgi.functional.OSGi.NOOP;
 import static org.apache.aries.osgi.functional.OSGi.all;
 import static org.apache.aries.osgi.functional.OSGi.bundleContext;
 import static org.apache.aries.osgi.functional.OSGi.just;
@@ -100,11 +101,12 @@ public class Whiteboard {
                 all(
                     countChanges(
                         whiteboardApplications(
-                            runtimeReference, runtime, Maps.from(configuration)),
+                            runtimeReference, runtime, configurationMap),
                         counter),
                     countChanges(
                         whiteBoardApplicationSingletons(
-                            runtimeReference, defaultApplicationReference, runtime),
+                            bundleContext, runtimeReference,
+                            defaultApplicationReference, runtime),
                         counter)
             ))))));
     }
@@ -123,14 +125,6 @@ public class Whiteboard {
                 ).then(
             just(endPoints)
         );
-    }
-
-    private static String buildExtensionFilter(String filter) {
-        filter = filter.replace("(objectClass=", "(original.objectClass=");
-
-        return String.format(
-            "(&(objectClass=%s)%s)",
-            ApplicationExtensionRegistration.class.getName(), filter);
     }
 
     private static String[] canonicalize(Object propertyValue) {
@@ -176,8 +170,8 @@ public class Whiteboard {
             bundleContext().flatMap(bundleContext ->
             just(createBus(bundleContext, configuration)).flatMap(bus ->
             registerCXFServletService(bus, "", configuration).foreach(
-                __ -> runtime.setApplicationForPath("/", properties),
-                __ -> runtime.unsetApplicationForPath("/")).then(
+                __ -> runtime.setDefaultApplication(properties),
+                __ -> runtime.clearDefaultApplication()).then(
             just(new CXFJaxRsServiceRegistrator(bus, new DefaultApplication())).
                 flatMap(registrator ->
             just(new ApplicationReference(DEFAULT_NAME, registrator))
@@ -233,22 +227,54 @@ public class Whiteboard {
     }
 
     private static OSGi<?> waitForExtensionDependencies(
-        ServiceReference<?> serviceReference, AriesJaxRSServiceRuntime runtime,
-        OSGi<?> program) {
+        BundleContext bundleContext,
+        ServiceReference<?> serviceReference,
+        ApplicationReference applicationReference,
+        AriesJaxRSServiceRuntime runtime, OSGi<?> program) {
 
         String[] extensionDependencies = canonicalize(
             serviceReference.getProperty(JAX_RS_EXTENSION_SELECT));
 
-        for (String extensionDependency : extensionDependencies) {
-            program =
-                serviceReferences(buildExtensionFilter(extensionDependency)).
-                    then(program);
+        if (extensionDependencies.length > 0) {
+            runtime.addDependentService(serviceReference);
         }
+
+        for (String extensionDependency : extensionDependencies) {
+            try {
+                extensionDependency = extensionDependency.replace(
+                    "(objectClass=", "(original.objectClass=");
+
+                Filter extensionFilter = bundleContext.createFilter(
+                    extensionDependency);
+
+                program =
+                    serviceReferences(ApplicationExtensionRegistration.class).
+                        filter(
+                            sr -> getApplicationName(sr::getProperty).equals(
+                                applicationReference.getApplicationName())
+                        ).
+                        filter(
+                            extensionFilter::match
+                        ).foreach(
+                            __ -> {},
+                            __ -> runtime.addDependentService(serviceReference)
+                        ).
+                        then(program);
+            }
+            catch (InvalidSyntaxException e) {
+                
+            }
+        }
+
+        program = program.foreach(
+            __ -> runtime.removeDependentService(serviceReference)
+        );
 
         return program;
     }
 
     private static OSGi<?> whiteBoardApplicationSingletons(
+        BundleContext bundleContext,
         ServiceReference<?> jaxRsRuntimeServiceReference,
         ApplicationReference defaultApplicationReference,
         AriesJaxRSServiceRuntime runtime) {
@@ -258,7 +284,8 @@ public class Whiteboard {
                 flatMap(endpointReference ->
             chooseApplication(endpointReference, defaultApplicationReference).
                 flatMap(applicationReference ->
-            waitForExtensionDependencies(endpointReference, runtime,
+            waitForExtensionDependencies(
+                bundleContext, endpointReference, applicationReference, runtime,
                 safeRegisterGeneric(
                     endpointReference,
                     applicationReference.getApplicationName(),
@@ -290,7 +317,10 @@ public class Whiteboard {
     }
 
     private static String getApplicationSingletonsFilter() {
-        return format("(|%s%s)", getExtensionsFilter(), getResourcesFilter());
+        return format(
+            "(&(!(objectClass=%s))(|%s%s))",
+            ApplicationExtensionRegistration.class.getName(),
+            getExtensionsFilter(), getResourcesFilter());
     }
 
     private static OSGi<?> whiteboardApplications(
