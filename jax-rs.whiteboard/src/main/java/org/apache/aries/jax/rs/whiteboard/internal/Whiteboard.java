@@ -52,8 +52,6 @@ import static org.apache.aries.jax.rs.whiteboard.internal.Utils.generateApplicat
 import static org.apache.aries.jax.rs.whiteboard.internal.Utils.getProperties;
 import static org.apache.aries.jax.rs.whiteboard.internal.Utils.highestPer;
 import static org.apache.aries.jax.rs.whiteboard.internal.Utils.onlyGettables;
-import static org.apache.aries.jax.rs.whiteboard.internal.Utils.safeRegisterEndpoint;
-import static org.apache.aries.jax.rs.whiteboard.internal.Utils.safeRegisterExtension;
 import static org.apache.aries.jax.rs.whiteboard.internal.Utils.safeRegisterGeneric;
 import static org.apache.aries.jax.rs.whiteboard.internal.Utils.service;
 import static org.apache.aries.osgi.functional.OSGi.all;
@@ -96,14 +94,18 @@ public class Whiteboard {
         return
             bundleContext().flatMap(bundleContext ->
             registerJaxRSServiceRuntime(runtime, bundleContext, configurationMap).flatMap(runtimeRegistration ->
-            createDefaultJaxRsServiceRegistrator(configurationMap, runtime).flatMap(defaultServiceRegistrator ->
+            createDefaultJaxRsServiceRegistrator(configurationMap, runtime).flatMap(defaultApplicationReference ->
             just(new ServiceRegistrationChangeCounter(runtimeRegistration)).flatMap(counter ->
             just(runtimeRegistration.getReference()).flatMap(runtimeReference ->
                 all(
-                    countChanges(whiteboardApplications(runtimeReference, runtime, Maps.from(configuration)), counter),
-                    countChanges(whiteBoardApplicationSingletons(runtimeReference, runtime), counter),
-                    countChanges(whiteboardExtensions(runtimeReference, defaultServiceRegistrator, runtime), counter),
-                    countChanges(whiteboardSingletons(runtimeReference, defaultServiceRegistrator, runtime), counter)
+                    countChanges(
+                        whiteboardApplications(
+                            runtimeReference, runtime, Maps.from(configuration)),
+                        counter),
+                    countChanges(
+                        whiteBoardApplicationSingletons(
+                            runtimeReference, defaultApplicationReference, runtime),
+                        counter)
             ))))));
     }
 
@@ -161,12 +163,12 @@ public class Whiteboard {
         return bus;
     }
 
-    private static OSGi<CXFJaxRsServiceRegistrator>
+    private static OSGi<ApplicationReference>
         createDefaultJaxRsServiceRegistrator(
             Map<String, ?> configuration, AriesJaxRSServiceRuntime runtime) {
 
         Map<String, Object> properties = new HashMap<>(configuration);
-        properties.put(JAX_RS_NAME, ".default");
+        properties.put(JAX_RS_NAME, DEFAULT_NAME);
         properties.put(JAX_RS_APPLICATION_BASE, "/");
         properties.put("service.id", (long)-1);
 
@@ -176,8 +178,10 @@ public class Whiteboard {
             registerCXFServletService(bus, "", configuration).foreach(
                 __ -> runtime.setApplicationForPath("/", properties),
                 __ -> runtime.unsetApplicationForPath("/")).then(
-            just(new CXFJaxRsServiceRegistrator(bus, new DefaultApplication()))
-        )));
+            just(new CXFJaxRsServiceRegistrator(bus, new DefaultApplication())).
+                flatMap(registrator ->
+            just(new ApplicationReference(DEFAULT_NAME, registrator))
+        ))));
     }
 
     private static String getApplicationFilter() {
@@ -246,32 +250,47 @@ public class Whiteboard {
 
     private static OSGi<?> whiteBoardApplicationSingletons(
         ServiceReference<?> jaxRsRuntimeServiceReference,
+        ApplicationReference defaultApplicationReference,
         AriesJaxRSServiceRuntime runtime) {
         return
             serviceReferences(getApplicationSingletonsFilter()).
                 filter(new TargetFilter<>(jaxRsRuntimeServiceReference)).
                 flatMap(endpointReference ->
-            just(endpointReference.
-                    getProperty(JAX_RS_APPLICATION_SELECT).
-                    toString()).
-                flatMap(applicationFilter ->
-            serviceReferences(
-                CXFJaxRsServiceRegistrator.class, applicationFilter).
-                flatMap(registratorReference ->
-            just(
-                getApplicationName(registratorReference::getProperty)).
-                flatMap(applicationName ->
+            chooseApplication(endpointReference, defaultApplicationReference).
+                flatMap(applicationReference ->
             waitForExtensionDependencies(endpointReference, runtime,
-                service(registratorReference).flatMap(registrator ->
                 safeRegisterGeneric(
-                    endpointReference, applicationName, registrator, runtime)
-        ))))));
+                    endpointReference,
+                    applicationReference.getApplicationName(),
+                    applicationReference.getRegistrator(), runtime)
+        )));
+    }
+
+    private static OSGi<ApplicationReference> chooseApplication(
+        ServiceReference<?> serviceReference, ApplicationReference theDefault) {
+
+        Object applicationSelectProperty = serviceReference.getProperty(
+            JAX_RS_APPLICATION_SELECT);
+
+        if (applicationSelectProperty == null) {
+            return just(theDefault);
+        }
+
+        String applicationName = getApplicationName(
+            serviceReference::getProperty);
+
+        return
+            serviceReferences(
+                    CXFJaxRsServiceRegistrator.class,
+                    applicationSelectProperty.toString()).
+                flatMap(registratorReference ->
+            service(registratorReference).flatMap(registrator ->
+            just(new ApplicationReference(applicationName, registrator))
+        ));
     }
 
     private static String getApplicationSingletonsFilter() {
-        return format(
-            "(&(|%s%s)(%s=*))", getExtensionsFilter(), getResourcesFilter(),
-            JAX_RS_APPLICATION_SELECT);
+        return format("(|%s%s)", getExtensionsFilter(), getResourcesFilter());
     }
 
     private static OSGi<?> whiteboardApplications(
@@ -339,45 +358,6 @@ public class Whiteboard {
         return
             serviceReferences(Application.class, getApplicationFilter()).
             filter(new TargetFilter<>(jaxRsRuntimeServiceReference));
-    }
-
-    private static OSGi<?> whiteboardExtensions(
-        ServiceReference<?> jaxRsRuntimeServiceReference,
-        CXFJaxRsServiceRegistrator defaultServiceRegistrator,
-        AriesJaxRSServiceRuntime runtime) {
-
-        return
-            serviceReferences(getExtensionsFilter()).
-                filter(new TargetFilter<>(jaxRsRuntimeServiceReference)).
-                flatMap(ref ->
-            waitForExtensionDependencies(ref, runtime,
-                safeRegisterExtension(
-                    ref, DEFAULT_NAME, defaultServiceRegistrator, runtime)
-            ).foreach(
-                __ -> runtime.addApplicationExtension(DEFAULT_NAME, ref),
-                __ -> runtime.removeApplicationExtension(DEFAULT_NAME, ref)
-            )
-        );
-    }
-
-    private static OSGi<?> whiteboardSingletons(
-        ServiceReference<?> jaxRsRuntimeServiceReference,
-        CXFJaxRsServiceRegistrator defaultServiceRegistrator,
-        AriesJaxRSServiceRuntime runtime) {
-
-        return
-            serviceReferences(getResourcesFilter()).
-                filter(new TargetFilter<>(jaxRsRuntimeServiceReference)).
-                flatMap(ref ->
-            waitForExtensionDependencies(
-                ref, runtime,
-                safeRegisterEndpoint(
-                    ref, DEFAULT_NAME, defaultServiceRegistrator, runtime)
-            ).foreach(
-                __ -> runtime.addApplicationEndpoint(DEFAULT_NAME, ref),
-                __ -> runtime.removeApplicationExtension(DEFAULT_NAME, ref)
-            )
-        );
     }
 
     private static <T> OSGi<T> countChanges(
@@ -462,6 +442,26 @@ public class Whiteboard {
         return properties.get(JAX_RS_APPLICATION_BASE).toString();
     }
 
+    private static class ApplicationReference {
+        private final String _applicationName;
+        private final CXFJaxRsServiceRegistrator _registrator;
 
+        public ApplicationReference(
+            String applicationName,
+            CXFJaxRsServiceRegistrator registrator) {
+
+            _applicationName = applicationName;
+            _registrator = registrator;
+        }
+
+        public String getApplicationName() {
+            return _applicationName;
+        }
+
+        public CXFJaxRsServiceRegistrator getRegistrator() {
+            return _registrator;
+        }
+
+    }
 
 }
