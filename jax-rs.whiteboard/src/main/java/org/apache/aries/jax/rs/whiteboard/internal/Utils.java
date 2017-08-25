@@ -48,6 +48,16 @@ import static org.apache.aries.osgi.functional.OSGi.register;
  */
 public class Utils {
 
+    public static String[] canonicalize(Object propertyValue) {
+        if (propertyValue == null) {
+            return new String[0];
+        }
+        if (propertyValue instanceof String[]) {
+            return (String[]) propertyValue;
+        }
+        return new String[]{propertyValue.toString()};
+    }
+
     public static String generateApplicationName(
         PropertyHolder propertyHolder) {
 
@@ -107,32 +117,6 @@ public class Utils {
                 nothing()
             );
         }
-    }
-
-    public static OSGi<?> safeRegisterGeneric(
-        ServiceReference<?> serviceReference,
-        String applicationName,
-        CXFJaxRsServiceRegistrator registrator,
-        AriesJaxRSServiceRuntime runtime) {
-
-        if (isExtension(serviceReference)) {
-            return safeRegisterExtension(
-                serviceReference, applicationName, registrator, runtime);
-        }
-        else {
-            return safeRegisterEndpoint(
-                serviceReference, applicationName, registrator, runtime);
-        }
-    }
-
-    private static boolean isExtension(ServiceReference<?> serviceReference) {
-        Object extensionProperty = serviceReference.getProperty(
-            "osgi.jaxrs.extension");
-
-        return
-            (extensionProperty != null) &&
-            (extensionProperty instanceof Boolean) &&
-            ((boolean) extensionProperty);
     }
 
     public static OSGi<?> safeRegisterExtension(

@@ -18,11 +18,15 @@
 package org.apache.aries.jax.rs.whiteboard.internal;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.stream.Stream;
 
 import javax.ws.rs.core.Application;
+import javax.ws.rs.core.Feature;
 
 import org.apache.aries.jax.rs.whiteboard.internal.Utils.ComparableResourceProvider;
+import org.apache.aries.jax.rs.whiteboard.internal.Utils.ServiceTuple;
 import org.apache.cxf.Bus;
 import org.apache.cxf.endpoint.Server;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
@@ -33,13 +37,16 @@ import org.apache.cxf.jaxrs.model.OperationResourceInfo;
 import org.apache.cxf.jaxrs.provider.json.JSONProvider;
 import org.apache.cxf.jaxrs.utils.ResourceUtils;
 import org.apache.cxf.message.Message;
+import org.osgi.framework.ServiceReference;
+
+import static org.apache.aries.jax.rs.whiteboard.internal.Utils.canonicalize;
 
 public class CXFJaxRsServiceRegistrator {
 
     private volatile boolean _closed = false;
     private final Application _application;
     private final Bus _bus;
-    private final Collection<Object> _providers = new ArrayList<>();
+    private final Collection<ServiceTuple<?>> _providers = new ArrayList<>();
     private Server _server;
     private final Collection<ResourceProvider> _services = new ArrayList<>();
 
@@ -60,12 +67,12 @@ public class CXFJaxRsServiceRegistrator {
         rewire();
     }
 
-    public void addProvider(Utils.ServiceTuple<?> tuple) {
+    public void addProvider(ServiceTuple<?> tuple) {
         if (_closed) {
             return;
         }
 
-        _providers.add(tuple.getService());
+        _providers.add(tuple);
 
         rewire();
     }
@@ -92,12 +99,12 @@ public class CXFJaxRsServiceRegistrator {
         rewire();
     }
 
-    public void removeProvider(Utils.ServiceTuple<?> tuple) {
+    public void removeProvider(ServiceTuple<?> tuple) {
         if (_closed) {
             return;
         }
 
-        _providers.remove(tuple.getService());
+        _providers.remove(tuple);
 
         rewire();
     }
@@ -166,8 +173,32 @@ public class CXFJaxRsServiceRegistrator {
 
         jaxRsServerFactoryBean.setProvider(jsonProvider);
 
-        for (Object provider : _providers) {
-            jaxRsServerFactoryBean.setProvider(provider);
+        for (ServiceTuple<?> provider : _providers) {
+            jaxRsServerFactoryBean.setProvider(
+                (Feature) featureContext -> {
+                    ServiceReference<?> serviceReference =
+                        provider.getServiceReference();
+
+                    String[] interfaces = canonicalize(
+                        serviceReference.getProperty("objectClass"));
+
+                    Class[] classes = Arrays.stream(interfaces).flatMap(
+                        className -> {
+                            try {
+                                return Stream.of(Class.forName(className));
+                            }
+                            catch (ClassNotFoundException e) {
+                                return Stream.empty();
+                            }
+                        }
+                    ).toArray(
+                        Class[]::new
+                    );
+
+                    featureContext.register(provider.getService(), classes);
+
+                    return true;
+                });
         }
 
         for (ResourceProvider resourceProvider: _services) {

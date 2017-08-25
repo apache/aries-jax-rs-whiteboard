@@ -69,10 +69,17 @@ public class AriesJaxRSServiceRuntime implements JaxRSServiceRuntime {
     private TreeSet<ServiceReference<?>> _ungettableExtensions = new TreeSet<>();
 
     private TreeSet<ServiceReference<?>> _dependentServices = new TreeSet<>();
+
+    private TreeSet<ServiceReference<?>> _invalidExtensions = new TreeSet<>();
+
     private Map<String, Object> _defaultApplicationProperties;
 
     public void addDependentService(ServiceReference<?> serviceReference) {
         _dependentServices.add(serviceReference);
+    }
+
+    public void addInvalidExtension(ServiceReference<?> serviceReference) {
+        _invalidExtensions.add(serviceReference);
     }
 
     public void clearDefaultApplication() {
@@ -105,6 +112,10 @@ public class AriesJaxRSServiceRuntime implements JaxRSServiceRuntime {
         ServiceReference<Application> serviceReference) {
 
         _erroredApplications.remove(serviceReference);
+    }
+
+    public void removeInvalidExtension(ServiceReference<?> serviceReference) {
+        _invalidExtensions.remove(serviceReference);
     }
 
     public boolean removeNotGettableApplication(
@@ -247,14 +258,21 @@ public class AriesJaxRSServiceRuntime implements JaxRSServiceRuntime {
                 FailedResourceDTO[]::new
             );
 
-        runtimeDTO.failedExtensionDTOs = unreferenciableExtensionsDTOStream().map(
-            sr -> buildFailedExtensionDTO(
-                DTOConstants.FAILURE_REASON_SERVICE_NOT_GETTABLE, sr)
-        ).toArray(
-            FailedExtensionDTO[]::new
-        );
+        runtimeDTO.failedExtensionDTOs = Stream.concat(
+                unreferenciableExtensionsDTOStream(),
+                invalidExtensionsDTOStream()
+            ).toArray(
+                FailedExtensionDTO[]::new
+            );
 
         return runtimeDTO;
+    }
+
+    private Stream<FailedExtensionDTO> invalidExtensionsDTOStream() {
+        return _invalidExtensions.stream().map(
+            sr -> buildFailedExtensionDTO(
+                DTOConstants.FAILURE_REASON_NOT_AN_EXTENSION_TYPE, sr)
+        );
     }
 
     private Stream<FailedResourceDTO> dependentServiceStreamDTO() {
@@ -282,8 +300,11 @@ public class AriesJaxRSServiceRuntime implements JaxRSServiceRuntime {
         return failedExtensionDTO;
     }
 
-    private Stream<ServiceReference<?>> unreferenciableExtensionsDTOStream() {
-        return _ungettableExtensions.stream();
+    private Stream<FailedExtensionDTO> unreferenciableExtensionsDTOStream() {
+        return _ungettableExtensions.stream().map(
+            sr -> buildFailedExtensionDTO(
+                DTOConstants.FAILURE_REASON_SERVICE_NOT_GETTABLE, sr)
+        );
     }
 
     private FailedResourceDTO buildFailedResourceDTO(

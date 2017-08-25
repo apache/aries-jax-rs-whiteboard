@@ -46,6 +46,7 @@ import test.types.TestHelper;
 
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.WebTarget;
+import javax.ws.rs.container.ContainerResponseFilter;
 import javax.ws.rs.core.Application;
 import javax.ws.rs.core.Response;
 
@@ -870,21 +871,32 @@ public class JaxrsTest extends TestHelper {
     }
 
     @Test
-    public void testStandaloneFilter() {
+    public void testStandaloneFilter() throws InterruptedException {
         Client client = createClient();
 
         WebTarget webTarget = client.
             target("http://localhost:8080").
             path("test");
 
-        ServiceRegistration<?> filterRegistration = null;
+        JaxRSServiceRuntime runtime = getJaxRSServiceRuntime();
 
         ServiceRegistration<?> serviceRegistration = null;
 
         try {
+            RuntimeDTO runtimeDTO = runtime.getRuntimeDTO();
+
+            assertEquals(
+                0, runtimeDTO.defaultApplication.extensionDTOs.length);
+
             serviceRegistration = registerAddon(new TestAddon());
 
-            filterRegistration = registerExtension("Filter");
+            ServiceRegistration<?> filterRegistration = registerExtension(
+                "Filter");
+
+            runtimeDTO = runtime.getRuntimeDTO();
+
+            assertEquals(
+                1, runtimeDTO.defaultApplication.extensionDTOs.length);
 
             Response response = webTarget.request().get();
 
@@ -893,13 +905,139 @@ public class JaxrsTest extends TestHelper {
                 response.readEntity(String.class));
 
             assertEquals("true", response.getHeaders().getFirst("Filtered"));
+
+            filterRegistration.unregister();
+
+            runtimeDTO = runtime.getRuntimeDTO();
+
+            assertEquals(
+                0, runtimeDTO.defaultApplication.extensionDTOs.length);
         }
         finally {
             if (serviceRegistration != null) {
                 serviceRegistration.unregister();
             }
-            if (filterRegistration != null) {
-                filterRegistration.unregister();
+        }
+    }
+
+    @Test
+    public void testInvalidExtension() throws InterruptedException {
+        Client client = createClient();
+
+        WebTarget webTarget = client.
+            target("http://localhost:8080").
+            path("test");
+
+        JaxRSServiceRuntime runtime = getJaxRSServiceRuntime();
+
+        ServiceRegistration<?> serviceRegistration = null;
+
+        try {
+            RuntimeDTO runtimeDTO = runtime.getRuntimeDTO();
+
+            assertEquals(
+                0, runtimeDTO.defaultApplication.extensionDTOs.length);
+
+            serviceRegistration = registerAddon(new TestAddon());
+
+            ServiceRegistration<?> filterRegistration =
+                registerInvalidExtension("Filter");
+
+            runtimeDTO = runtime.getRuntimeDTO();
+
+            assertEquals(
+                0, runtimeDTO.defaultApplication.extensionDTOs.length);
+
+            assertEquals(1, runtimeDTO.failedExtensionDTOs.length);
+            assertEquals(
+                (long)filterRegistration.getReference().getProperty(
+                    "service.id"),
+                runtimeDTO.failedExtensionDTOs[0].serviceId);
+            assertEquals(
+                DTOConstants.FAILURE_REASON_NOT_AN_EXTENSION_TYPE,
+                runtimeDTO.failedExtensionDTOs[0].failureReason);
+
+            Response response = webTarget.request().get();
+
+            assertEquals(
+                "This should say hello", "Hello test",
+                response.readEntity(String.class));
+
+            assertNull(response.getHeaders().getFirst("Filtered"));
+
+            filterRegistration.unregister();
+
+            runtimeDTO = runtime.getRuntimeDTO();
+
+            assertEquals(
+                0, runtimeDTO.defaultApplication.extensionDTOs.length);
+
+            assertEquals(0, runtimeDTO.failedExtensionDTOs.length);
+        }
+        finally {
+            if (serviceRegistration != null) {
+                serviceRegistration.unregister();
+            }
+        }
+    }
+
+    @Test
+    public void testUngettableExtension() throws InterruptedException {
+        Client client = createClient();
+
+        WebTarget webTarget = client.
+            target("http://localhost:8080").
+            path("test");
+
+        JaxRSServiceRuntime runtime = getJaxRSServiceRuntime();
+
+        ServiceRegistration<?> serviceRegistration = null;
+
+        try {
+            RuntimeDTO runtimeDTO = runtime.getRuntimeDTO();
+
+            assertEquals(
+                0, runtimeDTO.defaultApplication.extensionDTOs.length);
+
+            serviceRegistration = registerAddon(new TestAddon());
+
+            ServiceRegistration<?> filterRegistration =
+                registerUngettableExtension("Filter");
+
+            runtimeDTO = runtime.getRuntimeDTO();
+
+            assertEquals(
+                0, runtimeDTO.defaultApplication.extensionDTOs.length);
+
+            assertEquals(1, runtimeDTO.failedExtensionDTOs.length);
+            assertEquals(
+                (long)filterRegistration.getReference().getProperty(
+                    "service.id"),
+                runtimeDTO.failedExtensionDTOs[0].serviceId);
+            assertEquals(
+                DTOConstants.FAILURE_REASON_SERVICE_NOT_GETTABLE,
+                runtimeDTO.failedExtensionDTOs[0].failureReason);
+
+            Response response = webTarget.request().get();
+
+            assertEquals(
+                "This should say hello", "Hello test",
+                response.readEntity(String.class));
+
+            assertNull(response.getHeaders().getFirst("Filtered"));
+
+            filterRegistration.unregister();
+
+            runtimeDTO = runtime.getRuntimeDTO();
+
+            assertEquals(
+                0, runtimeDTO.defaultApplication.extensionDTOs.length);
+
+            assertEquals(0, runtimeDTO.failedExtensionDTOs.length);
+        }
+        finally {
+            if (serviceRegistration != null) {
+                serviceRegistration.unregister();
             }
         }
     }
@@ -1060,7 +1198,60 @@ public class JaxrsTest extends TestHelper {
         }
 
         return bundleContext.registerService(
+            ContainerResponseFilter.class, testFilter, properties);
+    }
+
+    private ServiceRegistration<?> registerInvalidExtension(
+        String name, Object... keyValues) {
+
+        TestFilter testFilter = new TestFilter();
+
+        Dictionary<String, Object> properties = new Hashtable<>();
+
+        properties.put(JAX_RS_EXTENSION, true);
+        properties.put(JAX_RS_NAME, name);
+
+        for (int i = 0; i < keyValues.length; i = i + 2) {
+            properties.put(keyValues[i].toString(), keyValues[i + 1]);
+        }
+
+        return bundleContext.registerService(
             Object.class, testFilter, properties);
+    }
+
+    private ServiceRegistration<?> registerUngettableExtension(
+        String name, Object... keyValues) {
+
+        Dictionary<String, Object> properties = new Hashtable<>();
+
+        properties.put(JAX_RS_EXTENSION, true);
+        properties.put(JAX_RS_NAME, name);
+
+        for (int i = 0; i < keyValues.length; i = i + 2) {
+            properties.put(keyValues[i].toString(), keyValues[i + 1]);
+        }
+
+        return bundleContext.registerService(
+            ContainerResponseFilter.class,
+            new ServiceFactory<ContainerResponseFilter>() {
+                @Override
+                public ContainerResponseFilter getService(
+                    Bundle bundle,
+                    ServiceRegistration<ContainerResponseFilter>
+                        serviceRegistration) {
+
+                    return null;
+                }
+
+                @Override
+                public void ungetService(
+                    Bundle bundle,
+                    ServiceRegistration<ContainerResponseFilter>
+                        serviceRegistration,
+                    ContainerResponseFilter containerResponseFilter) {
+
+                }
+            }, properties);
     }
 
     private ServiceRegistration<Application> registerUngettableApplication(
