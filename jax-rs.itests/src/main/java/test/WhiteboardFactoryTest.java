@@ -133,48 +133,6 @@ public class WhiteboardFactoryTest {
         }
     }
 
-    @Test
-    public void testChangeCount() throws Exception {
-        ServiceTracker<JaxRSServiceRuntime, JaxRSServiceRuntime> runtimeTracker =
-            new ServiceTracker<>(
-                bundleContext, JaxRSServiceRuntime.class, null);
-
-        try {
-            runtimeTracker.open();
-
-            JaxRSServiceRuntime runtime = runtimeTracker.waitForService(5000);
-
-            assertNotNull(runtime);
-
-            ServiceReference<JaxRSServiceRuntime> serviceReference = runtimeTracker.getServiceReference();
-
-            Long changeCount = (Long)serviceReference.getProperty("service.changecount");
-
-            Dictionary<String, Object> properties = new Hashtable<>();
-
-            properties.put(JAX_RS_APPLICATION_BASE, "/test-counter");
-
-            ServiceRegistration<?> serviceRegistration =
-                bundleContext.registerService(
-                    Application.class, new TestApplication(), properties);
-
-            Long newCount = (Long)serviceReference.getProperty("service.changecount");
-
-            assertTrue(changeCount < newCount);
-
-            changeCount = newCount;
-
-            serviceRegistration.unregister();
-
-            newCount = (Long)serviceReference.getProperty("service.changecount");
-
-            assertTrue(changeCount < newCount);
-        }
-        finally {
-            runtimeTracker.close();
-        }
-    }
-
     private BundleContext bundleContext = FrameworkUtil.getBundle(getClass()).getBundleContext();
 
 }

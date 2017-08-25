@@ -18,10 +18,14 @@
 package test;
 
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.osgi.service.jaxrs.whiteboard.JaxRSWhiteboardConstants.*;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Dictionary;
 import java.util.Hashtable;
+import java.util.Iterator;
 import java.util.Set;
 
 import org.junit.After;
@@ -29,6 +33,7 @@ import org.junit.Test;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.PrototypeServiceFactory;
 import org.osgi.framework.ServiceFactory;
+import org.osgi.framework.ServiceReference;
 import org.osgi.framework.ServiceRegistration;
 
 import org.osgi.service.jaxrs.runtime.JaxRSServiceRuntime;
@@ -61,8 +66,25 @@ public class JaxrsTest extends TestHelper {
 
     private ServiceTracker<JaxRSServiceRuntime, JaxRSServiceRuntime> _runtimeTracker;
 
+    private Collection<ServiceRegistration<?>> _registrations =
+        new ArrayList<>();
+
     @After
     public void tearDown() {
+        Iterator<ServiceRegistration<?>> iterator = _registrations.iterator();
+
+        while (iterator.hasNext()) {
+            ServiceRegistration<?> registration =  iterator.next();
+
+            try {
+                registration.unregister();
+
+                iterator.remove();
+            }
+            catch(Exception e) {
+            }
+        }
+
         if (_runtimeTracker != null) {
             _runtimeTracker.close();
         }
@@ -70,36 +92,27 @@ public class JaxrsTest extends TestHelper {
 
     @Test
     public void testApplication() throws InterruptedException {
-        ServiceRegistration<?> serviceRegistration = null;
 
-        try {
-            JaxRSServiceRuntime runtime = getJaxRSServiceRuntime();
+        JaxRSServiceRuntime runtime = getJaxRSServiceRuntime();
 
-            assertNotNull(runtime);
+        assertNotNull(runtime);
 
-            assertEquals(0, runtime.getRuntimeDTO().applicationDTOs.length);
+        assertEquals(0, runtime.getRuntimeDTO().applicationDTOs.length);
 
-            serviceRegistration = registerApplication(
-                new TestApplication());
+        registerApplication(new TestApplication());
 
-            assertEquals(1, runtime.getRuntimeDTO().applicationDTOs.length);
+        assertEquals(1, runtime.getRuntimeDTO().applicationDTOs.length);
 
-            Client client = createClient();
+        Client client = createClient();
 
-            WebTarget webTarget = client.
-                target("http://localhost:8080").
-                path("/test-application");
+        WebTarget webTarget = client.
+            target("http://localhost:8080").
+            path("/test-application");
 
-            Response response = webTarget.request().get();
+        Response response = webTarget.request().get();
 
-            assertEquals("Hello application",
-                response.readEntity(String.class));
-        }
-        finally {
-            if (serviceRegistration != null) {
-                serviceRegistration.unregister();
-            }
-        }
+        assertEquals("Hello application",
+            response.readEntity(String.class));
     }
 
     @Test
@@ -155,42 +168,34 @@ public class JaxrsTest extends TestHelper {
             target("http://localhost:8080").
             path("test-application");
 
-        ServiceRegistration<?> serviceRegistration = null;
         ServiceRegistration<?> serviceRegistration2;
 
-        try {
-            serviceRegistration = registerApplication(new TestApplication());
+        registerApplication(new TestApplication());
 
-            Response response = webTarget.request().get();
+        Response response = webTarget.request().get();
 
-            assertEquals(
-                "Hello application",
-                response.readEntity(String.class));
+        assertEquals(
+            "Hello application",
+            response.readEntity(String.class));
 
-            serviceRegistration2 = registerApplication(
-                new TestApplicationConflict(), "service.ranking", -1);
+        serviceRegistration2 = registerApplication(
+            new TestApplicationConflict(), "service.ranking", -1);
 
-            response = webTarget.request().get();
+        response = webTarget.request().get();
 
-            assertEquals(
-                "Hello application", response.readEntity(String.class));
+        assertEquals(
+            "Hello application", response.readEntity(String.class));
 
-            assertEquals(
-                Response.Status.NOT_FOUND.getStatusCode(),
-                webTarget.path("conflict").request().get().getStatus());
+        assertEquals(
+            Response.Status.NOT_FOUND.getStatusCode(),
+            webTarget.path("conflict").request().get().getStatus());
 
-            serviceRegistration2.unregister();
+        serviceRegistration2.unregister();
 
-            response = webTarget.request().get();
+        response = webTarget.request().get();
 
-            assertEquals(
-                "Hello application", response.readEntity(String.class));
-        }
-        finally {
-            if (serviceRegistration != null) {
-                serviceRegistration.unregister();
-            }
-        }
+        assertEquals(
+            "Hello application", response.readEntity(String.class));
     }
 
     @Test
@@ -202,30 +207,16 @@ public class JaxrsTest extends TestHelper {
             path("/test-application").
             path("extended");
 
-        ServiceRegistration<?> applicationRegistration = null;
+        registerApplication(
+            new TestApplication());
 
-        ServiceRegistration<?> serviceRegistration = null;
+        registerAddon(
+            new TestAddon(), JAX_RS_APPLICATION_SELECT,
+            "(" + JAX_RS_APPLICATION_BASE + "=/test-application)");
 
-        try {
-            applicationRegistration = registerApplication(
-                new TestApplication());
-
-            serviceRegistration = registerAddon(
-                new TestAddon(), JAX_RS_APPLICATION_SELECT,
-                "(" + JAX_RS_APPLICATION_BASE + "=/test-application)");
-
-            assertEquals(
-                "Hello extended",
-                webTarget.request().get().readEntity(String.class));
-        }
-        finally {
-            if (applicationRegistration != null) {
-                applicationRegistration.unregister();
-            }
-            if (serviceRegistration != null) {
-                serviceRegistration.unregister();
-            }
-        }
+        assertEquals(
+            "Hello extended",
+            webTarget.request().get().readEntity(String.class));
     }
 
     @Test
@@ -237,43 +228,32 @@ public class JaxrsTest extends TestHelper {
             path("/test-application").
             path("extended");
 
-        ServiceRegistration<?> applicationRegistration = null;
+        registerApplication(new TestApplication());
 
-        try {
-            applicationRegistration = registerApplication(
-                new TestApplication());
+        Runnable testCase = () -> {
+            assertEquals(webTarget.request().get().getStatus(), 404);
 
-            Runnable testCase = () -> {
-                assertEquals(webTarget.request().get().getStatus(), 404);
+            ServiceRegistration<?> serviceRegistration = null;
 
-                ServiceRegistration<?> serviceRegistration = null;
+            try {
+                serviceRegistration = registerAddon(
+                    new TestAddon(), JAX_RS_APPLICATION_SELECT,
+                    "(" + JAX_RS_APPLICATION_BASE + "=/test-application)");
 
-                try {
-                    serviceRegistration = registerAddon(
-                        new TestAddon(), JAX_RS_APPLICATION_SELECT,
-                        "(" + JAX_RS_APPLICATION_BASE + "=/test-application)");
-
-                    assertEquals(
-                        "Hello extended",
-                        webTarget.request().get().readEntity(String.class));
-                }
-                finally {
-                    if (serviceRegistration != null) {
-                        serviceRegistration.unregister();
-                    }
-                }
-            };
-
-            testCase.run();
-
-            testCase.run();
-        }
-        finally {
-            if (applicationRegistration != null) {
-                applicationRegistration.unregister();
+                assertEquals(
+                    "Hello extended",
+                    webTarget.request().get().readEntity(String.class));
             }
+            finally {
+                if (serviceRegistration != null) {
+                    serviceRegistration.unregister();
+                }
+            }
+        };
 
-        }
+        testCase.run();
+
+        testCase.run();
     }
 
     @Test
@@ -286,55 +266,47 @@ public class JaxrsTest extends TestHelper {
 
         JaxRSServiceRuntime runtime = getJaxRSServiceRuntime();
 
-        ServiceRegistration<?> serviceRegistration = null;
         ServiceRegistration<?> serviceRegistration2;
 
-        try {
-            assertEquals(0, runtime.getRuntimeDTO().applicationDTOs.length);
-            assertEquals(0, runtime.getRuntimeDTO().failedApplicationDTOs.length);
+        assertEquals(0, runtime.getRuntimeDTO().applicationDTOs.length);
+        assertEquals(0, runtime.getRuntimeDTO().failedApplicationDTOs.length);
 
-            serviceRegistration = registerApplication(new TestApplication());
+        registerApplication(new TestApplication());
 
-            assertEquals(1, runtime.getRuntimeDTO().applicationDTOs.length);
-            assertEquals(0, runtime.getRuntimeDTO().failedApplicationDTOs.length);
+        assertEquals(1, runtime.getRuntimeDTO().applicationDTOs.length);
+        assertEquals(0, runtime.getRuntimeDTO().failedApplicationDTOs.length);
 
-            Response response = webTarget.request().get();
+        Response response = webTarget.request().get();
 
-            assertEquals(
-                "Hello application",
-                response.readEntity(String.class));
+        assertEquals(
+            "Hello application",
+            response.readEntity(String.class));
 
-            serviceRegistration2 = registerApplication(
-                new TestApplicationConflict(), "service.ranking", 1);
+        serviceRegistration2 = registerApplication(
+            new TestApplicationConflict(), "service.ranking", 1);
 
-            assertEquals(1, runtime.getRuntimeDTO().applicationDTOs.length);
-            assertEquals(1, runtime.getRuntimeDTO().failedApplicationDTOs.length);
+        assertEquals(1, runtime.getRuntimeDTO().applicationDTOs.length);
+        assertEquals(1, runtime.getRuntimeDTO().failedApplicationDTOs.length);
 
-            response = webTarget.request().get();
+        response = webTarget.request().get();
 
-            assertEquals(
-                "Hello application conflict",
-                response.readEntity(String.class));
+        assertEquals(
+            "Hello application conflict",
+            response.readEntity(String.class));
 
-            assertEquals(
-                "conflict",
-                webTarget.path("conflict").request().get(String.class));
+        assertEquals(
+            "conflict",
+            webTarget.path("conflict").request().get(String.class));
 
-            serviceRegistration2.unregister();
+        serviceRegistration2.unregister();
 
-            assertEquals(1, runtime.getRuntimeDTO().applicationDTOs.length);
-            assertEquals(0, runtime.getRuntimeDTO().failedApplicationDTOs.length);
+        assertEquals(1, runtime.getRuntimeDTO().applicationDTOs.length);
+        assertEquals(0, runtime.getRuntimeDTO().failedApplicationDTOs.length);
 
-            response = webTarget.request().get();
+        response = webTarget.request().get();
 
-            assertEquals(
-                "Hello application", response.readEntity(String.class));
-        }
-        finally {
-            if (serviceRegistration != null) {
-                serviceRegistration.unregister();
-            }
-        }
+        assertEquals(
+            "Hello application", response.readEntity(String.class));
     }
 
     @Test
@@ -349,31 +321,21 @@ public class JaxrsTest extends TestHelper {
 
         ServiceRegistration<?> filterRegistration = null;
 
-        try {
-            applicationRegistration = registerApplication(
-                new TestApplication());
+        applicationRegistration = registerApplication(
+            new TestApplication());
 
-            filterRegistration = registerExtension(
-                "filter",
-                JAX_RS_APPLICATION_SELECT,
-                "(" + JAX_RS_APPLICATION_BASE + "=/test-application)");
+        filterRegistration = registerExtension(
+            "filter",
+            JAX_RS_APPLICATION_SELECT,
+            "(" + JAX_RS_APPLICATION_BASE + "=/test-application)");
 
-            Response response = webTarget.request().get();
+        Response response = webTarget.request().get();
 
-            assertEquals(
-                "Hello application",
-                response.readEntity(String.class));
+        assertEquals(
+            "Hello application",
+            response.readEntity(String.class));
 
-            assertEquals("true", response.getHeaders().getFirst("Filtered"));
-        }
-        finally {
-            if (applicationRegistration != null) {
-                applicationRegistration.unregister();
-            }
-            if (filterRegistration != null) {
-                filterRegistration.unregister();
-            }
-        }
+        assertEquals("true", response.getHeaders().getFirst("Filtered"));
     }
 
     @Test
@@ -386,50 +348,42 @@ public class JaxrsTest extends TestHelper {
 
         ServiceRegistration<?> applicationRegistration = null;
 
-        try {
-            applicationRegistration = registerApplication(
-                new TestApplication());
+        applicationRegistration = registerApplication(
+            new TestApplication());
 
-            assertEquals(
-                "Hello application",
-                webTarget.request().get().readEntity(String.class));
+        assertEquals(
+            "Hello application",
+            webTarget.request().get().readEntity(String.class));
 
-            Runnable testCase = () -> {
-                Response response = webTarget.request().get();
+        Runnable testCase = () -> {
+            Response response = webTarget.request().get();
 
-                assertNull(response.getHeaders().getFirst("Filtered"));
+            assertNull(response.getHeaders().getFirst("Filtered"));
 
-                ServiceRegistration<?> filterRegistration = null;
+            ServiceRegistration<?> filterRegistration = null;
 
-                try {
-                    filterRegistration = registerExtension(
-                        "Filter",
-                        JAX_RS_APPLICATION_SELECT,
-                        "(" + JAX_RS_APPLICATION_BASE + "=/test-application)");
+            try {
+                filterRegistration = registerExtension(
+                    "Filter",
+                    JAX_RS_APPLICATION_SELECT,
+                    "(" + JAX_RS_APPLICATION_BASE + "=/test-application)");
 
-                    response = webTarget.request().get();
+                response = webTarget.request().get();
 
-                    assertEquals(
-                        response.getHeaders().getFirst("Filtered"),
-                        "true");
-                }
-                finally {
-                    if (filterRegistration != null) {
-                        filterRegistration.unregister();
-                    }
-                }
-            };
-
-            testCase.run();
-
-            testCase.run();
-
-        }
-        finally {
-            if (applicationRegistration != null) {
-                applicationRegistration.unregister();
+                assertEquals(
+                    response.getHeaders().getFirst("Filtered"),
+                    "true");
             }
-        }
+            finally {
+                if (filterRegistration != null) {
+                    filterRegistration.unregister();
+                }
+            }
+        };
+
+        testCase.run();
+
+        testCase.run();
     }
 
     @Test
@@ -476,6 +430,112 @@ public class JaxrsTest extends TestHelper {
     }
 
     @Test
+    public void testApplicationChangeCount() throws Exception {
+        ServiceTracker<JaxRSServiceRuntime, JaxRSServiceRuntime> runtimeTracker =
+            new ServiceTracker<>(
+                bundleContext, JaxRSServiceRuntime.class, null);
+
+        try {
+            runtimeTracker.open();
+
+            JaxRSServiceRuntime runtime = runtimeTracker.getService();
+
+            assertNotNull(runtime);
+
+            ServiceReference<JaxRSServiceRuntime> serviceReference =
+                runtimeTracker.getServiceReference();
+
+            Long changeCount = (Long)serviceReference.getProperty(
+                "service.changecount");
+
+            Dictionary<String, Object> properties = new Hashtable<>();
+
+            properties.put(JAX_RS_APPLICATION_BASE, "/test-counter");
+
+            ServiceRegistration<?> serviceRegistration =
+                bundleContext.registerService(
+                    Application.class, new TestApplication(), properties);
+
+            Long newCount = (Long)serviceReference.getProperty(
+                "service.changecount");
+
+            assertTrue(changeCount < newCount);
+
+            changeCount = newCount;
+
+            serviceRegistration.unregister();
+
+            newCount = (Long)serviceReference.getProperty(
+                "service.changecount");
+
+            assertTrue(changeCount < newCount);
+        }
+        finally {
+            runtimeTracker.close();
+        }
+    }
+
+    @Test
+    public void testResourcesChangeCount() throws Exception {
+        ServiceTracker<JaxRSServiceRuntime, JaxRSServiceRuntime> runtimeTracker =
+            new ServiceTracker<>(
+                bundleContext, JaxRSServiceRuntime.class, null);
+
+        try {
+            runtimeTracker.open();
+
+            JaxRSServiceRuntime runtime = runtimeTracker.getService();
+
+            assertNotNull(runtime);
+
+            ServiceReference<JaxRSServiceRuntime> serviceReference =
+                runtimeTracker.getServiceReference();
+
+            Long changeCount = (Long)serviceReference.getProperty(
+                "service.changecount");
+
+            ServiceRegistration<?> serviceRegistration =
+                registerAddon(new TestAddon());
+
+            Long newCount = (Long)serviceReference.getProperty(
+                "service.changecount");
+
+            assertTrue(changeCount < newCount);
+
+            changeCount = newCount;
+
+            ServiceRegistration<?> serviceRegistration2 =
+                registerAddon(new TestAddon());
+
+            newCount = (Long)serviceReference.getProperty(
+                "service.changecount");
+
+            assertTrue(changeCount < newCount);
+
+            changeCount = newCount;
+
+            serviceRegistration.unregister();
+
+            newCount = (Long)serviceReference.getProperty(
+                "service.changecount");
+
+            assertTrue(changeCount < newCount);
+
+            changeCount = newCount;
+
+            serviceRegistration2.unregister();
+
+            newCount = (Long)serviceReference.getProperty(
+                "service.changecount");
+
+            assertTrue(changeCount < newCount);
+        }
+        finally {
+            runtimeTracker.close();
+        }
+    }
+
+    @Test
     public void testEndpointsOverride() {
         Client client = createClient();
 
@@ -486,42 +546,32 @@ public class JaxrsTest extends TestHelper {
         ServiceRegistration<?> serviceRegistration = null;
         ServiceRegistration<?> serviceRegistration2 = null;
 
-        try {
-            serviceRegistration = registerAddon(new TestAddonConflict());
+        serviceRegistration = registerAddon(new TestAddonConflict());
 
-            Response response = webTarget.request().get();
+        Response response = webTarget.request().get();
 
-            assertEquals(
-                "This should say hello1", "hello1",
-                response.readEntity(String.class));
+        assertEquals(
+            "This should say hello1", "hello1",
+            response.readEntity(String.class));
 
-            serviceRegistration2 = registerAddon(
-                new TestAddonConflict2(), "service.ranking", 1);
+        serviceRegistration2 = registerAddon(
+            new TestAddonConflict2(), "service.ranking", 1);
 
-            response = webTarget.request().get();
+        response = webTarget.request().get();
 
-            assertEquals(
-                "This should say hello2", "hello2",
-                response.readEntity(String.class));
+        assertEquals(
+            "This should say hello2", "hello2",
+            response.readEntity(String.class));
 
-            serviceRegistration2.unregister();
+        serviceRegistration2.unregister();
 
-            serviceRegistration2 = null;
+        serviceRegistration2 = null;
 
-            response = webTarget.request().get();
+        response = webTarget.request().get();
 
-            assertEquals(
-                "This should say hello1", "hello1",
-                response.readEntity(String.class));
-        }
-        finally {
-            if (serviceRegistration != null) {
-                serviceRegistration.unregister();
-            }
-            if (serviceRegistration2 != null) {
-                serviceRegistration2.unregister();
-            }
-        }
+        assertEquals(
+            "This should say hello1", "hello1",
+            response.readEntity(String.class));
     }
 
     @Test
@@ -659,24 +709,15 @@ public class JaxrsTest extends TestHelper {
 
         JaxRSServiceRuntime runtime = getJaxRSServiceRuntime();
 
-        ServiceRegistration<?> serviceRegistration = null;
+        runtime.getRuntimeDTO();
 
-        try {
-            runtime.getRuntimeDTO();
+        registerAddon(new TestAddon());
 
-            serviceRegistration = registerAddon(new TestAddon());
+        Response response = webTarget.request().get();
 
-            Response response = webTarget.request().get();
-
-            assertEquals(
-                "This should say hello", "Hello test",
-                response.readEntity(String.class));
-        }
-        finally {
-            if (serviceRegistration != null) {
-                serviceRegistration.unregister();
-            }
-        }
+        assertEquals(
+            "This should say hello", "Hello test",
+            response.readEntity(String.class));
     }
 
     @Test
@@ -687,23 +728,13 @@ public class JaxrsTest extends TestHelper {
             target("http://localhost:8080").
             path("/test-addon-lifecycle");
 
-        ServiceRegistration<?> serviceRegistration = null;
+        registerAddonLifecycle(false, JAX_RS_RESOURCE, "true");
 
-        try {
-            serviceRegistration = registerAddonLifecycle(
-                false, JAX_RS_RESOURCE, "true");
+        String first = webTarget.request().get().readEntity(String.class);
 
-            String first = webTarget.request().get().readEntity(String.class);
+        String second = webTarget.request().get().readEntity(String.class);
 
-            String second = webTarget.request().get().readEntity(String.class);
-
-            assertNotEquals("This should be different", first, second);
-        }
-        finally {
-            if (serviceRegistration != null) {
-                serviceRegistration.unregister();
-            }
-        }
+        assertNotEquals("This should be different", first, second);
     }
 
     @Test
@@ -746,23 +777,13 @@ public class JaxrsTest extends TestHelper {
             target("http://localhost:8080").
             path("/test-addon-lifecycle");
 
-        ServiceRegistration<?> serviceRegistration = null;
+        registerAddonLifecycle(true, JAX_RS_RESOURCE, "true");
 
-        try {
-            serviceRegistration = registerAddonLifecycle(
-                true, JAX_RS_RESOURCE, "true");
+        String first = webTarget.request().get().readEntity(String.class);
 
-            String first = webTarget.request().get().readEntity(String.class);
+        String second = webTarget.request().get().readEntity(String.class);
 
-            String second = webTarget.request().get().readEntity(String.class);
-
-            assertEquals("This should be equal", first, second);
-        }
-        finally {
-            if (serviceRegistration != null) {
-                serviceRegistration.unregister();
-            }
-        }
+        assertEquals("This should be equal", first, second);
     }
 
     @Test
@@ -777,100 +798,93 @@ public class JaxrsTest extends TestHelper {
 
         JaxRSServiceRuntime runtime = getJaxRSServiceRuntime();
 
-        ServiceRegistration<?> serviceRegistration = null;
+        ServiceRegistration<?> serviceRegistration;
         ServiceRegistration<?> extensionRegistration1;
         ServiceRegistration<?> extensionRegistration2;
 
-        try {
-            serviceRegistration = registerAddon(
-                new TestAddon(),
-                JAX_RS_EXTENSION_SELECT, new String[]{
-                    "(property one=one)",
-                    "(property two=two)",
-                });
+        serviceRegistration = registerAddon(
+            new TestAddon(),
+            JAX_RS_EXTENSION_SELECT, new String[]{
+                "(property one=one)",
+                "(property two=two)",
+            });
 
-            RuntimeDTO runtimeDTO = runtime.getRuntimeDTO();
+        RuntimeDTO runtimeDTO = runtime.getRuntimeDTO();
 
-            assertEquals(1, runtimeDTO.failedResourceDTOs.length);
-            assertEquals(
-                (long)serviceRegistration.getReference().getProperty(
-                    "service.id"),
-                runtimeDTO.failedResourceDTOs[0].serviceId);
+        assertEquals(1, runtimeDTO.failedResourceDTOs.length);
+        assertEquals(
+            (long)serviceRegistration.getReference().getProperty(
+                "service.id"),
+            runtimeDTO.failedResourceDTOs[0].serviceId);
 
-            assertEquals(404, webTarget.request().get().getStatus());
+        assertEquals(404, webTarget.request().get().getStatus());
 
-            extensionRegistration1 = registerExtension(
-                "aExtension", "property one", "one");
+        extensionRegistration1 = registerExtension(
+            "aExtension", "property one", "one");
 
-            runtimeDTO = runtime.getRuntimeDTO();
+        runtimeDTO = runtime.getRuntimeDTO();
 
-            assertEquals(1, runtimeDTO.failedResourceDTOs.length);
-            assertEquals(
-                (long)serviceRegistration.getReference().getProperty(
-                    "service.id"),
-                runtimeDTO.failedResourceDTOs[0].serviceId);
+        assertEquals(1, runtimeDTO.failedResourceDTOs.length);
+        assertEquals(
+            (long)serviceRegistration.getReference().getProperty(
+                "service.id"),
+            runtimeDTO.failedResourceDTOs[0].serviceId);
 
-            assertEquals(404, webTarget.request().get().getStatus());
+        assertEquals(404, webTarget.request().get().getStatus());
 
-            extensionRegistration2 = registerExtension(
-                "anotherExtension", "property two", "two");
+        extensionRegistration2 = registerExtension(
+            "anotherExtension", "property two", "two");
 
-            runtimeDTO = runtime.getRuntimeDTO();
+        runtimeDTO = runtime.getRuntimeDTO();
 
-            assertEquals(0, runtimeDTO.failedResourceDTOs.length);
+        assertEquals(0, runtimeDTO.failedResourceDTOs.length);
 
-            Response response = webTarget.request().get();
+        Response response = webTarget.request().get();
 
-            assertEquals(
-                "This should say hello", "Hello test",
-                response.readEntity(String.class));
+        assertEquals(
+            "This should say hello", "Hello test",
+            response.readEntity(String.class));
 
-            extensionRegistration1.unregister();
+        extensionRegistration1.unregister();
 
-            runtimeDTO = runtime.getRuntimeDTO();
-            assertEquals(1, runtimeDTO.failedResourceDTOs.length);
-            assertEquals(
-                (long)serviceRegistration.getReference().getProperty(
-                    "service.id"),
-                runtimeDTO.failedResourceDTOs[0].serviceId);
+        runtimeDTO = runtime.getRuntimeDTO();
+        assertEquals(1, runtimeDTO.failedResourceDTOs.length);
+        assertEquals(
+            (long)serviceRegistration.getReference().getProperty(
+                "service.id"),
+            runtimeDTO.failedResourceDTOs[0].serviceId);
 
-            assertEquals(404, webTarget.request().get().getStatus());
+        assertEquals(404, webTarget.request().get().getStatus());
 
-            extensionRegistration1 = registerExtension(
-                "aExtension", "property one", "one");
+        extensionRegistration1 = registerExtension(
+            "aExtension", "property one", "one");
 
-            runtimeDTO = runtime.getRuntimeDTO();
-            assertEquals(0, runtimeDTO.failedResourceDTOs.length);
+        runtimeDTO = runtime.getRuntimeDTO();
+        assertEquals(0, runtimeDTO.failedResourceDTOs.length);
 
-            assertEquals(
-                "This should say hello", "Hello test",
-                response.readEntity(String.class));
+        assertEquals(
+            "This should say hello", "Hello test",
+            response.readEntity(String.class));
 
-            extensionRegistration2.unregister();
+        extensionRegistration2.unregister();
 
-            runtimeDTO = runtime.getRuntimeDTO();
-            assertEquals(1, runtimeDTO.failedResourceDTOs.length);
-            assertEquals(
-                (long)serviceRegistration.getReference().getProperty(
-                    "service.id"),
-                runtimeDTO.failedResourceDTOs[0].serviceId);
+        runtimeDTO = runtime.getRuntimeDTO();
+        assertEquals(1, runtimeDTO.failedResourceDTOs.length);
+        assertEquals(
+            (long)serviceRegistration.getReference().getProperty(
+                "service.id"),
+            runtimeDTO.failedResourceDTOs[0].serviceId);
 
-            assertEquals(404, webTarget.request().get().getStatus());
+        assertEquals(404, webTarget.request().get().getStatus());
 
-            extensionRegistration1.unregister();
+        extensionRegistration1.unregister();
 
-            runtimeDTO = runtime.getRuntimeDTO();
-            assertEquals(1, runtimeDTO.failedResourceDTOs.length);
-            assertEquals(
-                (long)serviceRegistration.getReference().getProperty(
-                    "service.id"),
-                runtimeDTO.failedResourceDTOs[0].serviceId);
-        }
-        finally {
-            if (serviceRegistration != null) {
-                serviceRegistration.unregister();
-            }
-        }
+        runtimeDTO = runtime.getRuntimeDTO();
+        assertEquals(1, runtimeDTO.failedResourceDTOs.length);
+        assertEquals(
+            (long)serviceRegistration.getReference().getProperty(
+                "service.id"),
+            runtimeDTO.failedResourceDTOs[0].serviceId);
     }
 
     @Test
@@ -883,44 +897,31 @@ public class JaxrsTest extends TestHelper {
 
         JaxRSServiceRuntime runtime = getJaxRSServiceRuntime();
 
-        ServiceRegistration<?> serviceRegistration = null;
+        RuntimeDTO runtimeDTO = runtime.getRuntimeDTO();
 
-        try {
-            RuntimeDTO runtimeDTO = runtime.getRuntimeDTO();
+        assertEquals(0, runtimeDTO.defaultApplication.extensionDTOs.length);
 
-            assertEquals(
-                0, runtimeDTO.defaultApplication.extensionDTOs.length);
+        registerAddon(new TestAddon());
 
-            serviceRegistration = registerAddon(new TestAddon());
+        ServiceRegistration<?> filterRegistration = registerExtension("Filter");
 
-            ServiceRegistration<?> filterRegistration = registerExtension(
-                "Filter");
+        runtimeDTO = runtime.getRuntimeDTO();
 
-            runtimeDTO = runtime.getRuntimeDTO();
+        assertEquals(1, runtimeDTO.defaultApplication.extensionDTOs.length);
 
-            assertEquals(
-                1, runtimeDTO.defaultApplication.extensionDTOs.length);
+        Response response = webTarget.request().get();
 
-            Response response = webTarget.request().get();
+        assertEquals(
+            "This should say hello", "Hello test",
+            response.readEntity(String.class));
 
-            assertEquals(
-                "This should say hello", "Hello test",
-                response.readEntity(String.class));
+        assertEquals("true", response.getHeaders().getFirst("Filtered"));
 
-            assertEquals("true", response.getHeaders().getFirst("Filtered"));
+        filterRegistration.unregister();
 
-            filterRegistration.unregister();
+        runtimeDTO = runtime.getRuntimeDTO();
 
-            runtimeDTO = runtime.getRuntimeDTO();
-
-            assertEquals(
-                0, runtimeDTO.defaultApplication.extensionDTOs.length);
-        }
-        finally {
-            if (serviceRegistration != null) {
-                serviceRegistration.unregister();
-            }
-        }
+        assertEquals(0, runtimeDTO.defaultApplication.extensionDTOs.length);
     }
 
     @Test
@@ -933,55 +934,44 @@ public class JaxrsTest extends TestHelper {
 
         JaxRSServiceRuntime runtime = getJaxRSServiceRuntime();
 
-        ServiceRegistration<?> serviceRegistration = null;
+        RuntimeDTO runtimeDTO = runtime.getRuntimeDTO();
 
-        try {
-            RuntimeDTO runtimeDTO = runtime.getRuntimeDTO();
+        assertEquals(
+            0, runtimeDTO.defaultApplication.extensionDTOs.length);
 
-            assertEquals(
-                0, runtimeDTO.defaultApplication.extensionDTOs.length);
+        registerAddon(new TestAddon());
 
-            serviceRegistration = registerAddon(new TestAddon());
+        ServiceRegistration<?> filterRegistration =
+            registerInvalidExtension("Filter");
 
-            ServiceRegistration<?> filterRegistration =
-                registerInvalidExtension("Filter");
+        runtimeDTO = runtime.getRuntimeDTO();
 
-            runtimeDTO = runtime.getRuntimeDTO();
+        assertEquals(0, runtimeDTO.defaultApplication.extensionDTOs.length);
 
-            assertEquals(
-                0, runtimeDTO.defaultApplication.extensionDTOs.length);
+        assertEquals(1, runtimeDTO.failedExtensionDTOs.length);
+        assertEquals(
+            (long)filterRegistration.getReference().getProperty(
+                "service.id"),
+            runtimeDTO.failedExtensionDTOs[0].serviceId);
+        assertEquals(
+            DTOConstants.FAILURE_REASON_NOT_AN_EXTENSION_TYPE,
+            runtimeDTO.failedExtensionDTOs[0].failureReason);
 
-            assertEquals(1, runtimeDTO.failedExtensionDTOs.length);
-            assertEquals(
-                (long)filterRegistration.getReference().getProperty(
-                    "service.id"),
-                runtimeDTO.failedExtensionDTOs[0].serviceId);
-            assertEquals(
-                DTOConstants.FAILURE_REASON_NOT_AN_EXTENSION_TYPE,
-                runtimeDTO.failedExtensionDTOs[0].failureReason);
+        Response response = webTarget.request().get();
 
-            Response response = webTarget.request().get();
+        assertEquals(
+            "This should say hello", "Hello test",
+            response.readEntity(String.class));
 
-            assertEquals(
-                "This should say hello", "Hello test",
-                response.readEntity(String.class));
+        assertNull(response.getHeaders().getFirst("Filtered"));
 
-            assertNull(response.getHeaders().getFirst("Filtered"));
+        filterRegistration.unregister();
 
-            filterRegistration.unregister();
+        runtimeDTO = runtime.getRuntimeDTO();
 
-            runtimeDTO = runtime.getRuntimeDTO();
+        assertEquals(0, runtimeDTO.defaultApplication.extensionDTOs.length);
 
-            assertEquals(
-                0, runtimeDTO.defaultApplication.extensionDTOs.length);
-
-            assertEquals(0, runtimeDTO.failedExtensionDTOs.length);
-        }
-        finally {
-            if (serviceRegistration != null) {
-                serviceRegistration.unregister();
-            }
-        }
+        assertEquals(0, runtimeDTO.failedExtensionDTOs.length);
     }
 
     @Test
@@ -994,30 +984,18 @@ public class JaxrsTest extends TestHelper {
             target("http://localhost:8080").
             path("test-application");
 
-        ServiceRegistration<?> serviceRegistration = null;
+        registerApplication(new TestApplicationWithException());
 
-        try {
-            serviceRegistration = registerApplication(
-                new TestApplicationWithException());
+        ServiceRegistration<?> filterRegistration =
+            registerMultiExtension("Filter", ExceptionMapper.class.getName());
 
-            ServiceRegistration<?> filterRegistration =
-                registerMultiExtension(
-                    "Filter",
-                    ExceptionMapper.class.getName());
+        Response response = webTarget.request().get();
 
-            Response response = webTarget.request().get();
+        assertEquals(200, response.getStatus());
 
-            assertEquals(200, response.getStatus());
+        assertNull(response.getHeaders().getFirst("Filtered"));
 
-            assertNull(response.getHeaders().getFirst("Filtered"));
-
-            filterRegistration.unregister();
-        }
-        finally {
-            if (serviceRegistration != null) {
-                serviceRegistration.unregister();
-            }
-        }
+        filterRegistration.unregister();
     }
 
     @Test
@@ -1030,55 +1008,43 @@ public class JaxrsTest extends TestHelper {
 
         JaxRSServiceRuntime runtime = getJaxRSServiceRuntime();
 
-        ServiceRegistration<?> serviceRegistration = null;
+        RuntimeDTO runtimeDTO = runtime.getRuntimeDTO();
 
-        try {
-            RuntimeDTO runtimeDTO = runtime.getRuntimeDTO();
+        assertEquals(0, runtimeDTO.defaultApplication.extensionDTOs.length);
 
-            assertEquals(
-                0, runtimeDTO.defaultApplication.extensionDTOs.length);
+        registerAddon(new TestAddon());
 
-            serviceRegistration = registerAddon(new TestAddon());
+        ServiceRegistration<?> filterRegistration =
+            registerUngettableExtension("Filter");
 
-            ServiceRegistration<?> filterRegistration =
-                registerUngettableExtension("Filter");
+        runtimeDTO = runtime.getRuntimeDTO();
 
-            runtimeDTO = runtime.getRuntimeDTO();
+        assertEquals(0, runtimeDTO.defaultApplication.extensionDTOs.length);
 
-            assertEquals(
-                0, runtimeDTO.defaultApplication.extensionDTOs.length);
+        assertEquals(1, runtimeDTO.failedExtensionDTOs.length);
+        assertEquals(
+            (long)filterRegistration.getReference().getProperty(
+                "service.id"),
+            runtimeDTO.failedExtensionDTOs[0].serviceId);
+        assertEquals(
+            DTOConstants.FAILURE_REASON_SERVICE_NOT_GETTABLE,
+            runtimeDTO.failedExtensionDTOs[0].failureReason);
 
-            assertEquals(1, runtimeDTO.failedExtensionDTOs.length);
-            assertEquals(
-                (long)filterRegistration.getReference().getProperty(
-                    "service.id"),
-                runtimeDTO.failedExtensionDTOs[0].serviceId);
-            assertEquals(
-                DTOConstants.FAILURE_REASON_SERVICE_NOT_GETTABLE,
-                runtimeDTO.failedExtensionDTOs[0].failureReason);
+        Response response = webTarget.request().get();
 
-            Response response = webTarget.request().get();
+        assertEquals(
+            "This should say hello", "Hello test",
+            response.readEntity(String.class));
 
-            assertEquals(
-                "This should say hello", "Hello test",
-                response.readEntity(String.class));
+        assertNull(response.getHeaders().getFirst("Filtered"));
 
-            assertNull(response.getHeaders().getFirst("Filtered"));
+        filterRegistration.unregister();
 
-            filterRegistration.unregister();
+        runtimeDTO = runtime.getRuntimeDTO();
 
-            runtimeDTO = runtime.getRuntimeDTO();
+        assertEquals(0, runtimeDTO.defaultApplication.extensionDTOs.length);
 
-            assertEquals(
-                0, runtimeDTO.defaultApplication.extensionDTOs.length);
-
-            assertEquals(0, runtimeDTO.failedExtensionDTOs.length);
-        }
-        finally {
-            if (serviceRegistration != null) {
-                serviceRegistration.unregister();
-            }
-        }
+        assertEquals(0, runtimeDTO.failedExtensionDTOs.length);
     }
 
     @Test
@@ -1091,47 +1057,39 @@ public class JaxrsTest extends TestHelper {
 
         ServiceRegistration<?> serviceRegistration = null;
 
-        try {
-            serviceRegistration = registerAddon(new TestAddon());
+        serviceRegistration = registerAddon(new TestAddon());
 
-            assertEquals("Hello test",
-                webTarget.request().get().readEntity(String.class));
+        assertEquals("Hello test",
+            webTarget.request().get().readEntity(String.class));
 
-            Runnable testCase = () -> {
-                ServiceRegistration<?> filterRegistration = null;
+        Runnable testCase = () -> {
+            ServiceRegistration<?> filterRegistration = null;
 
-                try {
-                    Response response = webTarget.request().get();
+            try {
+                Response response = webTarget.request().get();
 
-                    assertNull(response.getHeaders().getFirst("Filtered"));
+                assertNull(response.getHeaders().getFirst("Filtered"));
 
-                    filterRegistration = registerExtension("Filter");
+                filterRegistration = registerExtension("Filter");
 
-                    response = webTarget.request().get();
+                response = webTarget.request().get();
 
-                    assertEquals(
-                        "Hello test", response.readEntity(String.class));
+                assertEquals(
+                    "Hello test", response.readEntity(String.class));
 
-                    assertEquals(
-                        "true", response.getHeaders().getFirst("Filtered"));
-                }
-                finally {
-                    if (filterRegistration != null) {
-                        filterRegistration.unregister();
-                    }
-                }
-            };
-
-            testCase.run();
-
-            testCase.run();
-        }
-        finally {
-            if (serviceRegistration != null) {
-                serviceRegistration.unregister();
+                assertEquals(
+                    "true", response.getHeaders().getFirst("Filtered"));
             }
+            finally {
+                if (filterRegistration != null) {
+                    filterRegistration.unregister();
+                }
+            }
+        };
 
-        }
+        testCase.run();
+
+        testCase.run();
     }
 
     private JaxRSServiceRuntime getJaxRSServiceRuntime() throws InterruptedException {
@@ -1152,8 +1110,12 @@ public class JaxrsTest extends TestHelper {
             properties.put(keyValues[i].toString(), keyValues[i + 1]);
         }
 
-        return bundleContext.registerService(
-            Object.class, instance, properties);
+        ServiceRegistration<Object> serviceRegistration =
+            bundleContext.registerService(Object.class, instance, properties);
+
+        _registrations.add(serviceRegistration);
+
+        return serviceRegistration;
     }
 
     private ServiceRegistration<?> registerAddonLifecycle(
@@ -1186,9 +1148,14 @@ public class JaxrsTest extends TestHelper {
                     }
                 };
 
-            return bundleContext.registerService(
-                Object.class, (ServiceFactory<?>) prototypeServiceFactory,
-                properties);
+            ServiceRegistration<Object> serviceRegistration =
+                bundleContext.registerService(
+                    Object.class, (ServiceFactory<?>) prototypeServiceFactory,
+                    properties);
+
+            _registrations.add(serviceRegistration);
+
+            return serviceRegistration;
         }
     }
 
@@ -1203,8 +1170,13 @@ public class JaxrsTest extends TestHelper {
             properties.put(keyValues[i].toString(), keyValues[i + 1]);
         }
 
-        return bundleContext.registerService(
-            Application.class, application, properties);
+        ServiceRegistration<Application> serviceRegistration =
+            bundleContext.registerService(
+                Application.class, application, properties);
+
+        _registrations.add(serviceRegistration);
+
+        return serviceRegistration;
     }
 
     private ServiceRegistration<Application> registerApplication(
@@ -1218,8 +1190,13 @@ public class JaxrsTest extends TestHelper {
             properties.put(keyValues[i].toString(), keyValues[i + 1]);
         }
 
-        return bundleContext.registerService(
-            Application.class, serviceFactory, properties);
+        ServiceRegistration<Application> serviceRegistration =
+            bundleContext.registerService(
+                Application.class, serviceFactory, properties);
+
+        _registrations.add(serviceRegistration);
+
+        return serviceRegistration;
     }
 
     private ServiceRegistration<?> registerExtension(
@@ -1236,8 +1213,13 @@ public class JaxrsTest extends TestHelper {
             properties.put(keyValues[i].toString(), keyValues[i + 1]);
         }
 
-        return bundleContext.registerService(
-            ContainerResponseFilter.class, testFilter, properties);
+        ServiceRegistration<ContainerResponseFilter> serviceRegistration =
+            bundleContext.registerService(
+                ContainerResponseFilter.class, testFilter, properties);
+
+        _registrations.add(serviceRegistration);
+
+        return serviceRegistration;
     }
 
     private ServiceRegistration<?> registerMultiExtension(
@@ -1248,8 +1230,13 @@ public class JaxrsTest extends TestHelper {
         properties.put(JAX_RS_EXTENSION, true);
         properties.put(JAX_RS_NAME, name);
 
-        return bundleContext.registerService(
-            classes, new TestFilterAndExceptionMapper(), properties);
+        ServiceRegistration<?> serviceRegistration =
+            bundleContext.registerService(
+                classes, new TestFilterAndExceptionMapper(), properties);
+
+        _registrations.add(serviceRegistration);
+
+        return serviceRegistration;
     }
 
     private ServiceRegistration<?> registerInvalidExtension(
@@ -1266,8 +1253,13 @@ public class JaxrsTest extends TestHelper {
             properties.put(keyValues[i].toString(), keyValues[i + 1]);
         }
 
-        return bundleContext.registerService(
-            Object.class, testFilter, properties);
+        ServiceRegistration<Object> serviceRegistration =
+            bundleContext.registerService(
+                Object.class, testFilter, properties);
+
+        _registrations.add(serviceRegistration);
+
+        return serviceRegistration;
     }
 
     private ServiceRegistration<?> registerUngettableExtension(
@@ -1282,27 +1274,32 @@ public class JaxrsTest extends TestHelper {
             properties.put(keyValues[i].toString(), keyValues[i + 1]);
         }
 
-        return bundleContext.registerService(
-            ContainerResponseFilter.class,
-            new ServiceFactory<ContainerResponseFilter>() {
-                @Override
-                public ContainerResponseFilter getService(
-                    Bundle bundle,
-                    ServiceRegistration<ContainerResponseFilter>
-                        serviceRegistration) {
+        ServiceRegistration<ContainerResponseFilter> serviceRegistration =
+            bundleContext.registerService(
+                ContainerResponseFilter.class,
+                new ServiceFactory<ContainerResponseFilter>() {
+                    @Override
+                    public ContainerResponseFilter getService(
+                        Bundle bundle,
+                        ServiceRegistration<ContainerResponseFilter>
+                            serviceRegistration) {
 
-                    return null;
-                }
+                        return null;
+                    }
 
-                @Override
-                public void ungetService(
-                    Bundle bundle,
-                    ServiceRegistration<ContainerResponseFilter>
-                        serviceRegistration,
-                    ContainerResponseFilter containerResponseFilter) {
+                    @Override
+                    public void ungetService(
+                        Bundle bundle,
+                        ServiceRegistration<ContainerResponseFilter>
+                            serviceRegistration,
+                        ContainerResponseFilter containerResponseFilter) {
 
-                }
-            }, properties);
+                    }
+                }, properties);
+
+        _registrations.add(serviceRegistration);
+
+        return serviceRegistration;
     }
 
     private ServiceRegistration<Application> registerUngettableApplication(
