@@ -23,11 +23,13 @@ import org.apache.aries.jax.rs.whiteboard.internal.Utils.ServiceTuple;
 import org.apache.aries.osgi.functional.OSGi;
 import org.apache.cxf.Bus;
 import org.apache.cxf.bus.extension.ExtensionManagerBus;
+import org.apache.cxf.jaxrs.lifecycle.ResourceProvider;
 import org.apache.cxf.transport.servlet.CXFNonSpringServlet;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.Constants;
 import org.osgi.framework.Filter;
 import org.osgi.framework.InvalidSyntaxException;
+import org.osgi.framework.ServiceObjects;
 import org.osgi.framework.ServiceReference;
 import org.osgi.framework.ServiceRegistration;
 import org.osgi.framework.wiring.BundleWiring;
@@ -62,14 +64,14 @@ import java.util.function.Function;
 import static java.lang.String.format;
 import static org.apache.aries.jax.rs.whiteboard.internal.AriesJaxRSServiceRuntime.getApplicationName;
 import static org.apache.aries.jax.rs.whiteboard.internal.Utils.canonicalize;
-import static org.apache.aries.jax.rs.whiteboard.internal.Utils.deployRegistrator;
 import static org.apache.aries.jax.rs.whiteboard.internal.Utils.generateApplicationName;
 import static org.apache.aries.jax.rs.whiteboard.internal.Utils.getProperties;
+import static org.apache.aries.jax.rs.whiteboard.internal.Utils.getResourceProvider;
 import static org.apache.aries.jax.rs.whiteboard.internal.Utils.highestPer;
+import static org.apache.aries.jax.rs.whiteboard.internal.Utils.ignore;
 import static org.apache.aries.jax.rs.whiteboard.internal.Utils.onlyGettables;
-import static org.apache.aries.jax.rs.whiteboard.internal.Utils.safeRegisterEndpoint;
-import static org.apache.aries.jax.rs.whiteboard.internal.Utils.safeRegisterExtension;
 import static org.apache.aries.jax.rs.whiteboard.internal.Utils.service;
+import static org.apache.aries.jax.rs.whiteboard.internal.Utils.serviceObjects;
 import static org.apache.aries.osgi.functional.OSGi.all;
 import static org.apache.aries.osgi.functional.OSGi.bundleContext;
 import static org.apache.aries.osgi.functional.OSGi.just;
@@ -119,6 +121,17 @@ public class Whiteboard {
 
     public static final String DEFAULT_NAME = ".default";
 
+    public static OSGi<ApplicationReference> allApplicationReferences() {
+        return
+            serviceReferences(CXFJaxRsServiceRegistrator.class).
+                flatMap(registratorReference ->
+            just(getApplicationName(registratorReference::getProperty)).
+                flatMap(applicationName ->
+            service(registratorReference).flatMap(registrator ->
+            just(new ApplicationReference(applicationName, registrator))
+        )));
+    }
+
     public static OSGi<?> createWhiteboard(Dictionary<String, ?> configuration) {
         AriesJaxRSServiceRuntime runtime = new AriesJaxRSServiceRuntime();
 
@@ -148,8 +161,108 @@ public class Whiteboard {
             ))))));
     }
 
-    private static OSGi<Void> ignore(OSGi<?> program) {
-        return program.map(t -> null);
+    public static OSGi<?> deployRegistrator(
+        Bus bus, ServiceTuple<Application> tuple, Map<String, Object> props,
+        AriesJaxRSServiceRuntime runtime) {
+
+        try {
+            CXFJaxRsServiceRegistrator registrator =
+                new CXFJaxRsServiceRegistrator(bus, tuple.getService());
+
+            return
+                onClose(registrator::close).then(
+                register(CXFJaxRsServiceRegistrator.class, registrator, props)
+            );
+        }
+        catch (Exception e) {
+            ServiceReference<Application> serviceReference =
+                tuple.getServiceReference();
+
+            runtime.addErroredApplication(serviceReference);
+
+            return onClose(
+                () -> runtime.removeErroredApplication(serviceReference)
+            ).then(
+                nothing()
+            );
+        }
+    }
+
+    public static String getApplicationBase(PropertyHolder properties) {
+        return properties.get(JAX_RS_APPLICATION_BASE).toString();
+    }
+
+    public static <T> OSGi<ResourceProvider>
+        registerEndpoint(
+            CXFJaxRsServiceRegistrator registrator,
+            ServiceObjects<T> serviceObjects) {
+
+        ResourceProvider resourceProvider = getResourceProvider(serviceObjects);
+        registrator.add(resourceProvider);
+        return just(resourceProvider);
+    }
+
+    public static <T> OSGi<?> safeRegisterEndpoint(
+        ServiceReference<T> serviceReference,
+        String applicationName,
+        CXFJaxRsServiceRegistrator registrator,
+        AriesJaxRSServiceRuntime runtime) {
+
+        return
+            onlyGettables(
+                just(serviceReference),
+                runtime::addNotGettableEndpoint,
+                runtime::removeNotGettableEndpoint
+            ).flatMap(
+                tuple -> serviceObjects(serviceReference).flatMap(
+                    serviceObjects -> registerEndpoint(
+                        registrator, serviceObjects).flatMap(
+                            resourceProvider ->
+                                onClose(
+                                    () -> Utils.unregisterEndpoint(
+                                        registrator, resourceProvider)
+                                )
+                    )
+                )
+            ).foreach(
+                __ -> runtime.addApplicationEndpoint(
+                    applicationName, serviceReference),
+                __ -> runtime.removeApplicationEndpoint(
+                    applicationName, serviceReference)
+            );
+    }
+
+    public static OSGi<?> safeRegisterExtension(
+        ServiceReference<?> serviceReference, String applicationName,
+        CXFJaxRsServiceRegistrator registrator,
+        AriesJaxRSServiceRuntime runtime) {
+
+        Map<String, Object> properties = getProperties(serviceReference);
+
+        properties.put(
+            JAX_RS_NAME, applicationName);
+        properties.put(
+            "original.objectClass",
+            serviceReference.getProperty("objectClass"));
+
+        return
+            onlyGettables(
+                just(serviceReference),
+                runtime::addNotGettableExtension,
+                runtime::removeNotGettableExtension
+            ).foreach(
+                registrator::addProvider,
+                registrator::removeProvider
+            ).foreach(
+                __ -> runtime.addApplicationExtension(
+                    applicationName, serviceReference),
+                __ -> runtime.removeApplicationExtension(
+                    applicationName, serviceReference)
+            ).then(
+                register(
+                    ApplicationExtensionRegistration.class,
+                    new ApplicationExtensionRegistration(){}, properties)
+            );
     }
 
     private static OSGi<Collection<String>> bestEffortCalculationOfEnpoints(Filter filter) {
@@ -166,6 +279,35 @@ public class Whiteboard {
                 ).then(
             just(endPoints)
         );
+    }
+
+    private static OSGi<ApplicationReference> chooseApplication(
+        ServiceReference<?> serviceReference, OSGi<ApplicationReference> theDefault) {
+
+        Object applicationSelectProperty = serviceReference.getProperty(
+            JAX_RS_APPLICATION_SELECT);
+
+        if (applicationSelectProperty == null) {
+            return theDefault;
+        }
+
+        String applicationName = getApplicationName(
+            serviceReference::getProperty);
+
+        return
+            serviceReferences(
+                    CXFJaxRsServiceRegistrator.class,
+                    applicationSelectProperty.toString()).
+                flatMap(registratorReference ->
+            service(registratorReference).flatMap(registrator ->
+            just(new ApplicationReference(applicationName, registrator))
+        ));
+    }
+
+    private static <T> OSGi<T> countChanges(
+        OSGi<T> program, ChangeCounter counter) {
+
+        return program.map(t -> {counter.inc(); return t;});
     }
 
     private static ExtensionManagerBus createBus(
@@ -186,6 +328,12 @@ public class Whiteboard {
         bus.initialize();
 
         return bus;
+    }
+
+    private static CXFNonSpringServlet createCXFServlet(Bus bus) {
+        CXFNonSpringServlet cxfNonSpringServlet = new CXFNonSpringServlet();
+        cxfNonSpringServlet.setBus(bus);
+        return cxfNonSpringServlet;
     }
 
     private static OSGi<ApplicationReference>
@@ -209,8 +357,47 @@ public class Whiteboard {
         ))));
     }
 
+    private static OSGi<ServiceTuple<Application>> deployApplication(
+        Map<String, ?> configuration, BundleContext bundleContext,
+        ServiceTuple<Application> tuple, AriesJaxRSServiceRuntime runtime) {
+
+        ExtensionManagerBus bus = createBus(bundleContext, configuration);
+
+        ServiceReference<Application> serviceReference =
+            tuple.getServiceReference();
+
+        Map<String, Object> properties = getProperties(serviceReference);
+
+        properties.computeIfAbsent(
+            JAX_RS_NAME, (__) -> generateApplicationName(
+                serviceReference::getProperty));
+
+        return
+            deployRegistrator(bus, tuple, properties, runtime).then(
+            registerCXFServletService(
+                bus, getApplicationBase(properties::get), properties)).then(
+            just(tuple)
+        );
+    }
+
+    private static String getApplicationExtensionsFilter() {
+        return format(
+            "(&(!(objectClass=%s))(%s=%s)%s)",
+            ApplicationExtensionRegistration.class.getName(),
+            JAX_RS_EXTENSION, true, getExtensionsFilter());
+    }
+
     private static String getApplicationFilter() {
         return format("(%s=*)", JAX_RS_APPLICATION_BASE);
+    }
+
+    private static OSGi<ServiceReference<Application>>
+        getApplicationsForWhiteboard(
+            ServiceReference<?> jaxRsRuntimeServiceReference) {
+
+        return
+            serviceReferences(Application.class, getApplicationFilter()).
+            filter(new TargetFilter<>(jaxRsRuntimeServiceReference));
     }
 
     private static String getExtensionsFilter() {
@@ -219,6 +406,45 @@ public class Whiteboard {
 
     private static String getResourcesFilter() {
         return format("(%s=true)", JAX_RS_RESOURCE);
+    }
+
+    private static OSGi<ServiceReference<Object>> onlySupportedInterfaces(
+        OSGi<ServiceReference<Object>> program,
+        Consumer<ServiceReference<?>> onInvalidAdded,
+        Consumer<ServiceReference<?>> onInvalidRemoved) {
+
+        return program.flatMap(sr -> {
+            if (signalsValidInterface(sr)) {
+                return just(sr);
+            }
+            else {
+                onInvalidAdded.accept(sr);
+                return
+                    onClose(() -> onInvalidRemoved.accept(sr)).then(nothing());
+            }
+        });
+    }
+
+    private static OSGi<ServiceRegistration<Servlet>> registerCXFServletService(
+        Bus bus, String address, Map<String, ?> configuration) {
+
+        Map<String, Object> properties = new HashMap<>(configuration);
+
+        properties.putIfAbsent(
+            HTTP_WHITEBOARD_TARGET, "(osgi.http.endpoint=*)");
+
+        properties.putIfAbsent(
+            HTTP_WHITEBOARD_CONTEXT_SELECT,
+            format(
+                "(%s=%s)",
+                HTTP_WHITEBOARD_CONTEXT_NAME,
+                HTTP_WHITEBOARD_DEFAULT_CONTEXT_NAME));
+
+        properties.putIfAbsent(HTTP_WHITEBOARD_SERVLET_PATTERN, address + "/*");
+
+        CXFNonSpringServlet cxfNonSpringServlet = createCXFServlet(bus);
+
+        return register(Servlet.class, cxfNonSpringServlet, properties);
     }
 
     private static OSGi<ServiceRegistration<?>>
@@ -257,6 +483,16 @@ public class Whiteboard {
         );
     }
 
+    private static boolean signalsValidInterface(
+        ServiceReference<Object> serviceReference) {
+
+        String[] objectClasses = canonicalize(serviceReference.getProperty(
+            "objectClass"));
+
+        return Arrays.stream(objectClasses).
+            anyMatch(SUPPORTED_EXTENSION_INTERFACES::contains);
+    }
+
     private static OSGi<?> waitForExtensionDependencies(
         BundleContext bundleContext,
         ServiceReference<?> serviceReference,
@@ -293,7 +529,7 @@ public class Whiteboard {
                         then(program);
             }
             catch (InvalidSyntaxException e) {
-                
+
             }
         }
 
@@ -302,28 +538,6 @@ public class Whiteboard {
         );
 
         return program;
-    }
-
-    private static OSGi<?> whiteBoardApplicationResources(
-        BundleContext bundleContext,
-        ServiceReference<?> jaxRsRuntimeServiceReference,
-        ApplicationReference defaultApplicationReference,
-        AriesJaxRSServiceRuntime runtime) {
-        return
-            serviceReferences(getResourcesFilter()).
-                filter(new TargetFilter<>(jaxRsRuntimeServiceReference)).
-                flatMap(resourceReference ->
-            chooseApplication(
-                resourceReference, just(defaultApplicationReference)).
-                flatMap(applicationReference ->
-            waitForExtensionDependencies(
-                bundleContext, resourceReference, applicationReference,
-                runtime,
-                safeRegisterEndpoint(
-                    resourceReference,
-                    applicationReference.getApplicationName(),
-                    applicationReference.getRegistrator(), runtime)
-        )));
     }
 
     private static OSGi<?> whiteBoardApplicationExtensions(
@@ -352,72 +566,26 @@ public class Whiteboard {
         )));
     }
 
-    private static OSGi<ServiceReference<Object>> onlySupportedInterfaces(
-        OSGi<ServiceReference<Object>> program,
-        Consumer<ServiceReference<?>> onInvalidAdded,
-        Consumer<ServiceReference<?>> onInvalidRemoved) {
-
-        return program.flatMap(sr -> {
-            if (signalsValidInterface(sr)) {
-                return just(sr);
-            }
-            else {
-                onInvalidAdded.accept(sr);
-                return
-                    onClose(() -> onInvalidRemoved.accept(sr)).then(nothing());
-            }
-        });
-    }
-
-    private static boolean signalsValidInterface(
-        ServiceReference<Object> serviceReference) {
-
-        String[] objectClasses = canonicalize(serviceReference.getProperty(
-            "objectClass"));
-
-        return Arrays.stream(objectClasses).
-            anyMatch(SUPPORTED_EXTENSION_INTERFACES::contains);
-    }
-
-    private static OSGi<ApplicationReference> chooseApplication(
-        ServiceReference<?> serviceReference, OSGi<ApplicationReference> theDefault) {
-
-        Object applicationSelectProperty = serviceReference.getProperty(
-            JAX_RS_APPLICATION_SELECT);
-
-        if (applicationSelectProperty == null) {
-            return theDefault;
-        }
-
-        String applicationName = getApplicationName(
-            serviceReference::getProperty);
-
+    private static OSGi<?> whiteBoardApplicationResources(
+        BundleContext bundleContext,
+        ServiceReference<?> jaxRsRuntimeServiceReference,
+        ApplicationReference defaultApplicationReference,
+        AriesJaxRSServiceRuntime runtime) {
         return
-            serviceReferences(
-                    CXFJaxRsServiceRegistrator.class,
-                    applicationSelectProperty.toString()).
-                flatMap(registratorReference ->
-            service(registratorReference).flatMap(registrator ->
-            just(new ApplicationReference(applicationName, registrator))
-        ));
-    }
-
-    public static OSGi<ApplicationReference> allApplicationReferences() {
-        return
-            serviceReferences(CXFJaxRsServiceRegistrator.class).
-                flatMap(registratorReference ->
-            just(getApplicationName(registratorReference::getProperty)).
-                flatMap(applicationName ->
-            service(registratorReference).flatMap(registrator ->
-            just(new ApplicationReference(applicationName, registrator))
+            serviceReferences(getResourcesFilter()).
+                filter(new TargetFilter<>(jaxRsRuntimeServiceReference)).
+                flatMap(resourceReference ->
+            chooseApplication(
+                resourceReference, just(defaultApplicationReference)).
+                flatMap(applicationReference ->
+            waitForExtensionDependencies(
+                bundleContext, resourceReference, applicationReference,
+                runtime,
+                safeRegisterEndpoint(
+                    resourceReference,
+                    applicationReference.getApplicationName(),
+                    applicationReference.getRegistrator(), runtime)
         )));
-    }
-
-    private static String getApplicationExtensionsFilter() {
-        return format(
-            "(&(!(objectClass=%s))(%s=%s)%s)",
-            ApplicationExtensionRegistration.class.getName(),
-            JAX_RS_EXTENSION, true, getExtensionsFilter());
     }
 
     private static OSGi<?> whiteboardApplications(
@@ -455,76 +623,10 @@ public class Whiteboard {
             );
     }
 
-    private static OSGi<ServiceTuple<Application>> deployApplication(
-        Map<String, ?> configuration, BundleContext bundleContext,
-        ServiceTuple<Application> tuple, AriesJaxRSServiceRuntime runtime) {
-
-        ExtensionManagerBus bus = createBus(bundleContext, configuration);
-
-        ServiceReference<Application> serviceReference =
-            tuple.getServiceReference();
-
-        Map<String, Object> properties = getProperties(serviceReference);
-
-        properties.computeIfAbsent(
-            JAX_RS_NAME, (__) -> generateApplicationName(
-                serviceReference::getProperty));
-
-        return
-            deployRegistrator(bus, tuple, properties, runtime).then(
-            registerCXFServletService(
-                bus, getApplicationBase(properties::get), properties)).then(
-            just(tuple)
-        );
-    }
-
-    private static OSGi<ServiceReference<Application>>
-        getApplicationsForWhiteboard(
-            ServiceReference<?> jaxRsRuntimeServiceReference) {
-
-        return
-            serviceReferences(Application.class, getApplicationFilter()).
-            filter(new TargetFilter<>(jaxRsRuntimeServiceReference));
-    }
-
-    private static <T> OSGi<T> countChanges(
-        OSGi<T> program, ChangeCounter counter) {
-
-        return program.map(t -> {counter.inc(); return t;});
-    }
-
     private static interface ChangeCounter {
 
         public void inc();
 
-    }
-
-    private static OSGi<ServiceRegistration<Servlet>> registerCXFServletService(
-        Bus bus, String address, Map<String, ?> configuration) {
-
-        Map<String, Object> properties = new HashMap<>(configuration);
-
-        properties.putIfAbsent(
-            HTTP_WHITEBOARD_TARGET, "(osgi.http.endpoint=*)");
-
-        properties.putIfAbsent(
-            HTTP_WHITEBOARD_CONTEXT_SELECT,
-            format(
-                "(%s=%s)",
-                HTTP_WHITEBOARD_CONTEXT_NAME,
-                HTTP_WHITEBOARD_DEFAULT_CONTEXT_NAME));
-
-        properties.putIfAbsent(HTTP_WHITEBOARD_SERVLET_PATTERN, address + "/*");
-
-        CXFNonSpringServlet cxfNonSpringServlet = createCXFServlet(bus);
-
-        return register(Servlet.class, cxfNonSpringServlet, properties);
-    }
-
-    private static CXFNonSpringServlet createCXFServlet(Bus bus) {
-        CXFNonSpringServlet cxfNonSpringServlet = new CXFNonSpringServlet();
-        cxfNonSpringServlet.setBus(bus);
-        return cxfNonSpringServlet;
     }
 
     private static class ServiceRegistrationChangeCounter
@@ -532,8 +634,8 @@ public class Whiteboard {
 
         private static final String changecount = "service.changecount";
         private final AtomicLong _atomicLong = new AtomicLong();
-        private ServiceRegistration<?> _serviceRegistration;
         private final Hashtable<String, Object> _properties;
+        private ServiceRegistration<?> _serviceRegistration;
 
         public ServiceRegistrationChangeCounter(
             ServiceRegistration<?> serviceRegistration) {
@@ -563,10 +665,6 @@ public class Whiteboard {
 
             _serviceRegistration.setProperties(properties);
         }
-    }
-
-    public static String getApplicationBase(PropertyHolder properties) {
-        return properties.get(JAX_RS_APPLICATION_BASE).toString();
     }
 
     private static class ApplicationReference {
