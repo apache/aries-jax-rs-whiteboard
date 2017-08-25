@@ -132,33 +132,37 @@ public class Whiteboard {
         )));
     }
 
-    public static OSGi<?> createWhiteboard(Dictionary<String, ?> configuration) {
+    public static OSGi<?> createWhiteboard(
+        Dictionary<String, ?> configuration) {
+
         AriesJaxRSServiceRuntime runtime = new AriesJaxRSServiceRuntime();
 
         Map<String, ?> configurationMap = Maps.from(configuration);
 
         return
             bundleContext().flatMap(bundleContext ->
-            registerJaxRSServiceRuntime(runtime, bundleContext, configurationMap).flatMap(runtimeRegistration ->
-            createDefaultJaxRsServiceRegistrator(configurationMap, runtime).flatMap(defaultApplicationReference ->
-            just(new ServiceRegistrationChangeCounter(runtimeRegistration)).flatMap(counter ->
+            registerJaxRSServiceRuntime(
+                    runtime, bundleContext, configurationMap).
+                flatMap(runtimeRegistration ->
+            createDefaultJaxRsServiceRegistrator(configurationMap, runtime).
+                flatMap(defaultApplicationReference ->
+            just(new ServiceRegistrationChangeCounter(runtimeRegistration)).
+                flatMap(counter ->
             just(runtimeRegistration.getReference()).flatMap(runtimeReference ->
                 all(
-                    ignore(countChanges(
+                    ignore(
                         whiteboardApplications(
-                            runtimeReference, runtime, configurationMap),
-                        counter)),
-                    ignore(countChanges(
+                            runtimeReference, runtime, configurationMap,
+                            counter)),
+                    ignore(
                         whiteBoardApplicationResources(
                             bundleContext, runtimeReference,
-                            defaultApplicationReference, runtime),
-                        counter)),
-                    ignore(countChanges(
+                            defaultApplicationReference, runtime, counter)),
+                    ignore(
                         whiteBoardApplicationExtensions(
                             bundleContext, runtimeReference,
-                            defaultApplicationReference, runtime),
-                        counter))
-            ))))));
+                            defaultApplicationReference, runtime, counter)
+            )))))));
     }
 
     public static OSGi<?> deployRegistrator(
@@ -544,11 +548,12 @@ public class Whiteboard {
         BundleContext bundleContext,
         ServiceReference<?> jaxRsRuntimeServiceReference,
         ApplicationReference defaultApplicationReference,
-        AriesJaxRSServiceRuntime runtime) {
+        AriesJaxRSServiceRuntime runtime, ServiceRegistrationChangeCounter counter) {
         return
             onlySupportedInterfaces(
-                serviceReferences(getApplicationExtensionsFilter()).
+                countChanges(serviceReferences(getApplicationExtensionsFilter()).
                     filter(new TargetFilter<>(jaxRsRuntimeServiceReference)),
+                    counter),
                 runtime::addInvalidExtension, runtime::removeInvalidExtension).
                     flatMap(endpointReference ->
             chooseApplication(
@@ -570,10 +575,13 @@ public class Whiteboard {
         BundleContext bundleContext,
         ServiceReference<?> jaxRsRuntimeServiceReference,
         ApplicationReference defaultApplicationReference,
-        AriesJaxRSServiceRuntime runtime) {
+        AriesJaxRSServiceRuntime runtime, ServiceRegistrationChangeCounter counter) {
         return
-            serviceReferences(getResourcesFilter()).
-                filter(new TargetFilter<>(jaxRsRuntimeServiceReference)).
+            countChanges(
+                    serviceReferences(getResourcesFilter()).
+                        filter(
+                            new TargetFilter<>(jaxRsRuntimeServiceReference)),
+                    counter).
                 flatMap(resourceReference ->
             chooseApplication(
                 resourceReference, just(defaultApplicationReference)).
@@ -591,11 +599,13 @@ public class Whiteboard {
     private static OSGi<?> whiteboardApplications(
         ServiceReference<?> jaxRsRuntimeServiceReference,
         AriesJaxRSServiceRuntime runtime,
-        Map<String, ?> configuration) {
+        Map<String, ?> configuration, ServiceRegistrationChangeCounter counter) {
 
         OSGi<ServiceTuple<Application>> gettableAplicationForWhiteboard =
             onlyGettables(
-                getApplicationsForWhiteboard(jaxRsRuntimeServiceReference),
+                countChanges(
+                    getApplicationsForWhiteboard(jaxRsRuntimeServiceReference),
+                    counter),
                 runtime::addNotGettableApplication,
                 runtime::removeNotGettableApplication);
 
