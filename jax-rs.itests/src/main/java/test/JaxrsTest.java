@@ -41,7 +41,9 @@ import test.types.TestAddonConflict2;
 import test.types.TestAddonLifecycle;
 import test.types.TestApplication;
 import test.types.TestApplicationConflict;
+import test.types.TestApplicationWithException;
 import test.types.TestFilter;
+import test.types.TestFilterAndExceptionMapper;
 import test.types.TestHelper;
 
 import javax.ws.rs.client.Client;
@@ -49,6 +51,7 @@ import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.container.ContainerResponseFilter;
 import javax.ws.rs.core.Application;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.ext.ExceptionMapper;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
@@ -982,6 +985,42 @@ public class JaxrsTest extends TestHelper {
     }
 
     @Test
+    public void testExtensionRegisterOnlySignalledInterfaces()
+        throws InterruptedException {
+
+        Client client = createClient();
+
+        WebTarget webTarget = client.
+            target("http://localhost:8080").
+            path("test-application");
+
+        ServiceRegistration<?> serviceRegistration = null;
+
+        try {
+            serviceRegistration = registerApplication(
+                new TestApplicationWithException());
+
+            ServiceRegistration<?> filterRegistration =
+                registerMultiExtension(
+                    "Filter",
+                    ExceptionMapper.class.getName());
+
+            Response response = webTarget.request().get();
+
+            assertEquals(200, response.getStatus());
+
+            assertNull(response.getHeaders().getFirst("Filtered"));
+
+            filterRegistration.unregister();
+        }
+        finally {
+            if (serviceRegistration != null) {
+                serviceRegistration.unregister();
+            }
+        }
+    }
+
+    @Test
     public void testUngettableExtension() throws InterruptedException {
         Client client = createClient();
 
@@ -1199,6 +1238,18 @@ public class JaxrsTest extends TestHelper {
 
         return bundleContext.registerService(
             ContainerResponseFilter.class, testFilter, properties);
+    }
+
+    private ServiceRegistration<?> registerMultiExtension(
+        String name, String... classes) {
+
+        Dictionary<String, Object> properties = new Hashtable<>();
+
+        properties.put(JAX_RS_EXTENSION, true);
+        properties.put(JAX_RS_NAME, name);
+
+        return bundleContext.registerService(
+            classes, new TestFilterAndExceptionMapper(), properties);
     }
 
     private ServiceRegistration<?> registerInvalidExtension(

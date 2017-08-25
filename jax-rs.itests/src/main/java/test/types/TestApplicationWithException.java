@@ -17,25 +17,23 @@
 
 package test.types;
 
-import java.io.IOException;
+import javax.ws.rs.GET;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.Application;
 import java.util.Collections;
+import java.util.Set;
 
-import javax.ws.rs.container.ContainerRequestContext;
-import javax.ws.rs.container.ContainerResponseContext;
-import javax.ws.rs.container.ContainerResponseFilter;
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.ext.Provider;
-
-public class TestFilter implements ContainerResponseFilter {
+public class TestApplicationWithException extends Application {
 
     @Override
-    public void filter(
-        ContainerRequestContext requestContext,
-        ContainerResponseContext responseContext) throws IOException {
+    public Set<Object> getSingletons() {
+        return Collections.<Object>singleton(this);
+    }
 
-        MultivaluedMap<String, Object> headers = responseContext.getHeaders();
-
-        headers.put("Filtered", Collections.singletonList("true"));
+    @GET
+    @Produces("text/plain")
+    public String sayHello() {
+        throw new TestFilterAndExceptionMapper.MyException();
     }
 
 }

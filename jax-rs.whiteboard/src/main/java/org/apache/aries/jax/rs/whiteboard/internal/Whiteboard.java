@@ -149,7 +149,7 @@ public class Whiteboard {
     }
 
     private static OSGi<Void> ignore(OSGi<?> program) {
-        return program.map(t -> { return null;});
+        return program.map(t -> null);
     }
 
     private static OSGi<Collection<String>> bestEffortCalculationOfEnpoints(Filter filter) {

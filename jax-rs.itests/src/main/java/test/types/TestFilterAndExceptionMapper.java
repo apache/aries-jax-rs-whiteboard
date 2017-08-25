@@ -17,16 +17,19 @@
 
 package test.types;
 
-import java.io.IOException;
-import java.util.Collections;
-
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ContainerResponseContext;
 import javax.ws.rs.container.ContainerResponseFilter;
 import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.ext.ExceptionMapper;
 import javax.ws.rs.ext.Provider;
+import java.io.IOException;
+import java.util.Collections;
 
-public class TestFilter implements ContainerResponseFilter {
+public class TestFilterAndExceptionMapper implements
+    ContainerResponseFilter,
+    ExceptionMapper<TestFilterAndExceptionMapper.MyException> {
 
     @Override
     public void filter(
@@ -36,6 +39,15 @@ public class TestFilter implements ContainerResponseFilter {
         MultivaluedMap<String, Object> headers = responseContext.getHeaders();
 
         headers.put("Filtered", Collections.singletonList("true"));
+    }
+
+    @Override
+    public Response toResponse(MyException e) {
+        return Response.ok().entity("This is fine").build();
+    }
+
+    public static class MyException extends RuntimeException {
+
     }
 
 }
