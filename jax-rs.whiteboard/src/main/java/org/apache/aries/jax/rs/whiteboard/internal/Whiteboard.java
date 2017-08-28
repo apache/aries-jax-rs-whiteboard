@@ -57,6 +57,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -269,24 +270,33 @@ public class Whiteboard {
             );
     }
 
-    private static OSGi<Collection<String>> bestEffortCalculationOfEnpoints(Filter filter) {
+    private static OSGi<Collection<String>> bestEffortCalculationOfEnpoints(
+        Filter filter) {
+
         Collection<String> endPoints = new ArrayList<>();
 
         return
             serviceReferences(HttpServiceRuntime.class, filter.toString()).
+                map(
+                    r -> Strings.stringPlus(
+                        r.getProperty(HTTP_SERVICE_ENDPOINT))
+                ).
+                filter(
+                    Optional::isPresent
+                ).
+                map(
+                    Optional::get
+                ).
                 foreach(
-                    reference -> Strings.stringPlus(reference.getProperty(HTTP_SERVICE_ENDPOINT)).
-                        ifPresent(endPoints::addAll)
-                    ,
-                    reference -> Strings.stringPlus(reference.getProperty(HTTP_SERVICE_ENDPOINT)).
-                        ifPresent(values -> values.forEach(endPoints::remove))
-                ).then(
-            just(endPoints)
-        );
+                    endPoints::addAll,
+                    endPoints::removeAll
+                ).
+            then(just(endPoints));
     }
 
     private static OSGi<ApplicationReference> chooseApplication(
-        ServiceReference<?> serviceReference, OSGi<ApplicationReference> theDefault) {
+        ServiceReference<?> serviceReference,
+        OSGi<ApplicationReference> theDefault) {
 
         Object applicationSelectProperty = serviceReference.getProperty(
             JAX_RS_APPLICATION_SELECT);
@@ -548,24 +558,30 @@ public class Whiteboard {
         BundleContext bundleContext,
         ServiceReference<?> jaxRsRuntimeServiceReference,
         ApplicationReference defaultApplicationReference,
-        AriesJaxRSServiceRuntime runtime, ServiceRegistrationChangeCounter counter) {
+        AriesJaxRSServiceRuntime runtime,
+        ServiceRegistrationChangeCounter counter) {
+
+        OSGi<ServiceReference<Object>> extensionsForApplications =
+            serviceReferences(getApplicationExtensionsFilter()).
+                filter(new TargetFilter<>(jaxRsRuntimeServiceReference));
+
         return
             onlySupportedInterfaces(
-                countChanges(serviceReferences(getApplicationExtensionsFilter()).
-                    filter(new TargetFilter<>(jaxRsRuntimeServiceReference)),
-                    counter),
-                runtime::addInvalidExtension, runtime::removeInvalidExtension).
-                    flatMap(endpointReference ->
+                    countChanges(extensionsForApplications, counter),
+                    runtime::addInvalidExtension,
+                    runtime::removeInvalidExtension).
+                flatMap(resourceReference ->
             chooseApplication(
-                    endpointReference,
+                    resourceReference,
                     all(
                         just(defaultApplicationReference),
-                        allApplicationReferences())).
+                        allApplicationReferences())
+                    ).
                 flatMap(applicationReference ->
             waitForExtensionDependencies(
-                bundleContext, endpointReference, applicationReference, runtime,
+                bundleContext, resourceReference, applicationReference, runtime,
             safeRegisterExtension(
-                endpointReference,
+                resourceReference,
                 applicationReference.getApplicationName(),
                 applicationReference.getRegistrator(), runtime)
         )));
