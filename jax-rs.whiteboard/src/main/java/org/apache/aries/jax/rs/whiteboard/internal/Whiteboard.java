@@ -58,6 +58,7 @@ import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -105,20 +106,21 @@ public class Whiteboard {
             ServiceTuple::getServiceReference).andThen(
                 sr -> getApplicationBase(sr::getProperty));
 
-    public static final Collection<String> SUPPORTED_EXTENSION_INTERFACES = new HashSet<>(
-        Arrays.asList(
-            ContainerRequestFilter.class.getName(),
-            ContainerResponseFilter.class.getName(),
-            ReaderInterceptor.class.getName(),
-            WriterInterceptor.class.getName(),
-            MessageBodyReader.class.getName(),
-            MessageBodyWriter.class.getName(),
-            ContextResolver.class.getName(),
-            ExceptionMapper.class.getName(),
-            ParamConverterProvider.class.getName(),
-            Feature.class.getName(),
-            DynamicFeature.class.getName()
-        ));
+    public static final Collection<String> SUPPORTED_EXTENSION_INTERFACES =
+        new HashSet<>(
+            Arrays.asList(
+                ContainerRequestFilter.class.getName(),
+                ContainerResponseFilter.class.getName(),
+                ReaderInterceptor.class.getName(),
+                WriterInterceptor.class.getName(),
+                MessageBodyReader.class.getName(),
+                MessageBodyWriter.class.getName(),
+                ContextResolver.class.getName(),
+                ExceptionMapper.class.getName(),
+                ParamConverterProvider.class.getName(),
+                Feature.class.getName(),
+                DynamicFeature.class.getName()
+            ));
 
     public static final String DEFAULT_NAME = ".default";
 
@@ -244,8 +246,7 @@ public class Whiteboard {
 
         Map<String, Object> properties = getProperties(serviceReference);
 
-        properties.put(
-            JAX_RS_NAME, applicationName);
+        properties.put(JAX_RS_NAME, applicationName);
         properties.put(
             "original.objectClass",
             serviceReference.getProperty("objectClass"));
