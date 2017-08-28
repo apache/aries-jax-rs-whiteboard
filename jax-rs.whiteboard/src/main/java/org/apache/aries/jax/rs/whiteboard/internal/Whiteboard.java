@@ -273,7 +273,7 @@ public class Whiteboard {
     private static OSGi<Collection<String>> bestEffortCalculationOfEnpoints(
         Filter filter) {
 
-        Collection<String> endPoints = new ArrayList<>();
+        Collection<String> endPoints = new CopyOnWriteArrayList<>();
 
         return
             serviceReferences(HttpServiceRuntime.class, filter.toString()).
