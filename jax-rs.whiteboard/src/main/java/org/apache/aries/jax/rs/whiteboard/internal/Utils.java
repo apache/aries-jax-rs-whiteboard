@@ -27,7 +27,6 @@ import org.osgi.framework.ServiceReference;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.NavigableSet;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
@@ -92,54 +91,68 @@ public class Utils {
                     Comparator<Event<T>> comparator = Comparator.comparing(
                         Event::getContent);
 
-                    NavigableSet<Event<T>> set = map.computeIfAbsent(
-                        key, __ -> new TreeSet<>(comparator));
+                    map.compute(
+                        key,
+                        (__, set) -> {
+                            if (set == null) {
+                                set = new TreeSet<>(comparator);
+                            }
 
-                    Event<T> last = set.size() > 0 ? set.last() : null;
+                            Event<T> last = set.size() > 0 ? set.last() : null;
 
-                    boolean higher =
-                        (last == null) || (comparator.compare(e, last) > 0);
+                            boolean higher =
+                                (last == null) ||
+                                (comparator.compare(e, last) > 0);
 
-                    if (higher) {
-                        if (last != null) {
-                            router.signalLeave(last);
+                            if (higher) {
+                                if (last != null) {
+                                    router.signalLeave(last);
 
-                            onAddingShadowed.accept(last.getContent());
-                        }
+                                    onAddingShadowed.accept(last.getContent());
+                                }
 
-                        router.signalAdd(e);
-                    }
-                    else {
-                        onAddingShadowed.accept(e.getContent());
-                    }
+                                router.signalAdd(e);
+                            }
+                            else {
+                                onAddingShadowed.accept(e.getContent());
+                            }
 
-                    set.add(e);
+                            set.add(e);
+
+                            return set;
+                        });
                 });
                 router.onLeaving(e -> {
                     T content = e.getContent();
 
                     K key = keySupplier.apply(content);
 
-                    TreeSet<Event<T>> set = map.get(key);
+                    map.compute(
+                        key,
+                        (__, set) -> {
+                            Event<T> last = set.last();
 
-                    Event<T> last = set.last();
+                            if (content.equals(last.getContent())) {
+                                router.signalLeave(e);
 
-                    if (content.equals(last.getContent())) {
-                        router.signalLeave(e);
+                                Event<T> penultimate = set.lower(last);
 
-                        Event<T> penultimate = set.lower(last);
+                                if (penultimate != null) {
+                                    router.signalAdd(penultimate);
 
-                        if (penultimate != null) {
-                            router.signalAdd(penultimate);
+                                    onRemovedShadowed.accept(
+                                        penultimate.getContent());
+                                }
+                            }
+                            else {
+                                onRemovedShadowed.accept(content);
+                            }
 
-                            onRemovedShadowed.accept(penultimate.getContent());
+                            set.removeIf(t -> t.getContent().equals(content));
+
+                            return set;
                         }
-                    }
-                    else {
-                        onRemovedShadowed.accept(content);
-                    }
-
-                    set.removeIf(t -> t.getContent().equals(content));
+                    );
                 });
             }
         );
