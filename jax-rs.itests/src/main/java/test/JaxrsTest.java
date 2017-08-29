@@ -64,7 +64,9 @@ import static org.junit.Assert.assertNull;
 
 public class JaxrsTest extends TestHelper {
 
-    private ServiceTracker<JaxRSServiceRuntime, JaxRSServiceRuntime> _runtimeTracker;
+    public static final long SERVICE_TIMEOUT = 15000L;
+    private ServiceTracker<JaxRSServiceRuntime, JaxRSServiceRuntime>
+        _runtimeTracker;
 
     private Collection<ServiceRegistration<?>> _registrations =
         new ArrayList<>();
@@ -207,8 +209,7 @@ public class JaxrsTest extends TestHelper {
             path("/test-application").
             path("extended");
 
-        registerApplication(
-            new TestApplication());
+        registerApplication(new TestApplication());
 
         registerAddon(
             new TestAddon(), JAX_RS_APPLICATION_SELECT,
@@ -220,7 +221,9 @@ public class JaxrsTest extends TestHelper {
     }
 
     @Test
-    public void testApplicationEndpointExtensionReadd() throws InterruptedException {
+    public void testApplicationEndpointExtensionReadd()
+        throws InterruptedException {
+
         Client client = createClient();
 
         WebTarget webTarget = client.
@@ -317,16 +320,10 @@ public class JaxrsTest extends TestHelper {
             target("http://localhost:8080").
             path("/test-application");
 
-        ServiceRegistration<?> applicationRegistration = null;
+        registerApplication(new TestApplication());
 
-        ServiceRegistration<?> filterRegistration = null;
-
-        applicationRegistration = registerApplication(
-            new TestApplication());
-
-        filterRegistration = registerExtension(
-            "filter",
-            JAX_RS_APPLICATION_SELECT,
+        registerExtension(
+            "filter", JAX_RS_APPLICATION_SELECT,
             "(" + JAX_RS_APPLICATION_BASE + "=/test-application)");
 
         Response response = webTarget.request().get();
@@ -346,10 +343,7 @@ public class JaxrsTest extends TestHelper {
             target("http://localhost:8080").
             path("/test-application");
 
-        ServiceRegistration<?> applicationRegistration = null;
-
-        applicationRegistration = registerApplication(
-            new TestApplication());
+        registerApplication(new TestApplication());
 
         assertEquals(
             "Hello application",
@@ -404,7 +398,8 @@ public class JaxrsTest extends TestHelper {
             ServiceRegistration<?> serviceRegistration = null;
 
             try {
-                serviceRegistration = registerApplication(new TestApplication());
+                serviceRegistration = registerApplication(
+                    new TestApplication());
 
                 assertEquals(
                     "Hello application",
@@ -431,14 +426,15 @@ public class JaxrsTest extends TestHelper {
 
     @Test
     public void testApplicationChangeCount() throws Exception {
-        ServiceTracker<JaxRSServiceRuntime, JaxRSServiceRuntime> runtimeTracker =
-            new ServiceTracker<>(
+        ServiceTracker<JaxRSServiceRuntime, JaxRSServiceRuntime>
+            runtimeTracker = new ServiceTracker<>(
                 bundleContext, JaxRSServiceRuntime.class, null);
 
         try {
             runtimeTracker.open();
 
-            JaxRSServiceRuntime runtime = runtimeTracker.getService();
+            JaxRSServiceRuntime runtime = runtimeTracker.waitForService(
+                SERVICE_TIMEOUT);
 
             assertNotNull(runtime);
 
@@ -477,14 +473,14 @@ public class JaxrsTest extends TestHelper {
 
     @Test
     public void testResourcesChangeCount() throws Exception {
-        ServiceTracker<JaxRSServiceRuntime, JaxRSServiceRuntime> runtimeTracker =
-            new ServiceTracker<>(
+        ServiceTracker<JaxRSServiceRuntime, JaxRSServiceRuntime>
+            runtimeTracker = new ServiceTracker<>(
                 bundleContext, JaxRSServiceRuntime.class, null);
 
         try {
             runtimeTracker.open();
 
-            JaxRSServiceRuntime runtime = runtimeTracker.getService();
+            JaxRSServiceRuntime runtime = runtimeTracker.waitForService(15000L);
 
             assertNotNull(runtime);
 
@@ -543,10 +539,7 @@ public class JaxrsTest extends TestHelper {
             target("http://localhost:8080").
             path("conflict");
 
-        ServiceRegistration<?> serviceRegistration = null;
-        ServiceRegistration<?> serviceRegistration2 = null;
-
-        serviceRegistration = registerAddon(new TestAddonConflict());
+        registerAddon(new TestAddonConflict());
 
         Response response = webTarget.request().get();
 
@@ -554,7 +547,7 @@ public class JaxrsTest extends TestHelper {
             "This should say hello1", "hello1",
             response.readEntity(String.class));
 
-        serviceRegistration2 = registerAddon(
+        ServiceRegistration<?> serviceRegistration = registerAddon(
             new TestAddonConflict2(), "service.ranking", 1);
 
         response = webTarget.request().get();
@@ -563,9 +556,7 @@ public class JaxrsTest extends TestHelper {
             "This should say hello2", "hello2",
             response.readEntity(String.class));
 
-        serviceRegistration2.unregister();
-
-        serviceRegistration2 = null;
+        serviceRegistration.unregister();
 
         response = webTarget.request().get();
 
@@ -575,7 +566,9 @@ public class JaxrsTest extends TestHelper {
     }
 
     @Test
-    public void testGettableAndNotGettableApplication() throws InterruptedException {
+    public void testGettableAndNotGettableApplication()
+        throws InterruptedException {
+
         Client client = createClient();
 
         WebTarget webTarget = client.
@@ -1055,9 +1048,7 @@ public class JaxrsTest extends TestHelper {
             target("http://localhost:8080").
             path("test");
 
-        ServiceRegistration<?> serviceRegistration = null;
-
-        serviceRegistration = registerAddon(new TestAddon());
+        registerAddon(new TestAddon());
 
         assertEquals("Hello test",
             webTarget.request().get().readEntity(String.class));
@@ -1092,16 +1083,20 @@ public class JaxrsTest extends TestHelper {
         testCase.run();
     }
 
-    private JaxRSServiceRuntime getJaxRSServiceRuntime() throws InterruptedException {
+    private JaxRSServiceRuntime getJaxRSServiceRuntime()
+        throws InterruptedException {
+
         _runtimeTracker = new ServiceTracker<>(
             bundleContext, JaxRSServiceRuntime.class, null);
 
         _runtimeTracker.open();
 
-        return _runtimeTracker.waitForService(5000);
+        return _runtimeTracker.waitForService(15000L);
     }
 
-    private ServiceRegistration<?> registerAddon(Object instance, Object... keyValues) {
+    private ServiceRegistration<?> registerAddon(
+        Object instance, Object... keyValues) {
+
         Dictionary<String, Object> properties = new Hashtable<>();
 
         properties.put(JAX_RS_RESOURCE, "true");
@@ -1135,7 +1130,8 @@ public class JaxrsTest extends TestHelper {
                 new PrototypeServiceFactory<Object>() {
                     @Override
                     public Object getService(
-                        Bundle bundle, ServiceRegistration<Object> registration) {
+                        Bundle bundle,
+                        ServiceRegistration<Object> registration) {
 
                         return new TestAddonLifecycle();
                     }
