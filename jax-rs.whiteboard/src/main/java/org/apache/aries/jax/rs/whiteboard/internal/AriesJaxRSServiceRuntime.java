@@ -69,6 +69,9 @@ public class AriesJaxRSServiceRuntime implements JaxRSServiceRuntime {
     private Collection<ServiceReference<Application>> _shadowedApplications =
         new CopyOnWriteArrayList<>();
 
+    private Set<ServiceReference<Application>> _dependentApplications =
+        ConcurrentHashMap.newKeySet();
+
     private Collection<ServiceReference<Application>> _erroredApplications =
         new CopyOnWriteArrayList<>();
 
@@ -98,6 +101,12 @@ public class AriesJaxRSServiceRuntime implements JaxRSServiceRuntime {
 
         _applicationExtensions.compute(
             applicationName, merger(extensionServiceReference));
+    }
+
+    public void addDependentApplication(
+        ServiceReference<Application> applicationReference) {
+
+        _dependentApplications.add(applicationReference);
     }
 
     public void addDependentService(ServiceReference<?> serviceReference) {
@@ -172,7 +181,9 @@ public class AriesJaxRSServiceRuntime implements JaxRSServiceRuntime {
             shadowedApplicationsDTOStream(),
             Stream.concat(
                 unreferenciableApplicationsDTOStream(),
-                erroredApplicationsDTOStream())
+                Stream.concat(
+                    dependentApplicationsDTOStream(),
+                    erroredApplicationsDTOStream()))
             ).toArray(
                 FailedApplicationDTO[]::new
             );
@@ -211,6 +222,12 @@ public class AriesJaxRSServiceRuntime implements JaxRSServiceRuntime {
 
         _applicationExtensions.computeIfPresent(
             applicationName, remover(extensionServiceReference));
+    }
+
+    public void removeDependentApplication(
+        ServiceReference<Application> applicationReference) {
+
+        _dependentApplications.remove(applicationReference);
     }
 
     public void removeDependentService(ServiceReference<?> serviceReference) {
@@ -321,6 +338,13 @@ public class AriesJaxRSServiceRuntime implements JaxRSServiceRuntime {
         failedResourceDTO.failureReason = reason;
 
         return failedResourceDTO;
+    }
+
+    private Stream<FailedApplicationDTO> dependentApplicationsDTOStream() {
+        return _dependentApplications.stream().map(
+            sr -> buildFailedApplicationDTO(
+                DTOConstants.FAILURE_REASON_REQUIRED_EXTENSIONS_UNAVAILABLE, sr)
+        );
     }
 
     private Stream<FailedResourceDTO> dependentServiceStreamDTO() {

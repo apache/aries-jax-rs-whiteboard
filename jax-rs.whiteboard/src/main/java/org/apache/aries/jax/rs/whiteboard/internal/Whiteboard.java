@@ -155,8 +155,8 @@ public class Whiteboard {
                 all(
                     ignore(
                         whiteboardApplications(
-                            runtimeReference, runtime, configurationMap,
-                            counter)),
+                            bundleContext, runtimeReference, runtime,
+                            configurationMap, counter)),
                     ignore(
                         whiteBoardApplicationResources(
                             bundleContext, runtimeReference,
@@ -508,17 +508,96 @@ public class Whiteboard {
             anyMatch(SUPPORTED_EXTENSION_INTERFACES::contains);
     }
 
+    private static OSGi<ServiceReference<Application>>
+        waitForApplicationDependencies(
+            BundleContext bundleContext,
+            ServiceReference<Application> applicationReference,
+            AriesJaxRSServiceRuntime runtime,
+            OSGi<ServiceReference<Application>> program) {
+
+        String[] extensionDependencies = canonicalize(
+            applicationReference.getProperty(JAX_RS_EXTENSION_SELECT));
+
+        if (extensionDependencies.length > 0) {
+            program = onClose(
+                () -> runtime.removeDependentApplication(applicationReference)).
+                then(program);
+
+            runtime.addDependentApplication(applicationReference);
+        }
+        else {
+            return program;
+        }
+
+        for (String extensionDependency : extensionDependencies) {
+            extensionDependency = String.format(
+                "(&(!(objectClass=%s))%s)",
+                ApplicationExtensionRegistration.class.getName(),
+                extensionDependency);
+
+            program =
+                serviceReferences(extensionDependency).
+                    flatMap(
+                        sr -> {
+                            Object applicationSelectProperty =
+                                sr.getProperty(JAX_RS_APPLICATION_SELECT);
+
+                            if (applicationSelectProperty == null) {
+                                return just(applicationReference);
+                            }
+
+                            Filter filter;
+
+                            try {
+                                filter = bundleContext.createFilter(
+                                    applicationSelectProperty.toString());
+                            }
+                            catch (InvalidSyntaxException e) {
+                                return nothing();
+                            }
+
+                            if (filter.match(applicationReference)) {
+                                return just(applicationReference);
+                            }
+
+                            return nothing();
+                        }
+                    ).foreach(
+                    __ -> {},
+                    __ -> runtime.addDependentApplication(
+                        applicationReference)
+                ).
+                    then(program);
+        }
+
+        program = onClose(
+            ()-> runtime.removeDependentApplication(applicationReference)).
+            then(program);
+
+        program = program.foreach(
+            __ -> runtime.removeDependentApplication(applicationReference)
+        ).
+        then(
+            just(applicationReference)
+        );
+
+        return program;
+    }
+
     private static OSGi<?> waitForExtensionDependencies(
         BundleContext bundleContext,
         ServiceReference<?> serviceReference,
         ApplicationReference applicationReference,
         AriesJaxRSServiceRuntime runtime, OSGi<?> program) {
 
-        String[] extensionDependencies = Utils.canonicalize(
+        String[] extensionDependencies = canonicalize(
             serviceReference.getProperty(JAX_RS_EXTENSION_SELECT));
 
         if (extensionDependencies.length > 0) {
             runtime.addDependentService(serviceReference);
+        }
+        else {
+            return program;
         }
 
         for (String extensionDependency : extensionDependencies) {
@@ -547,6 +626,10 @@ public class Whiteboard {
 
             }
         }
+
+        program = onClose(
+            () -> runtime.removeDependentService(serviceReference)).
+            then(program);
 
         program = program.foreach(
             __ -> runtime.removeDependentService(serviceReference)
@@ -614,15 +697,20 @@ public class Whiteboard {
     }
 
     private static OSGi<?> whiteboardApplications(
+        BundleContext bundleContext,
         ServiceReference<?> jaxRsRuntimeServiceReference,
         AriesJaxRSServiceRuntime runtime,
-        Map<String, ?> configuration, ServiceRegistrationChangeCounter counter) {
+        Map<String, ?> configuration,
+        ServiceRegistrationChangeCounter counter) {
 
         OSGi<ServiceTuple<Application>> gettableAplicationForWhiteboard =
             onlyGettables(
                 countChanges(
                     getApplicationsForWhiteboard(jaxRsRuntimeServiceReference),
-                    counter),
+                    counter).
+                flatMap(
+                    sr -> waitForApplicationDependencies(
+                        bundleContext, sr, runtime, just(sr))),
                 runtime::addNotGettableApplication,
                 runtime::removeNotGettableApplication);
 
@@ -633,20 +721,18 @@ public class Whiteboard {
         );
 
         return
-            bundleContext().flatMap(
-                bundleContext -> highestRankedPerPath.flatMap(
-                    tuple -> deployApplication(
-                        configuration, bundleContext, tuple, runtime)
-                ).map(
-                    ServiceTuple::getServiceReference
-                ).map(
-                    Utils::getProperties
-                ).foreach(
-                    p -> runtime.setApplicationForPath(
-                        getApplicationBase(p::get), p),
-                    p -> runtime.unsetApplicationForPath(
-                        getApplicationBase(p::get))
-                )
+            highestRankedPerPath.flatMap(
+                tuple -> deployApplication(
+                    configuration, bundleContext, tuple, runtime)
+            ).map(
+                ServiceTuple::getServiceReference
+            ).map(
+                Utils::getProperties
+            ).foreach(
+                p -> runtime.setApplicationForPath(
+                    getApplicationBase(p::get), p),
+                p -> runtime.unsetApplicationForPath(
+                    getApplicationBase(p::get))
             );
     }
 

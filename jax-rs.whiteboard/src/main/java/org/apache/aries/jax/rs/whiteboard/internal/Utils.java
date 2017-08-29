@@ -130,6 +130,10 @@ public class Utils {
                     map.compute(
                         key,
                         (__, set) -> {
+                            if (set.isEmpty()) {
+                                return set;
+                            }
+
                             Event<T> last = set.last();
 
                             if (content.equals(last.getContent())) {
