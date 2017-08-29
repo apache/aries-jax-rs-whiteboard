@@ -17,7 +17,7 @@
 	logback.configurationFile=file:${.}/logback.xml,\
 	osgi.console.enable.builtin=false, \
 	osgi.console=, \
-	org.osgi.service.http.port=8080
+	org.osgi.service.http.port=65532
 -runblacklist:\
 	osgi.identity;filter:='(osgi.identity=org.osgi.compendium)',\
 	osgi.identity;filter:='(osgi.identity=osgi.cmpn)'

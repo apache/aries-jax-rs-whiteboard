@@ -108,7 +108,7 @@ public class JaxrsTest extends TestHelper {
         Client client = createClient();
 
         WebTarget webTarget = client.
-            target("http://localhost:8080").
+            target("http://localhost:65532").
             path("/test-application");
 
         Response response = webTarget.request().get();
@@ -149,7 +149,7 @@ public class JaxrsTest extends TestHelper {
         Client client = createClient();
 
         WebTarget webTarget = client.
-            target("http://localhost:8080").
+            target("http://localhost:65532").
             path("/test-application");
 
         assertEquals(404, webTarget.request().get().getStatus());
@@ -167,7 +167,7 @@ public class JaxrsTest extends TestHelper {
         Client client = createClient();
 
         WebTarget webTarget = client.
-            target("http://localhost:8080").
+            target("http://localhost:65532").
             path("test-application");
 
         ServiceRegistration<?> serviceRegistration2;
@@ -205,7 +205,7 @@ public class JaxrsTest extends TestHelper {
         Client client = createClient();
 
         WebTarget webTarget = client.
-            target("http://localhost:8080").
+            target("http://localhost:65532").
             path("/test-application").
             path("extended");
 
@@ -227,7 +227,7 @@ public class JaxrsTest extends TestHelper {
         Client client = createClient();
 
         WebTarget webTarget = client.
-            target("http://localhost:8080").
+            target("http://localhost:65532").
             path("/test-application").
             path("extended");
 
@@ -264,7 +264,7 @@ public class JaxrsTest extends TestHelper {
         Client client = createClient();
 
         WebTarget webTarget = client.
-            target("http://localhost:8080").
+            target("http://localhost:65532").
             path("test-application");
 
         JaxRSServiceRuntime runtime = getJaxRSServiceRuntime();
@@ -317,7 +317,7 @@ public class JaxrsTest extends TestHelper {
         Client client = createClient();
 
         WebTarget webTarget = client.
-            target("http://localhost:8080").
+            target("http://localhost:65532").
             path("/test-application");
 
         registerApplication(new TestApplication());
@@ -340,7 +340,7 @@ public class JaxrsTest extends TestHelper {
         Client client = createClient();
 
         WebTarget webTarget = client.
-            target("http://localhost:8080").
+            target("http://localhost:65532").
             path("/test-application");
 
         registerApplication(new TestApplication());
@@ -385,7 +385,7 @@ public class JaxrsTest extends TestHelper {
         Client client = createClient();
 
         WebTarget webTarget = client.
-            target("http://localhost:8080").
+            target("http://localhost:65532").
             path("/test-application");
 
         JaxRSServiceRuntime runtime = getJaxRSServiceRuntime();
@@ -536,7 +536,7 @@ public class JaxrsTest extends TestHelper {
         Client client = createClient();
 
         WebTarget webTarget = client.
-            target("http://localhost:8080").
+            target("http://localhost:65532").
             path("conflict");
 
         registerAddon(new TestAddonConflict());
@@ -572,7 +572,7 @@ public class JaxrsTest extends TestHelper {
         Client client = createClient();
 
         WebTarget webTarget = client.
-            target("http://localhost:8080").
+            target("http://localhost:65532").
             path("test-application");
 
         JaxRSServiceRuntime runtime = getJaxRSServiceRuntime();
@@ -624,7 +624,7 @@ public class JaxrsTest extends TestHelper {
         Client client = createClient();
 
         WebTarget webTarget = client.
-            target("http://localhost:8080").
+            target("http://localhost:65532").
             path("test-application");
 
         JaxRSServiceRuntime runtime = getJaxRSServiceRuntime();
@@ -697,7 +697,7 @@ public class JaxrsTest extends TestHelper {
         Client client = createClient();
 
         WebTarget webTarget = client.
-            target("http://localhost:8080").
+            target("http://localhost:65532").
             path("test");
 
         JaxRSServiceRuntime runtime = getJaxRSServiceRuntime();
@@ -718,7 +718,7 @@ public class JaxrsTest extends TestHelper {
         Client client = createClient();
 
         WebTarget webTarget = client.
-            target("http://localhost:8080").
+            target("http://localhost:65532").
             path("/test-addon-lifecycle");
 
         registerAddonLifecycle(false, JAX_RS_RESOURCE, "true");
@@ -735,7 +735,7 @@ public class JaxrsTest extends TestHelper {
         Client client = createClient();
 
         WebTarget webTarget = client.
-            target("http://localhost:8080").
+            target("http://localhost:65532").
             path("test");
 
         Runnable testCase = () -> {
@@ -767,7 +767,7 @@ public class JaxrsTest extends TestHelper {
         Client client = createClient();
 
         WebTarget webTarget = client.
-            target("http://localhost:8080").
+            target("http://localhost:65532").
             path("/test-addon-lifecycle");
 
         registerAddonLifecycle(true, JAX_RS_RESOURCE, "true");
@@ -786,7 +786,7 @@ public class JaxrsTest extends TestHelper {
         Client client = createClient();
 
         WebTarget webTarget = client.
-            target("http://localhost:8080").
+            target("http://localhost:65532").
             path("test");
 
         JaxRSServiceRuntime runtime = getJaxRSServiceRuntime();
@@ -885,7 +885,7 @@ public class JaxrsTest extends TestHelper {
         Client client = createClient();
 
         WebTarget webTarget = client.
-            target("http://localhost:8080").
+            target("http://localhost:65532").
             path("test");
 
         JaxRSServiceRuntime runtime = getJaxRSServiceRuntime();
@@ -922,7 +922,7 @@ public class JaxrsTest extends TestHelper {
         Client client = createClient();
 
         WebTarget webTarget = client.
-            target("http://localhost:8080").
+            target("http://localhost:65532").
             path("test");
 
         JaxRSServiceRuntime runtime = getJaxRSServiceRuntime();
@@ -974,7 +974,7 @@ public class JaxrsTest extends TestHelper {
         Client client = createClient();
 
         WebTarget webTarget = client.
-            target("http://localhost:8080").
+            target("http://localhost:65532").
             path("test-application");
 
         registerApplication(new TestApplicationWithException());
@@ -996,7 +996,7 @@ public class JaxrsTest extends TestHelper {
         Client client = createClient();
 
         WebTarget webTarget = client.
-            target("http://localhost:8080").
+            target("http://localhost:65532").
             path("test");
 
         JaxRSServiceRuntime runtime = getJaxRSServiceRuntime();
@@ -1045,7 +1045,7 @@ public class JaxrsTest extends TestHelper {
         Client client = createClient();
 
         WebTarget webTarget = client.
-            target("http://localhost:8080").
+            target("http://localhost:65532").
             path("test");
 
         registerAddon(new TestAddon());

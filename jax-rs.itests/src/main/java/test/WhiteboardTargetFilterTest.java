@@ -42,7 +42,7 @@ public class WhiteboardTargetFilterTest extends TestHelper {
         Client client = createClient();
 
         WebTarget webTarget = client.
-            target("http://localhost:8080").
+            target("http://localhost:65532").
             path("extended");
 
         assertEquals(
@@ -71,7 +71,7 @@ public class WhiteboardTargetFilterTest extends TestHelper {
         Client client = createClient();
 
         WebTarget webTarget = client.
-            target("http://localhost:8080").
+            target("http://localhost:65532").
             path("extended");
 
         assertEquals(
@@ -100,7 +100,7 @@ public class WhiteboardTargetFilterTest extends TestHelper {
         Client client = createClient();
 
         WebTarget webTarget = client.
-            target("http://localhost:8080").
+            target("http://localhost:65532").
             path("extended");
 
         assertEquals(
