@@ -40,7 +40,8 @@ import static org.apache.aries.osgi.functional.OSGi.register;
 
 public class CXFJaxRsBundleActivator implements BundleActivator {
 
-    private static final Logger _log = LoggerFactory.getLogger(CXFJaxRsBundleActivator.class);
+    private static final Logger _log = LoggerFactory.getLogger(
+        CXFJaxRsBundleActivator.class);
 
     static {
         RuntimeDelegate.setInstance(new RuntimeDelegateImpl());
@@ -61,19 +62,21 @@ public class CXFJaxRsBundleActivator implements BundleActivator {
 
         _whiteboardsResult = whiteboards.run(bundleContext);
 
-        if (_log.isDebugEnabled()) {
-            _log.debug("Whiteboard factory started");
-        }
-
         Dictionary<String, Object> defaultConfiguration = new Hashtable<>();
 
         defaultConfiguration.put(
-            Constants.SERVICE_PID, "org.apache.aries.jax.rs.whiteboard.default");
+            Constants.SERVICE_PID,
+            "org.apache.aries.jax.rs.whiteboard.default");
 
         _defaultOSGiResult =
-            register(ClientBuilder.class, new ClientBuilderFactory(), null).then(
+            register(
+                ClientBuilder.class, new ClientBuilderFactory(), null).then(
             createWhiteboard(defaultConfiguration))
         .run(bundleContext);
+
+        if (_log.isDebugEnabled()) {
+            _log.debug("Whiteboard factory started");
+        }
     }
 
     @Override
