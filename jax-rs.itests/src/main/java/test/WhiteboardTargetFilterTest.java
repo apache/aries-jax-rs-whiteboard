@@ -39,11 +39,7 @@ public class WhiteboardTargetFilterTest extends TestHelper {
 
     @Test
     public void testInvalidTargetFilter() throws Exception {
-        Client client = createClient();
-
-        WebTarget webTarget = client.
-            target("http://localhost:65532").
-            path("extended");
+        WebTarget webTarget = createDefaultTarget().path("extended");
 
         assertEquals(
             "This should return nothing", 404,
@@ -53,8 +49,9 @@ public class WhiteboardTargetFilterTest extends TestHelper {
         properties.put(JaxRSWhiteboardConstants.JAX_RS_RESOURCE, "true");
         properties.put(JaxRSWhiteboardConstants.JAX_RS_WHITEBOARD_TARGET, "//");
 
-        ServiceRegistration<Object> serviceRegistration = bundleContext.registerService(
-            Object.class, new TestAddon(), properties);
+        ServiceRegistration<Object> serviceRegistration =
+            bundleContext.registerService(
+                Object.class, new TestAddon(), properties);
 
         try {
             assertEquals(
@@ -68,11 +65,7 @@ public class WhiteboardTargetFilterTest extends TestHelper {
 
     @Test
     public void testNonMatchingFilter() throws Exception {
-        Client client = createClient();
-
-        WebTarget webTarget = client.
-            target("http://localhost:65532").
-            path("extended");
+        WebTarget webTarget = createDefaultTarget().path("extended");
 
         assertEquals(
             "This should return nothing", 404,
@@ -80,10 +73,13 @@ public class WhiteboardTargetFilterTest extends TestHelper {
 
         Dictionary<String, Object> properties = new Hashtable<>();
         properties.put(JaxRSWhiteboardConstants.JAX_RS_RESOURCE, "true");
-        properties.put(JaxRSWhiteboardConstants.JAX_RS_WHITEBOARD_TARGET, "(crazy=the joker)");
+        properties.put(
+            JaxRSWhiteboardConstants.JAX_RS_WHITEBOARD_TARGET,
+            "(crazy=the joker)");
 
-        ServiceRegistration<Object> serviceRegistration = bundleContext.registerService(
-            Object.class, new TestAddon(), properties);
+        ServiceRegistration<Object> serviceRegistration =
+            bundleContext.registerService(
+                Object.class, new TestAddon(), properties);
 
         try {
             assertEquals(
@@ -97,11 +93,7 @@ public class WhiteboardTargetFilterTest extends TestHelper {
 
     @Test
     public void testMatchingFilter() throws Exception {
-        Client client = createClient();
-
-        WebTarget webTarget = client.
-            target("http://localhost:65532").
-            path("extended");
+        WebTarget webTarget = createDefaultTarget().path("extended");
 
         assertEquals(
             "This should return nothing", 404,
@@ -113,8 +105,9 @@ public class WhiteboardTargetFilterTest extends TestHelper {
             JaxRSWhiteboardConstants.JAX_RS_WHITEBOARD_TARGET,
             "(service.pid=org.apache.aries.jax.rs.whiteboard.default)");
 
-        ServiceRegistration<Object> serviceRegistration = bundleContext.registerService(
-            Object.class, new TestAddon(), properties);
+        ServiceRegistration<Object> serviceRegistration =
+            bundleContext.registerService(
+                Object.class, new TestAddon(), properties);
 
         try {
             assertEquals(

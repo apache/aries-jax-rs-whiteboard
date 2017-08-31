@@ -17,11 +17,9 @@
 
 package test;
 
+import static junit.framework.TestCase.assertNotNull;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 import static org.osgi.service.http.whiteboard.HttpWhiteboardConstants.HTTP_WHITEBOARD_SERVLET_PATTERN;
-import static org.osgi.service.jaxrs.whiteboard.JaxRSWhiteboardConstants.JAX_RS_APPLICATION_BASE;
 
 import java.util.Dictionary;
 import java.util.Hashtable;
@@ -31,39 +29,17 @@ import org.osgi.framework.BundleContext;
 import org.osgi.framework.Constants;
 import org.osgi.framework.FrameworkUtil;
 import org.osgi.framework.ServiceReference;
-import org.osgi.framework.ServiceRegistration;
 import org.osgi.service.cm.Configuration;
 import org.osgi.service.cm.ConfigurationAdmin;
 import org.osgi.service.jaxrs.runtime.JaxRSServiceRuntime;
 import org.osgi.util.tracker.ServiceTracker;
-import test.types.TestApplication;
+import test.types.TestHelper;
 
-import javax.ws.rs.core.Application;
-
-public class WhiteboardFactoryTest {
+public class WhiteboardFactoryTest extends TestHelper {
 
     @Test
     public void testDefaultDefaultWhiteboardConfig() throws Exception {
-        ServiceTracker<JaxRSServiceRuntime, JaxRSServiceRuntime> runtimeTracker =
-            new ServiceTracker<>(
-                bundleContext, JaxRSServiceRuntime.class, null);
-
-        try {
-            runtimeTracker.open();
-
-            JaxRSServiceRuntime runtime = runtimeTracker.waitForService(5000);
-
-            assertNotNull(runtime);
-
-            ServiceReference<JaxRSServiceRuntime> serviceReference = runtimeTracker.getServiceReference();
-
-            assertNotNull(serviceReference);
-
-            assertEquals(1, runtimeTracker.size());
-        }
-        finally {
-            runtimeTracker.close();
-        }
+        assertEquals(1, _runtimeTracker.size());
     }
 
     @Test
@@ -72,25 +48,17 @@ public class WhiteboardFactoryTest {
             new ServiceTracker<>(
                 bundleContext, ConfigurationAdmin.class, null);
 
-        ServiceTracker<JaxRSServiceRuntime, JaxRSServiceRuntime> runtimeTracker =
-            new ServiceTracker<>(
-                bundleContext, JaxRSServiceRuntime.class, null);
-
         try {
             configTracker.open();
-            runtimeTracker.open();
 
-            JaxRSServiceRuntime runtime = runtimeTracker.waitForService(5000);
-
-            assertNotNull(runtime);
-
-            ServiceReference<JaxRSServiceRuntime> serviceReference = runtimeTracker.getServiceReference();
+            ServiceReference<JaxRSServiceRuntime> serviceReference =
+                _runtimeTracker.getServiceReference();
 
             assertNotNull(serviceReference);
 
-            assertEquals(1, runtimeTracker.size());
+            assertEquals(1, _runtimeTracker.size());
 
-            int trackingCount = runtimeTracker.getTrackingCount();
+            int trackingCount = _runtimeTracker.getTrackingCount();
 
             ConfigurationAdmin admin = configTracker.waitForService(5000);
 
@@ -110,29 +78,33 @@ public class WhiteboardFactoryTest {
                 Thread.sleep(50);
 
                 if (!"/new-whiteboard".equals(
-                        runtimeTracker.getServiceReference().getProperty(HTTP_WHITEBOARD_SERVLET_PATTERN))) {
-                    trackingCount = runtimeTracker.getTrackingCount();
+                        _runtimeTracker.getServiceReference().getProperty(
+                            HTTP_WHITEBOARD_SERVLET_PATTERN))) {
+
+                    trackingCount = _runtimeTracker.getTrackingCount();
                 }
             }
-            while (runtimeTracker.getTrackingCount() <= trackingCount);
+            while (_runtimeTracker.getTrackingCount() <= trackingCount);
 
-            assertEquals(2, runtimeTracker.size());
+            assertEquals(2, _runtimeTracker.size());
 
             configuration.delete();
 
             do {
                 Thread.sleep(50);
             }
-            while (runtimeTracker.getTrackingCount() <= trackingCount);
+            while (_runtimeTracker.getTrackingCount() <= trackingCount);
 
-            assertEquals(1, runtimeTracker.size());
+            assertEquals(1, _runtimeTracker.size());
         }
         finally {
-            runtimeTracker.close();
             configTracker.close();
         }
     }
 
-    private BundleContext bundleContext = FrameworkUtil.getBundle(getClass()).getBundleContext();
+    private BundleContext bundleContext =
+        FrameworkUtil.
+            getBundle(getClass()).
+            getBundleContext();
 
 }

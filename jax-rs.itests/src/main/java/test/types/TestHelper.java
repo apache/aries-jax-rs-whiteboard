@@ -19,30 +19,73 @@ package test.types;
 
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
+import javax.ws.rs.client.WebTarget;
 
 import org.junit.After;
 import org.junit.Before;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.FrameworkUtil;
+import org.osgi.framework.ServiceReference;
+import org.osgi.service.jaxrs.runtime.JaxRSServiceRuntime;
 import org.osgi.util.tracker.ServiceTracker;
+
+import java.util.Collection;
 
 public class TestHelper {
 
-    public static BundleContext bundleContext = FrameworkUtil.getBundle(
-        TestHelper.class).getBundleContext();
+    public static BundleContext bundleContext =
+        FrameworkUtil.
+            getBundle(TestHelper.class).
+            getBundleContext();
 
-    private ServiceTracker<ClientBuilder, ClientBuilder> _clientBuilderTracker;
+    protected ServiceTracker<JaxRSServiceRuntime, JaxRSServiceRuntime>
+        _runtimeTracker;
+    protected ServiceTracker<ClientBuilder, ClientBuilder>
+        _clientBuilderTracker;
+    protected JaxRSServiceRuntime _runtime;
+    protected ServiceReference<JaxRSServiceRuntime> _runtimeServiceReference;
 
     @After
     public void after() {
+        _runtimeTracker.close();
+
         _clientBuilderTracker.close();
     }
 
     @Before
     public void before() {
-        _clientBuilderTracker = new ServiceTracker<>(bundleContext, ClientBuilder.class, null);
+        _clientBuilderTracker = new ServiceTracker<>(
+            bundleContext, ClientBuilder.class, null);
 
         _clientBuilderTracker.open();
+
+        _runtimeTracker = new ServiceTracker<>(
+            bundleContext, JaxRSServiceRuntime.class, null);
+
+        _runtimeTracker.open();
+
+        try {
+            _runtime = _runtimeTracker.waitForService(15000L);
+        }
+        catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+
+        _runtimeServiceReference = _runtimeTracker.getServiceReference();
+    }
+
+    private static String[] canonicalize(Object propertyValue) {
+        if (propertyValue == null) {
+            return new String[0];
+        }
+        if (propertyValue instanceof String[]) {
+            return (String[]) propertyValue;
+        }
+        if (propertyValue instanceof Collection) {
+            return ((Collection<String>) propertyValue).toArray(new String[0]);
+        }
+
+        return new String[]{propertyValue.toString()};
     }
 
     protected Client createClient() {
@@ -56,6 +99,23 @@ public class TestHelper {
         catch (InterruptedException ie) {
             throw new RuntimeException(ie);
         }
+    }
+
+    protected WebTarget createDefaultTarget() {
+        Client client = createClient();
+
+        String[] runtimes = canonicalize(
+            _runtimeServiceReference.getProperty("osgi.jaxrs.endpoint"));
+
+        if (runtimes.length == 0) {
+            throw new IllegalStateException(
+                "No runtimes could be found on \"osgi.jaxrs.endpoint\" " +
+                    "runtime service property ");
+        }
+
+        String runtime = runtimes[0];
+
+        return client.target(runtime);
     }
 
 }

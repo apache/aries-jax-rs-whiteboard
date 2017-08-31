@@ -193,8 +193,7 @@ public class Utils {
                     ).then(
                         just(new ServiceTuple<>(serviceReference, service))
                     );
-            }
-        ));
+            }));
     }
 
     public static <T> OSGi<T> service(ServiceReference<T> serviceReference) {
