@@ -27,6 +27,7 @@ import org.osgi.framework.ServiceReference;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
@@ -196,6 +197,12 @@ public class Utils {
             }));
     }
 
+    public static <T extends Comparable<? super T>> OSGi<T> repeatInOrder(
+        OSGi<T> program) {
+
+        return program.route(new RepeatInOrderRouter<>());
+    }
+
     public static <T> OSGi<T> service(ServiceReference<T> serviceReference) {
         return
             bundleContext().flatMap(bundleContext ->
@@ -294,13 +301,11 @@ public class Utils {
             return _service;
         }
 
-        @Override
-        public int compareTo(ServiceTuple<T> o) {
-            return _serviceReference.compareTo(o._serviceReference);
-        }
-
         public ServiceReference<T> getServiceReference() {
             return _serviceReference;
+        }        @Override
+        public int compareTo(ServiceTuple<T> o) {
+            return _serviceReference.compareTo(o._serviceReference);
         }
 
         @Override
@@ -316,6 +321,51 @@ public class Utils {
             ServiceTuple<?> that = (ServiceTuple<?>) o;
 
             return _serviceReference.equals(that._serviceReference);
+        }
+
+
+
+    }
+
+    private static class RepeatInOrderRouter<T extends Comparable<? super T>>
+        implements Consumer<OSGi.Router<T>> {
+
+        private final TreeSet<Event<T>> _treeSet;
+
+        public RepeatInOrderRouter() {
+            Comparator<Event<T>> comparing = Comparator.comparing(
+                Event::getContent);
+
+            _treeSet = new TreeSet<>(comparing.reversed());
+        }
+
+        @Override
+        public void accept(OSGi.Router<T> router) {
+            router.onIncoming(ev -> {
+                _treeSet.add(ev);
+
+                SortedSet<Event<T>> events = _treeSet.tailSet(ev, false);
+                events.forEach(router::signalLeave);
+
+                router.signalAdd(ev);
+
+                events.forEach(router::signalAdd);
+            });
+            router.onLeaving(ev -> {
+                _treeSet.remove(ev);
+
+                SortedSet<Event<T>> events = _treeSet.tailSet(ev, false);
+                events.forEach(router::signalLeave);
+
+                router.signalLeave(ev);
+
+                events.forEach(router::signalAdd);
+            });
+            router.onClose(() -> {
+                _treeSet.forEach(router::signalLeave);
+
+                _treeSet.clear();
+            });
         }
 
     }

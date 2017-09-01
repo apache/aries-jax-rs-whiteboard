@@ -18,16 +18,12 @@
 package test;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 
 import java.util.Dictionary;
 import java.util.Hashtable;
 
-import javax.ws.rs.client.Client;
 import javax.ws.rs.client.WebTarget;
 
-import org.junit.Ignore;
 import org.junit.Test;
 import org.osgi.framework.ServiceRegistration;
 import org.osgi.service.jaxrs.whiteboard.JaxRSWhiteboardConstants;

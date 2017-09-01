@@ -72,6 +72,9 @@ public class AriesJaxRSServiceRuntime implements JaxRSServiceRuntime {
     private Set<ServiceReference<Application>> _dependentApplications =
         ConcurrentHashMap.newKeySet();
 
+    private Collection<ServiceReference<Application>> _clashingApplications =
+        new CopyOnWriteArrayList<>();
+
     private Collection<ServiceReference<Application>> _erroredApplications =
         new CopyOnWriteArrayList<>();
 
@@ -101,6 +104,12 @@ public class AriesJaxRSServiceRuntime implements JaxRSServiceRuntime {
 
         _applicationExtensions.compute(
             applicationName, merger(extensionServiceReference));
+    }
+
+    public void addClashingApplication(
+        ServiceReference<Application> serviceReference) {
+
+        _clashingApplications.add(serviceReference);
     }
 
     public void addDependentApplication(
@@ -147,14 +156,6 @@ public class AriesJaxRSServiceRuntime implements JaxRSServiceRuntime {
         return _shadowedApplications.add(serviceReference);
     }
 
-    public void clearDefaultApplication() {
-        _applications.compute(DEFAULT_NAME, (__, ___) -> {
-            _defaultApplicationProperties = Collections.emptyMap();
-
-            return null;
-        });
-    }
-
     public static String getApplicationName(PropertyHolder properties) {
         Object property = properties.get(JAX_RS_NAME);
 
@@ -169,8 +170,10 @@ public class AriesJaxRSServiceRuntime implements JaxRSServiceRuntime {
     public RuntimeDTO getRuntimeDTO() {
         RuntimeDTO runtimeDTO = new RuntimeDTO();
 
-        runtimeDTO.defaultApplication = buildApplicationDTO(
-            _defaultApplicationProperties);
+        if (_defaultApplicationProperties != null) {
+            runtimeDTO.defaultApplication = buildApplicationDTO(
+                _defaultApplicationProperties);
+        }
 
         runtimeDTO.applicationDTOs = applicationDTOStream().
             toArray(
@@ -182,8 +185,10 @@ public class AriesJaxRSServiceRuntime implements JaxRSServiceRuntime {
             Stream.concat(
                 unreferenciableApplicationsDTOStream(),
                 Stream.concat(
-                    dependentApplicationsDTOStream(),
-                    erroredApplicationsDTOStream()))
+                    clashingApplicationsDTOStream(),
+                    Stream.concat(
+                        dependentApplicationsDTOStream(),
+                        erroredApplicationsDTOStream())))
             ).toArray(
                 FailedApplicationDTO[]::new
             );
@@ -222,6 +227,12 @@ public class AriesJaxRSServiceRuntime implements JaxRSServiceRuntime {
 
         _applicationExtensions.computeIfPresent(
             applicationName, remover(extensionServiceReference));
+    }
+
+    public void removeClashingApplication(
+        ServiceReference<Application> serviceReference) {
+
+        _clashingApplications.remove(serviceReference);
     }
 
     public void removeDependentApplication(
@@ -271,16 +282,24 @@ public class AriesJaxRSServiceRuntime implements JaxRSServiceRuntime {
     public Map<String, Object> setApplicationForPath(
         String path, Map<String, Object> properties) {
 
-        return _applications.put(path, properties);
+        return _applications.compute(
+            path,
+            (__, prop) -> {
+                if (DEFAULT_NAME.equals(getApplicationName(properties::get))) {
+                    _defaultApplicationProperties = properties;
+                }
+
+                return properties;
+            });
     }
 
-    public void setDefaultApplication(Map<String, Object> properties) {
+    /*public void setDefaultApplication(Map<String, Object> properties) {
         _applications.compute(DEFAULT_NAME, (__, ___) -> {
             _defaultApplicationProperties = properties;
 
             return properties;
         });
-    }
+    }*/
 
     public Map<String, Object> unsetApplicationForPath(String path) {
         return _applications.remove(path);
@@ -338,6 +357,13 @@ public class AriesJaxRSServiceRuntime implements JaxRSServiceRuntime {
         failedResourceDTO.failureReason = reason;
 
         return failedResourceDTO;
+    }
+
+    private Stream<FailedApplicationDTO> clashingApplicationsDTOStream() {
+        return _clashingApplications.stream().map(
+            sr -> buildFailedApplicationDTO(
+                DTOConstants.FAILURE_REASON_DUPLICATE_NAME, sr)
+        );
     }
 
     private Stream<FailedApplicationDTO> dependentApplicationsDTOStream() {

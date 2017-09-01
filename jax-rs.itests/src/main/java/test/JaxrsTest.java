@@ -73,10 +73,11 @@ public class JaxrsTest extends TestHelper {
 
             try {
                 registration.unregister();
-
-                iterator.remove();
             }
             catch(Exception e) {
+            }
+            finally {
+                iterator.remove();
             }
         }
 
@@ -87,11 +88,11 @@ public class JaxrsTest extends TestHelper {
 
     @Test
     public void testApplication() throws InterruptedException {
-        assertEquals(0, _runtime.getRuntimeDTO().applicationDTOs.length);
+        assertEquals(0, getRuntimeDTO().applicationDTOs.length);
 
         registerApplication(new TestApplication());
 
-        assertEquals(1, _runtime.getRuntimeDTO().applicationDTOs.length);
+        assertEquals(1, getRuntimeDTO().applicationDTOs.length);
 
         WebTarget webTarget = createDefaultTarget().path("/test-application");
 
@@ -319,7 +320,7 @@ public class JaxrsTest extends TestHelper {
         WebTarget webTarget = createDefaultTarget().path("/test-application");
 
         Runnable testCase = () -> {
-            int applications = _runtime.getRuntimeDTO().applicationDTOs.length;
+            int applications = getRuntimeDTO().applicationDTOs.length;
 
             assertEquals(404, webTarget.request().get().getStatus());
 
@@ -338,7 +339,7 @@ public class JaxrsTest extends TestHelper {
 
                 assertEquals(
                     applications + 1,
-                    _runtime.getRuntimeDTO().applicationDTOs.length);
+                    getRuntimeDTO().applicationDTOs.length);
             }
             finally {
                 if (serviceRegistration != null) {
@@ -353,10 +354,63 @@ public class JaxrsTest extends TestHelper {
     }
 
     @Test
+    public void testApplicationReplaceDefault() {
+        assertEquals(0, getRuntimeDTO().applicationDTOs.length);
+        assertEquals(0, getRuntimeDTO().failedApplicationDTOs.length);
+
+        registerAddon(new TestAddon());
+
+        assertEquals(
+            "Hello test",
+            createDefaultTarget().path("/test").request().get(String.class));
+
+        ServiceRegistration<Application> serviceRegistration =
+            registerApplication(new TestApplication(), JAX_RS_NAME, ".default");
+
+        assertEquals(0, getRuntimeDTO().applicationDTOs.length);
+        assertEquals(1, getRuntimeDTO().failedApplicationDTOs.length);
+        assertEquals(
+            serviceRegistration.getReference().getProperty("service.id"),
+            getRuntimeDTO().defaultApplication.serviceId);
+        assertEquals(
+            DTOConstants.FAILURE_REASON_DUPLICATE_NAME,
+            getRuntimeDTO().failedApplicationDTOs[0].failureReason);
+
+        assertEquals(
+            "Hello application",
+            createDefaultTarget().
+                path("/test-application").
+                request().
+                get().
+                readEntity(String.class));
+
+        assertEquals(
+            404,
+            createDefaultTarget().path("/test").request().get().getStatus());
+
+        assertEquals(
+            "Hello test",
+            createDefaultTarget().
+                path("/test-application").
+                path("/test").
+                request().
+                get(String.class));
+
+        serviceRegistration.unregister();
+
+        assertEquals(0, getRuntimeDTO().applicationDTOs.length);
+        assertEquals(0, getRuntimeDTO().failedApplicationDTOs.length);
+
+        assertEquals(
+            "Hello test",
+            createDefaultTarget().path("/test").request().get(String.class));
+    }
+
+    @Test
     public void testApplicationWithDedicatedExtension()
         throws InterruptedException {
 
-        assertEquals(0, _runtime.getRuntimeDTO().applicationDTOs.length);
+        assertEquals(0, getRuntimeDTO().applicationDTOs.length);
 
         registerApplication(
             new TestApplication(),
@@ -364,7 +418,7 @@ public class JaxrsTest extends TestHelper {
             String.format("(%s=%s)", JAX_RS_NAME, "Filter"), "propertyKey",
             "propertyValue");
 
-        assertEquals(0, _runtime.getRuntimeDTO().applicationDTOs.length);
+        assertEquals(0, getRuntimeDTO().applicationDTOs.length);
 
         WebTarget webTarget = createDefaultTarget().path("/test-application");
 
@@ -375,7 +429,7 @@ public class JaxrsTest extends TestHelper {
         ServiceRegistration<?> filterRegistration = registerExtension(
             "Filter", JAX_RS_APPLICATION_SELECT, "(propertyKey=propertyValue)");
 
-        assertEquals(1, _runtime.getRuntimeDTO().applicationDTOs.length);
+        assertEquals(1, getRuntimeDTO().applicationDTOs.length);
 
         response = webTarget.request().get();
 
@@ -383,7 +437,7 @@ public class JaxrsTest extends TestHelper {
 
         filterRegistration.unregister();
 
-        assertEquals(0, _runtime.getRuntimeDTO().applicationDTOs.length);
+        assertEquals(0, getRuntimeDTO().applicationDTOs.length);
 
         response = webTarget.request().get();
 
@@ -392,7 +446,7 @@ public class JaxrsTest extends TestHelper {
 
     @Test
     public void testApplicationWithError() throws InterruptedException {
-        RuntimeDTO runtimeDTO = _runtime.getRuntimeDTO();
+        RuntimeDTO runtimeDTO = getRuntimeDTO();
 
         assertEquals(0, runtimeDTO.applicationDTOs.length);
         assertEquals(0, runtimeDTO.failedExtensionDTOs.length);
@@ -407,7 +461,7 @@ public class JaxrsTest extends TestHelper {
 
             });
 
-        runtimeDTO = _runtime.getRuntimeDTO();
+        runtimeDTO = getRuntimeDTO();
 
         assertEquals(0, runtimeDTO.applicationDTOs.length);
         assertEquals(1, runtimeDTO.failedApplicationDTOs.length);
@@ -421,7 +475,7 @@ public class JaxrsTest extends TestHelper {
 
         serviceRegistration.unregister();
 
-        runtimeDTO = _runtime.getRuntimeDTO();
+        runtimeDTO = getRuntimeDTO();
 
         assertEquals(0, runtimeDTO.applicationDTOs.length);
         assertEquals(0, runtimeDTO.failedApplicationDTOs.length);
@@ -431,13 +485,13 @@ public class JaxrsTest extends TestHelper {
     public void testApplicationWithExtensionDryRun()
         throws InterruptedException {
 
-        assertEquals(0, _runtime.getRuntimeDTO().applicationDTOs.length);
+        assertEquals(0, getRuntimeDTO().applicationDTOs.length);
 
         registerApplication(
             new TestApplication(), JAX_RS_EXTENSION_SELECT,
             String.format("(%s=%s)", JAX_RS_NAME, "Filter"));
 
-        assertEquals(0, _runtime.getRuntimeDTO().applicationDTOs.length);
+        assertEquals(0, getRuntimeDTO().applicationDTOs.length);
 
         WebTarget webTarget = createDefaultTarget().path("/test-application");
 
@@ -448,7 +502,7 @@ public class JaxrsTest extends TestHelper {
         ServiceRegistration<?> filterRegistration = registerExtension(
             "Filter", JAX_RS_APPLICATION_SELECT, "(unexistent=application)");
 
-        assertEquals(0, _runtime.getRuntimeDTO().applicationDTOs.length);
+        assertEquals(0, getRuntimeDTO().applicationDTOs.length);
 
         response = webTarget.request().get();
 
@@ -456,7 +510,7 @@ public class JaxrsTest extends TestHelper {
 
         filterRegistration.unregister();
 
-        assertEquals(0, _runtime.getRuntimeDTO().applicationDTOs.length);
+        assertEquals(0, getRuntimeDTO().applicationDTOs.length);
 
         response = webTarget.request().get();
 
@@ -467,14 +521,14 @@ public class JaxrsTest extends TestHelper {
     public void testApplicationWithGenericExtension()
         throws InterruptedException {
 
-        assertEquals(0, _runtime.getRuntimeDTO().applicationDTOs.length);
+        assertEquals(0, getRuntimeDTO().applicationDTOs.length);
 
         registerApplication(
             new TestApplication(),
             JAX_RS_EXTENSION_SELECT,
             String.format("(%s=%s)", JAX_RS_NAME, "Filter"));
 
-        assertEquals(0, _runtime.getRuntimeDTO().applicationDTOs.length);
+        assertEquals(0, getRuntimeDTO().applicationDTOs.length);
 
         WebTarget webTarget = createDefaultTarget().path("/test-application");
 
@@ -484,7 +538,7 @@ public class JaxrsTest extends TestHelper {
 
         ServiceRegistration<?> filterRegistration = registerExtension("Filter");
 
-        assertEquals(1, _runtime.getRuntimeDTO().applicationDTOs.length);
+        assertEquals(1, getRuntimeDTO().applicationDTOs.length);
 
         response = webTarget.request().get();
 
@@ -492,7 +546,7 @@ public class JaxrsTest extends TestHelper {
 
         filterRegistration.unregister();
 
-        assertEquals(0, _runtime.getRuntimeDTO().applicationDTOs.length);
+        assertEquals(0, getRuntimeDTO().applicationDTOs.length);
 
         response = webTarget.request().get();
 
@@ -555,14 +609,14 @@ public class JaxrsTest extends TestHelper {
 
         WebTarget webTarget = createDefaultTarget().path("test-application");
 
-        assertEquals(0, _runtime.getRuntimeDTO().applicationDTOs.length);
-        assertEquals(0, _runtime.getRuntimeDTO().failedApplicationDTOs.length);
+        assertEquals(0, getRuntimeDTO().applicationDTOs.length);
+        assertEquals(0, getRuntimeDTO().failedApplicationDTOs.length);
 
         ServiceRegistration<Application> serviceRegistration =
             registerApplication(new TestApplication());
 
-        assertEquals(1, _runtime.getRuntimeDTO().applicationDTOs.length);
-        assertEquals(0, _runtime.getRuntimeDTO().failedApplicationDTOs.length);
+        assertEquals(1, getRuntimeDTO().applicationDTOs.length);
+        assertEquals(0, getRuntimeDTO().failedApplicationDTOs.length);
 
         assertEquals(
             "Hello application",
@@ -571,12 +625,12 @@ public class JaxrsTest extends TestHelper {
         ServiceRegistration<Application> ungettableServiceRegistration =
             registerUngettableApplication("service.ranking", 1);
 
-        assertEquals(1, _runtime.getRuntimeDTO().applicationDTOs.length);
-        assertEquals(1, _runtime.getRuntimeDTO().failedApplicationDTOs.length);
+        assertEquals(1, getRuntimeDTO().applicationDTOs.length);
+        assertEquals(1, getRuntimeDTO().failedApplicationDTOs.length);
 
         assertEquals(
             DTOConstants.FAILURE_REASON_SERVICE_NOT_GETTABLE,
-            _runtime.getRuntimeDTO().failedApplicationDTOs[0].failureReason);
+            getRuntimeDTO().failedApplicationDTOs[0].failureReason);
 
         assertEquals(
             "Hello application",
@@ -584,15 +638,15 @@ public class JaxrsTest extends TestHelper {
 
         serviceRegistration.unregister();
 
-        assertEquals(0, _runtime.getRuntimeDTO().applicationDTOs.length);
-        assertEquals(1, _runtime.getRuntimeDTO().failedApplicationDTOs.length);
+        assertEquals(0, getRuntimeDTO().applicationDTOs.length);
+        assertEquals(1, getRuntimeDTO().failedApplicationDTOs.length);
 
         assertEquals(404, webTarget.request().get().getStatus());
 
         ungettableServiceRegistration.unregister();
 
-        assertEquals(0, _runtime.getRuntimeDTO().applicationDTOs.length);
-        assertEquals(0, _runtime.getRuntimeDTO().failedApplicationDTOs.length);
+        assertEquals(0, getRuntimeDTO().applicationDTOs.length);
+        assertEquals(0, getRuntimeDTO().failedApplicationDTOs.length);
     }
 
     @Test
@@ -601,14 +655,14 @@ public class JaxrsTest extends TestHelper {
 
         WebTarget webTarget = createDefaultTarget().path("test-application");
 
-        assertEquals(0, _runtime.getRuntimeDTO().applicationDTOs.length);
-        assertEquals(0, _runtime.getRuntimeDTO().failedApplicationDTOs.length);
+        assertEquals(0, getRuntimeDTO().applicationDTOs.length);
+        assertEquals(0, getRuntimeDTO().failedApplicationDTOs.length);
 
         ServiceRegistration<Application> serviceRegistration =
             registerApplication(new TestApplication());
 
-        assertEquals(1, _runtime.getRuntimeDTO().applicationDTOs.length);
-        assertEquals(0, _runtime.getRuntimeDTO().failedApplicationDTOs.length);
+        assertEquals(1, getRuntimeDTO().applicationDTOs.length);
+        assertEquals(0, getRuntimeDTO().failedApplicationDTOs.length);
 
         assertEquals(
             "Hello application",
@@ -617,12 +671,12 @@ public class JaxrsTest extends TestHelper {
         ServiceRegistration<Application> ungettableServiceRegistration =
             registerUngettableApplication("service.ranking", -1);
 
-        assertEquals(1, _runtime.getRuntimeDTO().applicationDTOs.length);
-        assertEquals(1, _runtime.getRuntimeDTO().failedApplicationDTOs.length);
+        assertEquals(1, getRuntimeDTO().applicationDTOs.length);
+        assertEquals(1, getRuntimeDTO().failedApplicationDTOs.length);
 
         assertEquals(
             DTOConstants.FAILURE_REASON_SERVICE_NOT_GETTABLE,
-            _runtime.getRuntimeDTO().failedApplicationDTOs[0].failureReason);
+            getRuntimeDTO().failedApplicationDTOs[0].failureReason);
 
         assertEquals(
             "Hello application",
@@ -630,22 +684,22 @@ public class JaxrsTest extends TestHelper {
 
         serviceRegistration.unregister();
 
-        assertEquals(0, _runtime.getRuntimeDTO().applicationDTOs.length);
-        assertEquals(1, _runtime.getRuntimeDTO().failedApplicationDTOs.length);
+        assertEquals(0, getRuntimeDTO().applicationDTOs.length);
+        assertEquals(1, getRuntimeDTO().failedApplicationDTOs.length);
 
         assertEquals(404, webTarget.request().get().getStatus());
 
         ungettableServiceRegistration.unregister();
 
-        assertEquals(0, _runtime.getRuntimeDTO().applicationDTOs.length);
-        assertEquals(0, _runtime.getRuntimeDTO().failedApplicationDTOs.length);
+        assertEquals(0, getRuntimeDTO().applicationDTOs.length);
+        assertEquals(0, getRuntimeDTO().failedApplicationDTOs.length);
     }
 
     @Test
     public void testInvalidExtension() throws InterruptedException {
         WebTarget webTarget = createDefaultTarget().path("test");
 
-        RuntimeDTO runtimeDTO = _runtime.getRuntimeDTO();
+        RuntimeDTO runtimeDTO = getRuntimeDTO();
 
         assertEquals(0, runtimeDTO.defaultApplication.extensionDTOs.length);
 
@@ -654,7 +708,7 @@ public class JaxrsTest extends TestHelper {
         ServiceRegistration<?> filterRegistration = registerInvalidExtension(
             "Filter");
 
-        runtimeDTO = _runtime.getRuntimeDTO();
+        runtimeDTO = getRuntimeDTO();
 
         assertEquals(0, runtimeDTO.defaultApplication.extensionDTOs.length);
 
@@ -677,7 +731,7 @@ public class JaxrsTest extends TestHelper {
 
         filterRegistration.unregister();
 
-        runtimeDTO = _runtime.getRuntimeDTO();
+        runtimeDTO = getRuntimeDTO();
 
         assertEquals(0, runtimeDTO.defaultApplication.extensionDTOs.length);
 
@@ -686,23 +740,23 @@ public class JaxrsTest extends TestHelper {
 
     @Test
     public void testNotGettableApplication() throws InterruptedException {
-        assertEquals(0, _runtime.getRuntimeDTO().applicationDTOs.length);
-        assertEquals(0, _runtime.getRuntimeDTO().failedApplicationDTOs.length);
+        assertEquals(0, getRuntimeDTO().applicationDTOs.length);
+        assertEquals(0, getRuntimeDTO().failedApplicationDTOs.length);
 
         ServiceRegistration<Application> serviceRegistration =
             registerUngettableApplication();
 
-        assertEquals(0, _runtime.getRuntimeDTO().applicationDTOs.length);
-        assertEquals(1, _runtime.getRuntimeDTO().failedApplicationDTOs.length);
+        assertEquals(0, getRuntimeDTO().applicationDTOs.length);
+        assertEquals(1, getRuntimeDTO().failedApplicationDTOs.length);
 
         assertEquals(
             DTOConstants.FAILURE_REASON_SERVICE_NOT_GETTABLE,
-            _runtime.getRuntimeDTO().failedApplicationDTOs[0].failureReason);
+            getRuntimeDTO().failedApplicationDTOs[0].failureReason);
 
         serviceRegistration.unregister();
 
-        assertEquals(0, _runtime.getRuntimeDTO().applicationDTOs.length);
-        assertEquals(0, _runtime.getRuntimeDTO().failedApplicationDTOs.length);
+        assertEquals(0, getRuntimeDTO().applicationDTOs.length);
+        assertEquals(0, getRuntimeDTO().failedApplicationDTOs.length);
     }
 
     @Test
@@ -751,7 +805,7 @@ public class JaxrsTest extends TestHelper {
     public void testStandaloneEndPoint() throws InterruptedException {
         WebTarget webTarget = createDefaultTarget().path("test");
 
-        _runtime.getRuntimeDTO();
+        getRuntimeDTO();
 
         registerAddon(new TestAddon());
 
@@ -1045,6 +1099,10 @@ public class JaxrsTest extends TestHelper {
         return _runtimeTracker.waitForService(15000L);
     }
 
+    private RuntimeDTO getRuntimeDTO() {
+        return _runtime.getRuntimeDTO();
+    }
+
     private ServiceRegistration<?> registerAddon(
         Object instance, Object... keyValues) {
 
@@ -1111,10 +1169,12 @@ public class JaxrsTest extends TestHelper {
 
         Dictionary<String, Object> properties = new Hashtable<>();
 
-        properties.put(JAX_RS_APPLICATION_BASE, "/test-application");
-
         for (int i = 0; i < keyValues.length; i = i + 2) {
             properties.put(keyValues[i].toString(), keyValues[i + 1]);
+        }
+
+        if (properties.get(JAX_RS_APPLICATION_BASE) == null) {
+            properties.put(JAX_RS_APPLICATION_BASE, "/test-application");
         }
 
         ServiceRegistration<Application> serviceRegistration =
