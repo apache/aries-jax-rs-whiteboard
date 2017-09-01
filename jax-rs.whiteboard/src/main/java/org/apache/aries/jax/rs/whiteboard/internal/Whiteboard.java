@@ -714,20 +714,20 @@ public class Whiteboard {
                 runtime::addNotGettableApplication,
                 runtime::removeNotGettableApplication);
 
-        OSGi<ServiceTuple<Application>> highestRankedPerPath = highestPer(
-            APPLICATION_BASE, gettableAplicationForWhiteboard,
-            t -> runtime.addShadowedApplication(t.getServiceReference()),
-            t -> runtime.removeShadowedApplication(t.getServiceReference())
-        );
-
         OSGi<ServiceTuple<Application>> highestRankedPerName = highestPer(
-            APPLICATION_NAME, highestRankedPerPath,
+            APPLICATION_NAME, gettableAplicationForWhiteboard,
             t -> runtime.addClashingApplication(t.getServiceReference()),
             t -> runtime.removeClashingApplication(t.getServiceReference())
         );
 
+        OSGi<ServiceTuple<Application>> highestRankedPerPath = highestPer(
+            APPLICATION_BASE, highestRankedPerName,
+            t -> runtime.addShadowedApplication(t.getServiceReference()),
+            t -> runtime.removeShadowedApplication(t.getServiceReference())
+        );
+
         return
-            highestRankedPerName.flatMap(
+            highestRankedPerPath.flatMap(
                 tuple -> deployApplication(
                     configuration, bundleContext, tuple, runtime)
             ).map(
