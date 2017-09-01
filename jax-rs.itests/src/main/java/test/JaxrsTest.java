@@ -396,6 +396,74 @@ public class JaxrsTest extends TestHelper {
                 request().
                 get(String.class));
 
+        ServiceRegistration<Application> serviceRegistration2 =
+            registerApplication(
+                new TestApplicationConflict(), JAX_RS_NAME, ".default",
+                "service.ranking", 1);
+
+        assertEquals(0, getRuntimeDTO().applicationDTOs.length);
+        assertEquals(2, getRuntimeDTO().failedApplicationDTOs.length);
+        assertEquals(
+            serviceRegistration2.getReference().getProperty("service.id"),
+            getRuntimeDTO().defaultApplication.serviceId);
+        assertEquals(
+            DTOConstants.FAILURE_REASON_DUPLICATE_NAME,
+            getRuntimeDTO().failedApplicationDTOs[0].failureReason);
+        assertEquals(
+            DTOConstants.FAILURE_REASON_DUPLICATE_NAME,
+            getRuntimeDTO().failedApplicationDTOs[1].failureReason);
+
+        assertEquals(
+            "Hello application conflict",
+            createDefaultTarget().
+                path("/test-application").
+                request().
+                get().
+                readEntity(String.class));
+
+        assertEquals(
+            404,
+            createDefaultTarget().path("/test").request().get().getStatus());
+
+        assertEquals(
+            "Hello test",
+            createDefaultTarget().
+                path("/test-application").
+                path("/test").
+                request().
+                get(String.class));
+
+        serviceRegistration2.unregister();
+
+        assertEquals(0, getRuntimeDTO().applicationDTOs.length);
+        assertEquals(1, getRuntimeDTO().failedApplicationDTOs.length);
+        assertEquals(
+            serviceRegistration.getReference().getProperty("service.id"),
+            getRuntimeDTO().defaultApplication.serviceId);
+        assertEquals(
+            DTOConstants.FAILURE_REASON_DUPLICATE_NAME,
+            getRuntimeDTO().failedApplicationDTOs[0].failureReason);
+
+        assertEquals(
+            "Hello application",
+            createDefaultTarget().
+                path("/test-application").
+                request().
+                get().
+                readEntity(String.class));
+
+        assertEquals(
+            404,
+            createDefaultTarget().path("/test").request().get().getStatus());
+
+        assertEquals(
+            "Hello test",
+            createDefaultTarget().
+                path("/test-application").
+                path("/test").
+                request().
+                get(String.class));
+
         serviceRegistration.unregister();
 
         assertEquals(0, getRuntimeDTO().applicationDTOs.length);
