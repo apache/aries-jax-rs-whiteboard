@@ -20,12 +20,13 @@ package org.apache.aries.jax.rs.whiteboard.internal;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.stream.Stream;
 
 import javax.ws.rs.core.Application;
 import javax.ws.rs.core.Feature;
 
-import org.apache.aries.jax.rs.whiteboard.internal.Utils.ComparableResourceProvider;
+import org.apache.aries.jax.rs.whiteboard.internal.Utils.ServiceReferenceResourceProvider;
 import org.apache.aries.jax.rs.whiteboard.internal.Utils.ServiceTuple;
 import org.apache.cxf.Bus;
 import org.apache.cxf.endpoint.Server;
@@ -43,12 +44,12 @@ import static org.apache.aries.jax.rs.whiteboard.internal.Utils.canonicalize;
 
 public class CXFJaxRsServiceRegistrator {
 
-    private volatile boolean _closed = false;
     private final Application _application;
     private final Bus _bus;
     private final Collection<ServiceTuple<?>> _providers = new ArrayList<>();
-    private Server _server;
     private final Collection<ResourceProvider> _services = new ArrayList<>();
+    private volatile boolean _closed = false;
+    private Server _server;
 
     public CXFJaxRsServiceRegistrator(Bus bus, Application application) {
         _bus = bus;
@@ -89,6 +90,16 @@ public class CXFJaxRsServiceRegistrator {
         _closed = true;
     }
 
+    public <T> T createEndpoint(Application app, Class<T> endpointType) {
+        JAXRSServerFactoryBean bean = ResourceUtils.createApplication(app, false);
+        if (JAXRSServerFactoryBean.class.isAssignableFrom(endpointType)) {
+            return endpointType.cast(bean);
+        }
+        bean.setStart(false);
+        Server server = bean.create();
+        return endpointType.cast(server);
+    }
+
     public void remove(ResourceProvider resourceProvider) {
         if (_closed) {
             return;
@@ -112,6 +123,13 @@ public class CXFJaxRsServiceRegistrator {
     private static class ComparableResourceComparator
         implements ResourceComparator {
 
+        private static Comparator<ServiceReferenceResourceProvider> comparator;
+
+        static {
+            comparator = Comparator.comparing(
+                ServiceReferenceResourceProvider::getServiceReference);
+        }
+
         @Override
         public int compare(
             ClassResourceInfo cri1, ClassResourceInfo cri2, Message message) {
@@ -119,18 +137,19 @@ public class CXFJaxRsServiceRegistrator {
             ResourceProvider rp1 = cri1.getResourceProvider();
             ResourceProvider rp2 = cri2.getResourceProvider();
 
-            if (rp1 instanceof ComparableResourceProvider &&
-                rp2 instanceof ComparableResourceProvider) {
+            if (rp1 instanceof ServiceReferenceResourceProvider &&
+                rp2 instanceof ServiceReferenceResourceProvider) {
 
-                return -((ComparableResourceProvider) rp1).compareTo(
-                    (ComparableResourceProvider) rp2);
+                return comparator.compare(
+                    (ServiceReferenceResourceProvider)rp2,
+                    (ServiceReferenceResourceProvider)rp1);
             }
 
-            if (rp1 instanceof ComparableResourceProvider) {
+            if (rp1 instanceof ServiceReferenceResourceProvider) {
                 return 1;
             }
 
-            if (rp2 instanceof ComparableResourceProvider) {
+            if (rp2 instanceof ServiceReferenceResourceProvider) {
                 return -1;
             }
 
@@ -211,16 +230,6 @@ public class CXFJaxRsServiceRegistrator {
         _server = jaxRsServerFactoryBean.create();
 
         _server.start();
-    }
-
-    public <T> T createEndpoint(Application app, Class<T> endpointType) {
-        JAXRSServerFactoryBean bean = ResourceUtils.createApplication(app, false);
-        if (JAXRSServerFactoryBean.class.isAssignableFrom(endpointType)) {
-            return endpointType.cast(bean);
-        }
-        bean.setStart(false);
-        Server server = bean.create();
-        return endpointType.cast(server);
     }
 
 }

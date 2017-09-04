@@ -51,12 +51,12 @@ import javax.ws.rs.ext.ReaderInterceptor;
 import javax.ws.rs.ext.WriterInterceptor;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Dictionary;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
@@ -101,21 +101,9 @@ import static org.osgi.service.jaxrs.whiteboard.JaxRSWhiteboardConstants.JAX_RS_
  */
 public class Whiteboard {
 
-    public static final Function<ServiceTuple<Application>, String>
-        APPLICATION_BASE =
-        ((Function<ServiceTuple<Application>, ServiceReference<Application>>)
-            ServiceTuple::getServiceReference).andThen(
-                sr -> getApplicationBase(sr::getProperty));
-
-    public static final Function<ServiceTuple<Application>, String>
-        APPLICATION_NAME =
-        ((Function<ServiceTuple<Application>, ServiceReference<Application>>)
-            ServiceTuple::getServiceReference).andThen(
-            sr -> getApplicationName(sr::getProperty));
-
-    public static final Collection<String> SUPPORTED_EXTENSION_INTERFACES =
-        new HashSet<>(
-            Arrays.asList(
+    static final Collection<String> SUPPORTED_EXTENSION_INTERFACES =
+        Collections.unmodifiableSet(
+            new HashSet<>(Arrays.asList(
                 ContainerRequestFilter.class.getName(),
                 ContainerResponseFilter.class.getName(),
                 ReaderInterceptor.class.getName(),
@@ -127,15 +115,18 @@ public class Whiteboard {
                 ParamConverterProvider.class.getName(),
                 Feature.class.getName(),
                 DynamicFeature.class.getName()
-            ));
-
-    public static final String DEFAULT_NAME = ".default";
-
-    public static OSGi<ServiceReference<CXFJaxRsServiceRegistrator>>
-        allApplicationReferences() {
-
-        return serviceReferences(CXFJaxRsServiceRegistrator.class);
-    }
+        )));
+    static final String DEFAULT_NAME = ".default";
+    private static final Function<ServiceTuple<Application>, String>
+        APPLICATION_BASE =
+        ((Function<ServiceTuple<Application>, ServiceReference<Application>>)
+            ServiceTuple::getServiceReference).andThen(
+                sr -> getApplicationBase(sr::getProperty));
+    private static final Function<ServiceTuple<Application>, String>
+        APPLICATION_NAME =
+        ((Function<ServiceTuple<Application>, ServiceReference<Application>>)
+            ServiceTuple::getServiceReference).andThen(
+            sr -> getApplicationName(sr::getProperty));
 
     public static OSGi<?> createWhiteboard(
         Dictionary<String, ?> configuration) {
@@ -165,46 +156,6 @@ public class Whiteboard {
                         whiteBoardApplicationExtensions(
                             bundleContext, runtimeReference, runtime, counter)
             )))))));
-    }
-
-    public static OSGi<ServiceReference<CXFJaxRsServiceRegistrator>>
-        defaultApplication() {
-
-        return
-            repeatInOrder(
-                serviceReferences(
-                    CXFJaxRsServiceRegistrator.class,
-                    String.format(
-                        "(%s=%s)", JAX_RS_NAME, DEFAULT_NAME)
-                )
-            );
-    }
-
-    public static OSGi<?> deployRegistrator(
-        Bus bus, ServiceTuple<Application> tuple, Map<String, Object> props,
-        AriesJaxRSServiceRuntime runtime) {
-
-        try {
-            CXFJaxRsServiceRegistrator registrator =
-                new CXFJaxRsServiceRegistrator(bus, tuple.getService());
-
-            return
-                onClose(registrator::close).then(
-                register(CXFJaxRsServiceRegistrator.class, registrator, props)
-            );
-        }
-        catch (Exception e) {
-            ServiceReference<Application> serviceReference =
-                tuple.getServiceReference();
-
-            runtime.addErroredApplication(serviceReference);
-
-            return onClose(
-                () -> runtime.removeErroredApplication(serviceReference)
-            ).then(
-                nothing()
-            );
-        }
     }
 
     public static String getApplicationBase(PropertyHolder properties) {
@@ -290,6 +241,12 @@ public class Whiteboard {
             ));
     }
 
+    private static OSGi<ServiceReference<CXFJaxRsServiceRegistrator>>
+        allApplicationReferences() {
+
+        return serviceReferences(CXFJaxRsServiceRegistrator.class);
+    }
+
     private static OSGi<Collection<String>> bestEffortCalculationOfEnpoints(
         Filter filter) {
 
@@ -298,14 +255,9 @@ public class Whiteboard {
         return
             serviceReferences(HttpServiceRuntime.class, filter.toString()).
                 map(
-                    r -> Strings.stringPlus(
-                        r.getProperty(HTTP_SERVICE_ENDPOINT))
-                ).
-                filter(
-                    Optional::isPresent
-                ).
-                map(
-                    Optional::get
+                    r -> Arrays.asList(
+                        canonicalize(
+                            r.getProperty(HTTP_SERVICE_ENDPOINT)))
                 ).
                 foreach(
                     endPoints::addAll,
@@ -365,6 +317,19 @@ public class Whiteboard {
         return cxfNonSpringServlet;
     }
 
+    private static OSGi<ServiceReference<CXFJaxRsServiceRegistrator>>
+        defaultApplication() {
+
+        return
+            repeatInOrder(
+                serviceReferences(
+                    CXFJaxRsServiceRegistrator.class,
+                    String.format(
+                        "(%s=%s)", JAX_RS_NAME, DEFAULT_NAME)
+                )
+            );
+    }
+
     private static OSGi<ServiceTuple<Application>> deployApplication(
         Map<String, ?> configuration, BundleContext bundleContext,
         ServiceTuple<Application> tuple, AriesJaxRSServiceRuntime runtime) {
@@ -386,6 +351,33 @@ public class Whiteboard {
                 bus, getApplicationBase(properties::get), properties)).then(
             just(tuple)
         );
+    }
+
+    private static OSGi<?> deployRegistrator(
+        Bus bus, ServiceTuple<Application> tuple, Map<String, Object> props,
+        AriesJaxRSServiceRuntime runtime) {
+
+        try {
+            CXFJaxRsServiceRegistrator registrator =
+                new CXFJaxRsServiceRegistrator(bus, tuple.getService());
+
+            return
+                onClose(registrator::close).then(
+                register(CXFJaxRsServiceRegistrator.class, registrator, props)
+            );
+        }
+        catch (RuntimeException e) {
+            ServiceReference<Application> serviceReference =
+                tuple.getServiceReference();
+
+            runtime.addErroredApplication(serviceReference);
+
+            return onClose(
+                () -> runtime.removeErroredApplication(serviceReference)
+            ).then(
+                nothing()
+            );
+        }
     }
 
     private static String getApplicationExtensionsFilter() {

@@ -30,6 +30,8 @@ import org.osgi.service.jaxrs.runtime.dto.RequestInfoDTO;
 import org.osgi.service.jaxrs.runtime.dto.ResourceDTO;
 import org.osgi.service.jaxrs.runtime.dto.RuntimeDTO;
 import org.osgi.service.jaxrs.whiteboard.JaxRSWhiteboardConstants;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.core.Application;
 import java.util.ArrayList;
@@ -56,42 +58,32 @@ import static org.osgi.service.jaxrs.whiteboard.JaxRSWhiteboardConstants.JAX_RS_
 public class AriesJaxRSServiceRuntime implements JaxRSServiceRuntime {
 
     private static final long serialVersionUID = 1L;
-
+    private static final Logger _LOGGER = LoggerFactory.getLogger(
+        Whiteboard.class);
     private ConcurrentHashMap<String, Map<String, Object>>
         _applications = new ConcurrentHashMap<>();
-
     private ConcurrentHashMap<String, Collection<ServiceReference<?>>>
         _applicationEndpoints = new ConcurrentHashMap<>();
-
     private ConcurrentHashMap<String, Collection<ServiceReference<?>>>
         _applicationExtensions = new ConcurrentHashMap<>();
-
     private Collection<ServiceReference<Application>>
         _ungettableApplications = new CopyOnWriteArrayList<>();
-
     private Collection<ServiceReference<Application>> _shadowedApplications =
         new CopyOnWriteArrayList<>();
-
     private Set<ServiceReference<Application>> _dependentApplications =
         ConcurrentHashMap.newKeySet();
-
     private Collection<ServiceReference<Application>> _clashingApplications =
         new CopyOnWriteArrayList<>();
-
     private Collection<ServiceReference<Application>> _erroredApplications =
         new CopyOnWriteArrayList<>();
-
     private Collection<ServiceReference<?>> _ungettableEndpoints =
         new CopyOnWriteArrayList<>();
     private Collection<ServiceReference<?>> _ungettableExtensions =
         new CopyOnWriteArrayList<>();
-
     private Set<ServiceReference<?>> _dependentServices =
         ConcurrentHashMap.newKeySet();
-
     private Collection<ServiceReference<?>> _invalidExtensions =
         new CopyOnWriteArrayList<>();
-
     private volatile Map<String, Object> _defaultApplicationProperties;
 
     public void addApplicationEndpoint(
@@ -138,17 +130,35 @@ public class AriesJaxRSServiceRuntime implements JaxRSServiceRuntime {
     public boolean addNotGettableApplication(
         ServiceReference<Application> serviceReference) {
 
+        if (_LOGGER.isWarnEnabled()) {
+            _LOGGER.warn(
+                "Application from reference " + serviceReference +
+                    " can't be got");
+        }
+
         return _ungettableApplications.add(serviceReference);
     }
 
     public <T> boolean addNotGettableEndpoint(
         ServiceReference<T> serviceReference) {
 
+        if (_LOGGER.isWarnEnabled()) {
+            _LOGGER.warn(
+                "Resource from reference " + serviceReference +
+                    " can't be got");
+        }
+
         return _ungettableEndpoints.add(serviceReference);
     }
 
     public <T> void addNotGettableExtension(
         ServiceReference<T> serviceReference) {
+
+        if (_LOGGER.isWarnEnabled()) {
+            _LOGGER.warn(
+                "Extension from reference " + serviceReference +
+                    " can't be got");
+        }
 
         _ungettableExtensions.add(serviceReference);
     }
@@ -295,14 +305,6 @@ public class AriesJaxRSServiceRuntime implements JaxRSServiceRuntime {
                 return properties;
             });
     }
-
-    /*public void setDefaultApplication(Map<String, Object> properties) {
-        _applications.compute(DEFAULT_NAME, (__, ___) -> {
-            _defaultApplicationProperties = properties;
-
-            return properties;
-        });
-    }*/
 
     public Map<String, Object> unsetApplicationForPath(String path) {
         return _applications.remove(path);

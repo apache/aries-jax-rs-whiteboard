@@ -23,6 +23,7 @@ import org.apache.cxf.jaxrs.lifecycle.ResourceProvider;
 import org.apache.cxf.message.Message;
 import org.osgi.framework.ServiceObjects;
 import org.osgi.framework.ServiceReference;
+import org.slf4j.Logger;
 
 import java.util.Collection;
 import java.util.Comparator;
@@ -52,8 +53,15 @@ public class Utils {
             return (String[]) propertyValue;
         }
         if (propertyValue instanceof Collection) {
-            return ((Collection<String>) propertyValue).toArray(new String[0]);
+            return
+                ((Collection<?>)propertyValue).stream().
+                    map(
+                        Object::toString
+                    ).toArray(
+                        String[]::new
+                    );
         }
+
         return new String[]{propertyValue.toString()};
     }
 
@@ -80,7 +88,8 @@ public class Utils {
         ServiceReference<T> serviceReference =
             serviceObjects.getServiceReference();
 
-        return new ComparableResourceProvider(serviceReference, serviceObjects);
+        return new ServiceReferenceResourceProvider(
+            serviceReference, serviceObjects);
     }
 
     public static <K, T extends Comparable<? super T>> OSGi<T> highestPer(
@@ -166,23 +175,18 @@ public class Utils {
 
     public interface ApplicationExtensionRegistration {}
 
-    public static class ComparableResourceProvider
-        implements ResourceProvider, Comparable<ComparableResourceProvider> {
+    public static class ServiceReferenceResourceProvider
+        implements ResourceProvider {
 
         private final ServiceObjects<?> _serviceObjects;
         private ServiceReference<?> _serviceReference;
 
-        public ComparableResourceProvider(
+        ServiceReferenceResourceProvider(
             ServiceReference<?> serviceReference,
             ServiceObjects<?> serviceObjects) {
             _serviceReference = serviceReference;
 
             _serviceObjects = serviceObjects;
-        }
-
-        @Override
-        public int compareTo(ComparableResourceProvider o) {
-            return _serviceReference.compareTo(o._serviceReference);
         }
 
         @Override
@@ -214,6 +218,10 @@ public class Utils {
             return false;
         }
 
+        ServiceReference<?> getServiceReference() {
+            return _serviceReference;
+        }
+
     }
 
     public static class ServiceTuple<T> implements Comparable<ServiceTuple<T>> {
@@ -221,22 +229,25 @@ public class Utils {
         private final ServiceReference<T> _serviceReference;
         private final T _service;
 
-        public ServiceTuple(ServiceReference<T> a, T service) {
+        ServiceTuple(ServiceReference<T> a, T service) {
             _serviceReference = a;
             _service = service;
+        }
+
+        @Override
+        public int compareTo(ServiceTuple<T> o) {
+            return _serviceReference.compareTo(o._serviceReference);
         }
 
         public T getService() {
             return _service;
         }
 
-        public ServiceReference<T> getServiceReference() {
-            return _serviceReference;
-        }
         @Override
         public int hashCode() {
             return _serviceReference.hashCode();
         }
+
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;
@@ -245,9 +256,10 @@ public class Utils {
             ServiceTuple<?> that = (ServiceTuple<?>) o;
 
             return _serviceReference.equals(that._serviceReference);
-        }@Override
-        public int compareTo(ServiceTuple<T> o) {
-            return _serviceReference.compareTo(o._serviceReference);
+        }
+
+        ServiceReference<T> getServiceReference() {
+            return _serviceReference;
         }
 
 
