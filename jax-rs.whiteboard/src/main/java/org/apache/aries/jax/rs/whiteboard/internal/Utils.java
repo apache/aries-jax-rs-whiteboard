@@ -24,6 +24,7 @@ import org.apache.cxf.message.Message;
 import org.osgi.framework.ServiceObjects;
 import org.osgi.framework.ServiceReference;
 
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -49,6 +50,9 @@ public class Utils {
         }
         if (propertyValue instanceof String[]) {
             return (String[]) propertyValue;
+        }
+        if (propertyValue instanceof Collection) {
+            return ((Collection<String>) propertyValue).toArray(new String[0]);
         }
         return new String[]{propertyValue.toString()};
     }

@@ -33,6 +33,7 @@ import org.osgi.service.jaxrs.whiteboard.JaxRSWhiteboardConstants;
 
 import javax.ws.rs.core.Application;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -45,8 +46,10 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.BiFunction;
 import java.util.stream.Stream;
 
+import static org.apache.aries.jax.rs.whiteboard.internal.Utils.canonicalize;
 import static org.apache.aries.jax.rs.whiteboard.internal.Utils.generateApplicationName;
 import static org.apache.aries.jax.rs.whiteboard.internal.Whiteboard.DEFAULT_NAME;
+import static org.apache.aries.jax.rs.whiteboard.internal.Whiteboard.SUPPORTED_EXTENSION_INTERFACES;
 import static org.apache.aries.jax.rs.whiteboard.internal.Whiteboard.getApplicationBase;
 import static org.osgi.service.jaxrs.whiteboard.JaxRSWhiteboardConstants.JAX_RS_NAME;
 
@@ -490,6 +493,13 @@ public class AriesJaxRSServiceRuntime implements JaxRSServiceRuntime {
             toString();
         extensionDTO.serviceId = (Long)serviceReference.getProperty(
             "service.id");
+        extensionDTO.extensionTypes =
+            Arrays.stream(
+                canonicalize(serviceReference.getProperty("objectClass"))).
+            filter(
+                SUPPORTED_EXTENSION_INTERFACES::contains
+            ).
+            toArray(String[]::new);
 
         return extensionDTO;
     }
