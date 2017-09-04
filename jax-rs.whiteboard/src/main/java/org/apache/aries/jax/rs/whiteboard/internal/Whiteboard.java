@@ -82,7 +82,6 @@ import static org.apache.aries.osgi.functional.OSGi.nothing;
 import static org.apache.aries.osgi.functional.OSGi.onClose;
 import static org.apache.aries.osgi.functional.OSGi.register;
 import static org.apache.aries.osgi.functional.OSGi.serviceReferences;
-import static org.apache.aries.osgi.functional.OSGi.services;
 import static org.osgi.service.http.runtime.HttpServiceRuntimeConstants.HTTP_SERVICE_ENDPOINT;
 import static org.osgi.service.http.whiteboard.HttpWhiteboardConstants.HTTP_WHITEBOARD_CONTEXT_NAME;
 import static org.osgi.service.http.whiteboard.HttpWhiteboardConstants.HTTP_WHITEBOARD_CONTEXT_SELECT;
@@ -784,28 +783,6 @@ public class Whiteboard {
 
             _serviceRegistration.setProperties(properties);
         }
-    }
-
-    private static class ApplicationReference {
-        private final String _applicationName;
-        private final CXFJaxRsServiceRegistrator _registrator;
-
-        public ApplicationReference(
-            String applicationName,
-            CXFJaxRsServiceRegistrator registrator) {
-
-            _applicationName = applicationName;
-            _registrator = registrator;
-        }
-
-        public String getApplicationName() {
-            return _applicationName;
-        }
-
-        public CXFJaxRsServiceRegistrator getRegistrator() {
-            return _registrator;
-        }
-
     }
 
 }
