@@ -194,7 +194,6 @@ public class Whiteboard {
     }
 
     private OSGi<?> applicationExtensions() {
-
         return
             onlySupportedInterfaces(
                     countChanges(
@@ -206,10 +205,9 @@ public class Whiteboard {
                     resourceReference, Whiteboard::allApplicationReferences).
                 flatMap(registratorReference ->
             waitForExtensionDependencies(
-                _bundleContext, resourceReference,
-                getApplicationName(registratorReference::getProperty), _runtime,
-            safeRegisterExtension(
-                resourceReference, registratorReference, _runtime)
+                resourceReference,
+                getApplicationName(registratorReference::getProperty),
+            safeRegisterExtension(resourceReference, registratorReference)
         )));
     }
 
@@ -220,22 +218,19 @@ public class Whiteboard {
             chooseApplication(resourceReference, this::defaultApplication).
                 flatMap(registratorReference ->
             waitForExtensionDependencies(
-                _bundleContext, resourceReference,
-                getApplicationName(registratorReference::getProperty), _runtime,
-                safeRegisterEndpoint(
-                    resourceReference, registratorReference, _runtime)
+                resourceReference,
+                getApplicationName(registratorReference::getProperty),
+            safeRegisterEndpoint(resourceReference, registratorReference)
         )));
     }
 
     private OSGi<?> applications() {
-
         OSGi<ServiceTuple<Application>> gettableAplicationForWhiteboard =
             onlyGettables(
                 countChanges(
                     getApplicationsForWhiteboard(), _counter).
                 flatMap(
-                    sr -> waitForApplicationDependencies(
-                        _bundleContext, sr, _runtime, just(sr))),
+                    sr -> waitForApplicationDependencies(sr, just(sr))),
                 _runtime::addNotGettableApplication,
                 _runtime::removeNotGettableApplication);
 
@@ -293,8 +288,7 @@ public class Whiteboard {
             serviceReferences(HttpServiceRuntime.class, filter.toString()).
                 map(
                     r -> Arrays.asList(
-                        canonicalize(
-                            r.getProperty(HTTP_SERVICE_ENDPOINT)))
+                        canonicalize(r.getProperty(HTTP_SERVICE_ENDPOINT)))
                 ).
                 foreach(
                     this::addHttpEndpoints,
@@ -366,6 +360,200 @@ public class Whiteboard {
             updateProperty(
                 _runtimeRegistration, JAX_RS_SERVICE_ENDPOINT, _endpoints);
         }
+    }
+
+    private <T> OSGi<?> safeRegisterEndpoint(
+        ServiceReference<T> serviceReference,
+        ServiceReference<CXFJaxRsServiceRegistrator> registratorReference) {
+
+        String applicationName = getApplicationName(
+            registratorReference::getProperty);
+
+        return
+            service(registratorReference).flatMap(registrator ->
+            onlyGettables(
+                just(serviceReference),
+                _runtime::addNotGettableEndpoint,
+                _runtime::removeNotGettableEndpoint
+            ).flatMap(
+                tuple -> serviceObjects(serviceReference).flatMap(
+                    serviceObjects -> registerEndpoint(
+                        registrator, serviceObjects).flatMap(
+                            resourceProvider ->
+                                onClose(
+                                    () -> Utils.unregisterEndpoint(
+                                        registrator, resourceProvider)
+                                )
+                    )
+                )
+            ).foreach(
+                __ -> _runtime.addApplicationEndpoint(
+                    applicationName, serviceReference),
+                __ -> _runtime.removeApplicationEndpoint(
+                    applicationName, serviceReference)
+            ));
+    }
+
+    private OSGi<?> safeRegisterExtension(
+        ServiceReference<?> serviceReference,
+        ServiceReference<CXFJaxRsServiceRegistrator> registratorReference) {
+
+        Map<String, Object> properties = getProperties(serviceReference);
+
+        String applicationName = getApplicationName(
+            registratorReference::getProperty);
+
+        properties.put(JAX_RS_NAME, applicationName);
+        properties.put(
+            "original.objectClass",
+            serviceReference.getProperty("objectClass"));
+
+        return
+            service(registratorReference).flatMap(registrator ->
+            onlyGettables(
+                just(serviceReference),
+                _runtime::addNotGettableExtension,
+                _runtime::removeNotGettableExtension
+            ).foreach(
+                registrator::addProvider,
+                registrator::removeProvider
+            ).foreach(
+                __ -> _runtime.addApplicationExtension(
+                    applicationName, serviceReference),
+                __ -> _runtime.removeApplicationExtension(
+                    applicationName, serviceReference)
+            ).then(
+                register(
+                    ApplicationExtensionRegistration.class,
+                    new ApplicationExtensionRegistration(){}, properties)
+            ));
+    }
+
+    private OSGi<ServiceReference<Application>>
+        waitForApplicationDependencies(
+            ServiceReference<Application> applicationReference,
+            OSGi<ServiceReference<Application>> program) {
+
+        String[] extensionDependencies = canonicalize(
+            applicationReference.getProperty(JAX_RS_EXTENSION_SELECT));
+
+        if (extensionDependencies.length > 0) {
+            program = onClose(
+                () -> _runtime.removeDependentApplication(
+                    applicationReference)).
+                then(program);
+
+            _runtime.addDependentApplication(applicationReference);
+        }
+        else {
+            return program;
+        }
+
+        for (String extensionDependency : extensionDependencies) {
+            extensionDependency = String.format(
+                "(&(!(objectClass=%s))%s)",
+                ApplicationExtensionRegistration.class.getName(),
+                extensionDependency);
+
+            program =
+                serviceReferences(extensionDependency).
+                    flatMap(
+                        sr -> {
+                            Object applicationSelectProperty =
+                                sr.getProperty(JAX_RS_APPLICATION_SELECT);
+
+                            if (applicationSelectProperty == null) {
+                                return just(applicationReference);
+                            }
+
+                            Filter filter;
+
+                            try {
+                                filter = _bundleContext.createFilter(
+                                    applicationSelectProperty.toString());
+                            }
+                            catch (InvalidSyntaxException e) {
+                                return nothing();
+                            }
+
+                            if (filter.match(applicationReference)) {
+                                return just(applicationReference);
+                            }
+
+                            return nothing();
+                        }
+                    ).foreach(
+                    __ -> {},
+                    __ -> _runtime.addDependentApplication(
+                        applicationReference)
+                ).
+                    then(program);
+        }
+
+        program = onClose(
+            ()-> _runtime.removeDependentApplication(applicationReference)).
+            then(program);
+
+        program = program.foreach(
+            __ -> _runtime.removeDependentApplication(applicationReference)
+        ).
+        then(
+            just(applicationReference)
+        );
+
+        return program;
+    }
+
+    private OSGi<?> waitForExtensionDependencies(
+        ServiceReference<?> serviceReference, String applicationName,
+        OSGi<?> program) {
+
+        String[] extensionDependencies = canonicalize(
+            serviceReference.getProperty(JAX_RS_EXTENSION_SELECT));
+
+        if (extensionDependencies.length > 0) {
+            _runtime.addDependentService(serviceReference);
+        }
+        else {
+            return program;
+        }
+
+        for (String extensionDependency : extensionDependencies) {
+            try {
+                extensionDependency = extensionDependency.replace(
+                    "(objectClass=", "(original.objectClass=");
+
+                Filter extensionFilter = _bundleContext.createFilter(
+                    extensionDependency);
+
+                program =
+                    serviceReferences(ApplicationExtensionRegistration.class).
+                        filter(
+                            sr -> getApplicationName(sr::getProperty).equals(
+                                applicationName)
+                        ).
+                        filter(
+                            extensionFilter::match
+                        ).foreach(
+                            __ -> {},
+                            __ -> _runtime.addDependentService(serviceReference)
+                        ).
+                        then(program);
+            }
+            catch (InvalidSyntaxException e) {
+
+            }
+        }
+
+        program = onClose(
+            () -> _runtime.removeDependentService(serviceReference)).
+            then(program);
+
+        program = program.foreach(
+            __ -> _runtime.removeDependentService(serviceReference)
+        );
+
+        return program;
     }
 
     static String getApplicationBase(PropertyHolder properties) {
@@ -551,75 +739,6 @@ public class Whiteboard {
         return just(resourceProvider);
     }
 
-    private static <T> OSGi<?> safeRegisterEndpoint(
-        ServiceReference<T> serviceReference,
-        ServiceReference<CXFJaxRsServiceRegistrator> registratorReference,
-        AriesJaxRSServiceRuntime runtime) {
-
-        String applicationName = getApplicationName(
-            registratorReference::getProperty);
-
-        return
-            service(registratorReference).flatMap(registrator ->
-            onlyGettables(
-                just(serviceReference),
-                runtime::addNotGettableEndpoint,
-                runtime::removeNotGettableEndpoint
-            ).flatMap(
-                tuple -> serviceObjects(serviceReference).flatMap(
-                    serviceObjects -> registerEndpoint(
-                        registrator, serviceObjects).flatMap(
-                            resourceProvider ->
-                                onClose(
-                                    () -> Utils.unregisterEndpoint(
-                                        registrator, resourceProvider)
-                                )
-                    )
-                )
-            ).foreach(
-                __ -> runtime.addApplicationEndpoint(
-                    applicationName, serviceReference),
-                __ -> runtime.removeApplicationEndpoint(
-                    applicationName, serviceReference)
-            ));
-    }
-
-    private static OSGi<?> safeRegisterExtension(
-        ServiceReference<?> serviceReference,
-        ServiceReference<CXFJaxRsServiceRegistrator> registratorReference,
-        AriesJaxRSServiceRuntime runtime) {
-
-        Map<String, Object> properties = getProperties(serviceReference);
-
-        String applicationName = getApplicationName(
-            registratorReference::getProperty);
-
-        properties.put(JAX_RS_NAME, applicationName);
-        properties.put(
-            "original.objectClass",
-            serviceReference.getProperty("objectClass"));
-
-        return
-            service(registratorReference).flatMap(registrator ->
-            onlyGettables(
-                just(serviceReference),
-                runtime::addNotGettableExtension,
-                runtime::removeNotGettableExtension
-            ).foreach(
-                registrator::addProvider,
-                registrator::removeProvider
-            ).foreach(
-                __ -> runtime.addApplicationExtension(
-                    applicationName, serviceReference),
-                __ -> runtime.removeApplicationExtension(
-                    applicationName, serviceReference)
-            ).then(
-                register(
-                    ApplicationExtensionRegistration.class,
-                    new ApplicationExtensionRegistration(){}, properties)
-            ));
-    }
-
     private static boolean signalsValidInterface(
         ServiceReference<Object> serviceReference) {
 
@@ -628,135 +747,6 @@ public class Whiteboard {
 
         return Arrays.stream(objectClasses).
             anyMatch(SUPPORTED_EXTENSION_INTERFACES::contains);
-    }
-
-    private static OSGi<ServiceReference<Application>>
-        waitForApplicationDependencies(
-            BundleContext bundleContext,
-            ServiceReference<Application> applicationReference,
-            AriesJaxRSServiceRuntime runtime,
-            OSGi<ServiceReference<Application>> program) {
-
-        String[] extensionDependencies = canonicalize(
-            applicationReference.getProperty(JAX_RS_EXTENSION_SELECT));
-
-        if (extensionDependencies.length > 0) {
-            program = onClose(
-                () -> runtime.removeDependentApplication(applicationReference)).
-                then(program);
-
-            runtime.addDependentApplication(applicationReference);
-        }
-        else {
-            return program;
-        }
-
-        for (String extensionDependency : extensionDependencies) {
-            extensionDependency = String.format(
-                "(&(!(objectClass=%s))%s)",
-                ApplicationExtensionRegistration.class.getName(),
-                extensionDependency);
-
-            program =
-                serviceReferences(extensionDependency).
-                    flatMap(
-                        sr -> {
-                            Object applicationSelectProperty =
-                                sr.getProperty(JAX_RS_APPLICATION_SELECT);
-
-                            if (applicationSelectProperty == null) {
-                                return just(applicationReference);
-                            }
-
-                            Filter filter;
-
-                            try {
-                                filter = bundleContext.createFilter(
-                                    applicationSelectProperty.toString());
-                            }
-                            catch (InvalidSyntaxException e) {
-                                return nothing();
-                            }
-
-                            if (filter.match(applicationReference)) {
-                                return just(applicationReference);
-                            }
-
-                            return nothing();
-                        }
-                    ).foreach(
-                    __ -> {},
-                    __ -> runtime.addDependentApplication(
-                        applicationReference)
-                ).
-                    then(program);
-        }
-
-        program = onClose(
-            ()-> runtime.removeDependentApplication(applicationReference)).
-            then(program);
-
-        program = program.foreach(
-            __ -> runtime.removeDependentApplication(applicationReference)
-        ).
-        then(
-            just(applicationReference)
-        );
-
-        return program;
-    }
-
-    private static OSGi<?> waitForExtensionDependencies(
-        BundleContext bundleContext, ServiceReference<?> serviceReference,
-        String applicationName, AriesJaxRSServiceRuntime runtime,
-        OSGi<?> program) {
-
-        String[] extensionDependencies = canonicalize(
-            serviceReference.getProperty(JAX_RS_EXTENSION_SELECT));
-
-        if (extensionDependencies.length > 0) {
-            runtime.addDependentService(serviceReference);
-        }
-        else {
-            return program;
-        }
-
-        for (String extensionDependency : extensionDependencies) {
-            try {
-                extensionDependency = extensionDependency.replace(
-                    "(objectClass=", "(original.objectClass=");
-
-                Filter extensionFilter = bundleContext.createFilter(
-                    extensionDependency);
-
-                program =
-                    serviceReferences(ApplicationExtensionRegistration.class).
-                        filter(
-                            sr -> getApplicationName(sr::getProperty).equals(
-                                applicationName)
-                        ).
-                        filter(
-                            extensionFilter::match
-                        ).foreach(
-                            __ -> {},
-                            __ -> runtime.addDependentService(serviceReference)
-                        ).
-                        then(program);
-            }
-            catch (InvalidSyntaxException e) {
-
-            }
-        }
-
-        program = onClose(
-            () -> runtime.removeDependentService(serviceReference)).
-            then(program);
-
-        program = program.foreach(
-            __ -> runtime.removeDependentService(serviceReference)
-        );
-
-        return program;
     }
 
     private interface ChangeCounter {
