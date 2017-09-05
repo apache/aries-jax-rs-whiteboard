@@ -36,6 +36,8 @@ import org.slf4j.LoggerFactory;
 
 import static org.apache.aries.jax.rs.whiteboard.internal.Whiteboard.createWhiteboard;
 import static org.apache.aries.osgi.functional.OSGi.configurations;
+import static org.apache.aries.osgi.functional.OSGi.just;
+import static org.apache.aries.osgi.functional.OSGi.onClose;
 import static org.apache.aries.osgi.functional.OSGi.register;
 
 public class CXFJaxRsBundleActivator implements BundleActivator {
@@ -57,8 +59,9 @@ public class CXFJaxRsBundleActivator implements BundleActivator {
         }
 
         OSGi<?> whiteboards =
-            configurations("org.apache.aries.jax.rs.whiteboard").
-                flatMap(Whiteboard::createWhiteboard);
+            configurations("org.apache.aries.jax.rs.whiteboard").flatMap(
+                configuration -> runWhiteboard(bundleContext, configuration)
+            );
 
         _whiteboardsResult = whiteboards.run(bundleContext);
 
@@ -71,7 +74,7 @@ public class CXFJaxRsBundleActivator implements BundleActivator {
         _defaultOSGiResult =
             register(
                 ClientBuilder.class, new ClientBuilderFactory(), null).then(
-            createWhiteboard(defaultConfiguration))
+            runWhiteboard(bundleContext, defaultConfiguration))
         .run(bundleContext);
 
         if (_log.isDebugEnabled()) {
@@ -92,6 +95,16 @@ public class CXFJaxRsBundleActivator implements BundleActivator {
         if (_log.isDebugEnabled()) {
             _log.debug("Stopped whiteboard factory");
         }
+    }
+
+    private static OSGi<?> runWhiteboard(
+        BundleContext bundleContext, Dictionary<String, ?> configuration) {
+
+        Whiteboard whiteboard = createWhiteboard(bundleContext, configuration);
+
+        whiteboard.start();
+
+        return onClose(whiteboard::stop);
     }
 
 }

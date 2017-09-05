@@ -23,11 +23,14 @@ import org.apache.cxf.jaxrs.lifecycle.ResourceProvider;
 import org.apache.cxf.message.Message;
 import org.osgi.framework.ServiceObjects;
 import org.osgi.framework.ServiceReference;
+import org.osgi.framework.ServiceRegistration;
 import org.slf4j.Logger;
 
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.Dictionary;
 import java.util.HashMap;
+import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.TreeSet;
@@ -135,7 +138,7 @@ public class Utils {
             }));
     }
 
-    public static <T extends Comparable<? super T>> OSGi<T> repeatInOrder(
+    public static <T extends Comparable<? super T>> OSGi<T> highestRanked(
         OSGi<T> program) {
 
         return program.route(new HighestRankedRouter<>());
@@ -165,7 +168,25 @@ public class Utils {
         registrator.remove(resourceProvider);
     }
 
-    static OSGi<Void> ignore(OSGi<?> program) {
+    public static void updateProperty(
+        ServiceRegistration<?> serviceRegistration, String key, Object value) {
+
+        ServiceReference<?> serviceReference =
+            serviceRegistration.getReference();
+
+        Dictionary<String, Object> properties = new Hashtable<>();
+
+        for (String propertyKey : serviceReference.getPropertyKeys()) {
+            properties.put(
+                propertyKey, serviceReference.getProperty(propertyKey));
+        }
+
+        properties.put(key, value);
+
+        serviceRegistration.setProperties(properties);
+    }
+
+    static OSGi<Void> ignoreResult(OSGi<?> program) {
         return program.map(t -> null);
     }
 
