@@ -24,6 +24,7 @@ import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.ext.RuntimeDelegate;
 
 import org.apache.aries.jax.rs.whiteboard.internal.ClientBuilderFactory;
+import org.apache.aries.jax.rs.whiteboard.internal.Utils;
 import org.apache.aries.jax.rs.whiteboard.internal.Whiteboard;
 import org.apache.aries.osgi.functional.OSGi;
 import org.apache.aries.osgi.functional.OSGiResult;
@@ -34,7 +35,9 @@ import org.osgi.framework.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static org.apache.aries.jax.rs.whiteboard.internal.Utils.ignoreResult;
 import static org.apache.aries.jax.rs.whiteboard.internal.Whiteboard.createWhiteboard;
+import static org.apache.aries.osgi.functional.OSGi.all;
 import static org.apache.aries.osgi.functional.OSGi.configurations;
 import static org.apache.aries.osgi.functional.OSGi.just;
 import static org.apache.aries.osgi.functional.OSGi.onClose;
@@ -72,9 +75,12 @@ public class CXFJaxRsBundleActivator implements BundleActivator {
             "org.apache.aries.jax.rs.whiteboard.default");
 
         _defaultOSGiResult =
-            register(
-                ClientBuilder.class, new ClientBuilderFactory(), null).then(
-            runWhiteboard(bundleContext, defaultConfiguration))
+            all(
+                ignoreResult(
+                    register(
+                        ClientBuilder.class, new ClientBuilderFactory(), null)),
+                ignoreResult(runWhiteboard(bundleContext, defaultConfiguration))
+            )
         .run(bundleContext);
 
         if (_log.isDebugEnabled()) {
