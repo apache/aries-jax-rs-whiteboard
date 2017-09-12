@@ -186,7 +186,7 @@ public class Utils {
         serviceRegistration.setProperties(properties);
     }
 
-    static OSGi<Void> ignoreResult(OSGi<?> program) {
+    public static OSGi<Void> ignoreResult(OSGi<?> program) {
         return program.map(t -> null);
     }
 
