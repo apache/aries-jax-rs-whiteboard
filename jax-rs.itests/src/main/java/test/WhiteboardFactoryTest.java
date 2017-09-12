@@ -102,9 +102,9 @@ public class WhiteboardFactoryTest extends TestHelper {
         }
     }
 
+
+
     private BundleContext bundleContext =
-        FrameworkUtil.
-            getBundle(getClass()).
-            getBundleContext();
+        FrameworkUtil.getBundle(getClass()).getBundleContext();
 
 }
