@@ -88,6 +88,8 @@ public class WhiteboardFactoryTest extends TestHelper {
 
             assertEquals(2, _runtimeTracker.size());
 
+            trackingCount = _runtimeTracker.getTrackingCount();
+
             configuration.delete();
 
             do {
