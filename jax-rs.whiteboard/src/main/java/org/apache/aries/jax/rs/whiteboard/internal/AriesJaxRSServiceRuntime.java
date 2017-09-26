@@ -26,7 +26,6 @@ import org.osgi.service.jaxrs.runtime.dto.ExtensionDTO;
 import org.osgi.service.jaxrs.runtime.dto.FailedApplicationDTO;
 import org.osgi.service.jaxrs.runtime.dto.FailedExtensionDTO;
 import org.osgi.service.jaxrs.runtime.dto.FailedResourceDTO;
-import org.osgi.service.jaxrs.runtime.dto.RequestInfoDTO;
 import org.osgi.service.jaxrs.runtime.dto.ResourceDTO;
 import org.osgi.service.jaxrs.runtime.dto.RuntimeDTO;
 import org.osgi.service.jaxrs.whiteboard.JaxRSWhiteboardConstants;
@@ -221,11 +220,6 @@ public class AriesJaxRSServiceRuntime implements JaxRSServiceRuntime {
             );
 
         return runtimeDTO;
-    }
-
-    @Override
-    public RequestInfoDTO calculateRequestInfoDTO(String path) {
-        return null;
     }
 
     public void removeApplicationEndpoint(
