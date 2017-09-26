@@ -668,7 +668,11 @@ public class Whiteboard {
     private static <T> OSGi<T> countChanges(
         OSGi<T> program, ChangeCounter counter) {
 
-        return program.map(t -> {counter.inc(); return t;});
+        return program.flatMap(t -> {
+            counter.inc();
+
+            return onClose(counter::inc).then(just(t));
+        });
     }
 
     private static CXFNonSpringServlet createCXFServlet(Bus bus) {
