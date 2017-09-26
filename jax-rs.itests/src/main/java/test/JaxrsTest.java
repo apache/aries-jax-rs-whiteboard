@@ -103,6 +103,25 @@ public class JaxrsTest extends TestHelper {
     }
 
     @Test
+    public void testApplicationWithoutStartingSlash()
+        throws InterruptedException {
+
+        assertEquals(0, getRuntimeDTO().applicationDTOs.length);
+
+        registerApplication(
+            new TestApplication(), JAX_RS_APPLICATION_BASE, "test-application");
+
+        assertEquals(1, getRuntimeDTO().applicationDTOs.length);
+
+        WebTarget webTarget = createDefaultTarget().path("/test-application");
+
+        Response response = webTarget.request().get();
+
+        assertEquals("Hello application",
+            response.readEntity(String.class));
+    }
+
+    @Test
     public void testApplicationChangeCount() throws Exception {
         Long changeCount = (Long)_runtimeServiceReference.getProperty(
             "service.changecount");

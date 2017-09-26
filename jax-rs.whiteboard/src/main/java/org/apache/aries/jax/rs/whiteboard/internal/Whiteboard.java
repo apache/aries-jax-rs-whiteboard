@@ -728,6 +728,10 @@ public class Whiteboard {
                 HTTP_WHITEBOARD_CONTEXT_NAME,
                 HTTP_WHITEBOARD_DEFAULT_CONTEXT_NAME));
 
+        if (!address.startsWith("/")) {
+            address = "/" + address;
+        }
+
         if (address.endsWith("/")) {
             address = address.substring(0, address.length() - 1);
         }
