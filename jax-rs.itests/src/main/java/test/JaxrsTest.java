@@ -26,6 +26,9 @@ import java.util.Dictionary;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.junit.After;
 import org.junit.Test;
@@ -45,10 +48,12 @@ import test.types.TestAddonLifecycle;
 import test.types.TestApplication;
 import test.types.TestApplicationConflict;
 import test.types.TestApplicationWithException;
+import test.types.TestAsyncResource;
 import test.types.TestFilter;
 import test.types.TestFilterAndExceptionMapper;
 import test.types.TestHelper;
 
+import javax.ws.rs.client.InvocationCallback;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.container.ContainerResponseFilter;
 import javax.ws.rs.core.Application;
@@ -91,25 +96,6 @@ public class JaxrsTest extends TestHelper {
         assertEquals(0, getRuntimeDTO().applicationDTOs.length);
 
         registerApplication(new TestApplication());
-
-        assertEquals(1, getRuntimeDTO().applicationDTOs.length);
-
-        WebTarget webTarget = createDefaultTarget().path("/test-application");
-
-        Response response = webTarget.request().get();
-
-        assertEquals("Hello application",
-            response.readEntity(String.class));
-    }
-
-    @Test
-    public void testApplicationWithoutStartingSlash()
-        throws InterruptedException {
-
-        assertEquals(0, getRuntimeDTO().applicationDTOs.length);
-
-        registerApplication(
-            new TestApplication(), JAX_RS_APPLICATION_BASE, "test-application");
 
         assertEquals(1, getRuntimeDTO().applicationDTOs.length);
 
@@ -638,6 +624,59 @@ public class JaxrsTest extends TestHelper {
         response = webTarget.request().get();
 
         assertEquals(404, response.getStatus());
+    }
+
+    @Test
+    public void testApplicationWithoutStartingSlash()
+        throws InterruptedException {
+
+        assertEquals(0, getRuntimeDTO().applicationDTOs.length);
+
+        registerApplication(
+            new TestApplication(), JAX_RS_APPLICATION_BASE, "test-application");
+
+        assertEquals(1, getRuntimeDTO().applicationDTOs.length);
+
+        WebTarget webTarget = createDefaultTarget().path("/test-application");
+
+        Response response = webTarget.request().get();
+
+        assertEquals("Hello application",
+            response.readEntity(String.class));
+    }
+
+    @Test
+    public void testAsyncResource()
+        throws ExecutionException, InterruptedException {
+
+        WebTarget webTarget =
+            createDefaultTarget().path("whiteboard").path("async").
+                path("HelloAsync");
+
+        AtomicBoolean pre = new AtomicBoolean();
+        AtomicBoolean post = new AtomicBoolean();
+
+        registerAddon(
+            new TestAsyncResource(() -> pre.set(true), () -> post.set(true)));
+
+        Future<String> future = webTarget.request().async().get(
+            new InvocationCallback<String>() {
+                @Override
+                public void completed(String s) {
+                    assertTrue(pre.get());
+                }
+
+                @Override
+                public void failed(Throwable throwable) {
+
+                }
+            });
+
+        String result = future.get();
+
+        assertTrue(post.get());
+
+        assertEquals("This should say HelloAsync", "HelloAsync", result);
     }
 
     @Test

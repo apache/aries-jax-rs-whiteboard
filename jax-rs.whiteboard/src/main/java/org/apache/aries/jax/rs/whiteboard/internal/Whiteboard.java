@@ -89,6 +89,7 @@ import static org.osgi.service.http.runtime.HttpServiceRuntimeConstants.HTTP_SER
 import static org.osgi.service.http.whiteboard.HttpWhiteboardConstants.HTTP_WHITEBOARD_CONTEXT_NAME;
 import static org.osgi.service.http.whiteboard.HttpWhiteboardConstants.HTTP_WHITEBOARD_CONTEXT_SELECT;
 import static org.osgi.service.http.whiteboard.HttpWhiteboardConstants.HTTP_WHITEBOARD_DEFAULT_CONTEXT_NAME;
+import static org.osgi.service.http.whiteboard.HttpWhiteboardConstants.HTTP_WHITEBOARD_SERVLET_ASYNC_SUPPORTED;
 import static org.osgi.service.http.whiteboard.HttpWhiteboardConstants.HTTP_WHITEBOARD_SERVLET_PATTERN;
 import static org.osgi.service.http.whiteboard.HttpWhiteboardConstants.HTTP_WHITEBOARD_TARGET;
 import static org.osgi.service.jaxrs.runtime.JaxRSServiceRuntimeConstants.JAX_RS_SERVICE_ENDPOINT;
@@ -741,6 +742,7 @@ public class Whiteboard {
         }
 
         properties.putIfAbsent(HTTP_WHITEBOARD_SERVLET_PATTERN, address + "/*");
+        properties.putIfAbsent(HTTP_WHITEBOARD_SERVLET_ASYNC_SUPPORTED, true);
 
         CXFNonSpringServlet cxfNonSpringServlet = createCXFServlet(bus);
 
