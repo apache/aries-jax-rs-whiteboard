@@ -522,7 +522,7 @@ public class JaxrsTest extends TestHelper {
         RuntimeDTO runtimeDTO = getRuntimeDTO();
 
         assertEquals(0, runtimeDTO.applicationDTOs.length);
-        assertEquals(0, runtimeDTO.failedExtensionDTOs.length);
+        assertEquals(0, runtimeDTO.failedApplicationDTOs.length);
 
         ServiceRegistration<?> serviceRegistration = registerApplication(
             new TestApplication() {
