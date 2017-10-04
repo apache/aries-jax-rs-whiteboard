@@ -458,6 +458,8 @@ public class AriesJaxRSServiceRuntime implements JaxRSServiceRuntime {
         failedApplicationDTO.name = nameProperty == null ?
             generateApplicationName(serviceReference::getProperty) :
             nameProperty.toString();
+        failedApplicationDTO.serviceId =
+            (long)serviceReference.getProperty("service.id");
 
         failedApplicationDTO.failureReason = reason;
 
