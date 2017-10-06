@@ -37,7 +37,7 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <cxf.version>3.1.10</cxf.version>
-        <bnd.version>3.4.0</bnd.version>
+        <bnd.version>3.5.0</bnd.version>
     </properties>
 
     <scm>
