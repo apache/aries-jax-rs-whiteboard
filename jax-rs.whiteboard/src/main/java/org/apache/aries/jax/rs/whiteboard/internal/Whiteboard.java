@@ -60,6 +60,7 @@ import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -419,7 +420,27 @@ public class Whiteboard {
                 return properties;
         }).flatMap(properties ->
         register(
-            Application.class, new DefaultApplication(), properties));
+            Application.class,
+            new DefaultApplication() {
+
+                @Override
+                public Set<Object> getSingletons() {
+                    Object defaultApplication = _configurationMap.get(
+                        "org.apache.aries.jax.rs.whiteboard.default." +
+                            "application");
+
+                    if (defaultApplication == null ||
+                        Boolean.parseBoolean(defaultApplication.toString())) {
+
+                        return Collections.singleton(new DefaultWeb());
+                    }
+                    else {
+                        return Collections.emptySet();
+                    }
+                }
+
+            },
+            properties));
     }
 
     private ServiceRegistration<?>
