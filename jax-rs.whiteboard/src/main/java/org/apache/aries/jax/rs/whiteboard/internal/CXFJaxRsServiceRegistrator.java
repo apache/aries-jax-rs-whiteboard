@@ -146,11 +146,11 @@ public class CXFJaxRsServiceRegistrator {
             }
 
             if (rp1 instanceof ServiceReferenceResourceProvider) {
-                return 1;
+                return -1;
             }
 
             if (rp2 instanceof ServiceReferenceResourceProvider) {
-                return -1;
+                return 1;
             }
 
             return 0;
