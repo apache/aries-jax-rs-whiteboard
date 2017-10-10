@@ -141,7 +141,7 @@ public class Whiteboard {
     private final OSGi<Void> _program;
     private final List<Object> _endpoints;
     private final ServiceRegistration<?> _runtimeRegistration;
-    private OSGiResult<Void> _osgiResult;
+    private OSGiResult _osgiResult;
 
     private Whiteboard(
         BundleContext bundleContext, Dictionary<String, ?> configuration) {
@@ -485,7 +485,7 @@ public class Whiteboard {
                                 )
                     )
                 )
-            ).foreach(
+            ).effects(
                 __ -> _runtime.addApplicationEndpoint(
                     applicationName, serviceReference),
                 __ -> _runtime.removeApplicationEndpoint(
@@ -516,10 +516,10 @@ public class Whiteboard {
                 just(serviceReference),
                 _runtime::addNotGettableExtension,
                 _runtime::removeNotGettableExtension
-            ).foreach(
+            ).effects(
                 registrator::addProvider,
                 registrator::removeProvider
-            ).foreach(
+            ).effects(
                 __ -> _runtime.addApplicationExtension(
                     applicationName, serviceReference),
                 __ -> _runtime.removeApplicationExtension(
@@ -584,7 +584,7 @@ public class Whiteboard {
 
                             return nothing();
                         }
-                    ).foreach(
+                    ).effects(
                     __ -> {},
                     __ -> _runtime.addDependentApplication(
                         applicationReference)
@@ -596,11 +596,9 @@ public class Whiteboard {
             ()-> _runtime.removeDependentApplication(applicationReference)).
             then(program);
 
-        program = program.foreach(
-            __ -> _runtime.removeDependentApplication(applicationReference)
-        ).
-        then(
-            just(applicationReference)
+        program = program.effects(
+            __ -> _runtime.removeDependentApplication(applicationReference),
+            __ -> {}
         );
 
         return program;
@@ -636,7 +634,7 @@ public class Whiteboard {
                         ).
                         filter(
                             extensionFilter::match
-                        ).foreach(
+                        ).effects(
                             __ -> {},
                             __ -> _runtime.addDependentService(serviceReference)
                         ).
@@ -652,7 +650,8 @@ public class Whiteboard {
             then(program);
 
         program = program.foreach(
-            __ -> _runtime.removeDependentService(serviceReference)
+            __ -> _runtime.removeDependentService(serviceReference),
+            __ -> {}
         );
 
         return program;

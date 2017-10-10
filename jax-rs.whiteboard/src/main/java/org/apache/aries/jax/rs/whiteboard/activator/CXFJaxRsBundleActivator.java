@@ -52,8 +52,8 @@ public class CXFJaxRsBundleActivator implements BundleActivator {
         RuntimeDelegate.setInstance(new RuntimeDelegateImpl());
     }
 
-    private OSGiResult<?> _defaultOSGiResult;
-    private OSGiResult<?> _whiteboardsResult;
+    private OSGiResult _defaultOSGiResult;
+    private OSGiResult _whiteboardsResult;
 
     @Override
     public void start(BundleContext bundleContext) throws Exception {
