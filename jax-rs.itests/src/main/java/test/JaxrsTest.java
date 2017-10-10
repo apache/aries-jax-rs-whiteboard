@@ -26,8 +26,10 @@ import java.util.Dictionary;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.junit.After;
@@ -656,8 +658,16 @@ public class JaxrsTest extends TestHelper {
         AtomicBoolean pre = new AtomicBoolean();
         AtomicBoolean post = new AtomicBoolean();
 
+        CountDownLatch countDownLatch = new CountDownLatch(1);
+
         registerAddon(
-            new TestAsyncResource(() -> pre.set(true), () -> post.set(true)));
+            new TestAsyncResource(
+                () -> pre.set(true),
+                () -> {
+                    post.set(true);
+
+                    countDownLatch.countDown();
+                }));
 
         Future<String> future = webTarget.request().async().get(
             new InvocationCallback<String>() {
@@ -673,6 +683,8 @@ public class JaxrsTest extends TestHelper {
             });
 
         String result = future.get();
+
+        countDownLatch.await(1, TimeUnit.MINUTES);
 
         assertTrue(post.get());
 
