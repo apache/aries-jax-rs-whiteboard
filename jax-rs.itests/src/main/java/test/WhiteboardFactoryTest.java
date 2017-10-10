@@ -23,6 +23,8 @@ import static org.osgi.service.http.whiteboard.HttpWhiteboardConstants.HTTP_WHIT
 
 import java.util.Dictionary;
 import java.util.Hashtable;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import org.junit.Test;
 import org.osgi.framework.BundleContext;
@@ -48,8 +50,42 @@ public class WhiteboardFactoryTest extends TestHelper {
             new ServiceTracker<>(
                 bundleContext, ConfigurationAdmin.class, null);
 
+        CountDownLatch addedCountLatch = new CountDownLatch(1);
+        CountDownLatch removedCountLatch = new CountDownLatch(1);
+
+        ServiceTracker<?, ?> serviceTracker = new ServiceTracker
+            <JaxRSServiceRuntime, JaxRSServiceRuntime>(
+            bundleContext, JaxRSServiceRuntime.class, null) {
+
+            @Override
+            public JaxRSServiceRuntime addingService(
+                ServiceReference<JaxRSServiceRuntime> reference) {
+
+                if ("/new-whiteboard".equals(
+                    reference.getProperty(
+                        HTTP_WHITEBOARD_SERVLET_PATTERN))) {
+
+                    addedCountLatch.countDown();
+
+                    return super.addingService(reference);
+                }
+
+                return null;
+            }
+
+            @Override
+            public void removedService(
+                ServiceReference<JaxRSServiceRuntime> reference,
+                JaxRSServiceRuntime service) {
+
+                removedCountLatch.countDown();
+            }
+        };
+
         try {
             configTracker.open();
+
+            serviceTracker.open();
 
             ServiceReference<JaxRSServiceRuntime> serviceReference =
                 _runtimeTracker.getServiceReference();
@@ -57,8 +93,6 @@ public class WhiteboardFactoryTest extends TestHelper {
             assertNotNull(serviceReference);
 
             assertEquals(1, _runtimeTracker.size());
-
-            int trackingCount = _runtimeTracker.getTrackingCount();
 
             ConfigurationAdmin admin = configTracker.waitForService(5000);
 
@@ -74,33 +108,20 @@ public class WhiteboardFactoryTest extends TestHelper {
 
             configuration.update(properties);
 
-            do {
-                Thread.sleep(50);
-
-                if (!"/new-whiteboard".equals(
-                        _runtimeTracker.getServiceReference().getProperty(
-                            HTTP_WHITEBOARD_SERVLET_PATTERN))) {
-
-                    trackingCount = _runtimeTracker.getTrackingCount();
-                }
-            }
-            while (_runtimeTracker.getTrackingCount() <= trackingCount);
+            addedCountLatch.await(1, TimeUnit.MINUTES);
 
             assertEquals(2, _runtimeTracker.size());
 
-            trackingCount = _runtimeTracker.getTrackingCount();
-
             configuration.delete();
 
-            do {
-                Thread.sleep(50);
-            }
-            while (_runtimeTracker.getTrackingCount() <= trackingCount);
+            removedCountLatch.await(1, TimeUnit.MINUTES);
 
             assertEquals(1, _runtimeTracker.size());
         }
         finally {
             configTracker.close();
+
+            serviceTracker.close();
         }
     }
 
