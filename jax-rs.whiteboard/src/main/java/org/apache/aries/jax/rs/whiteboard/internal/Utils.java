@@ -36,6 +36,8 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -284,31 +286,28 @@ public class Utils {
             return _serviceReference;
         }
 
-
-
     }
 
     private static class HighestRankedRouter<T extends Comparable<? super T>>
         implements Consumer<OSGi.Router<T>> {
 
-        private final TreeSet<Event<T>> _set;
         private final Comparator<Event<T>> _comparator;
-        private SentEvent _sent;
 
         public HighestRankedRouter() {
             _comparator = Comparator.comparing(Event::getContent);
-
-            _set = new TreeSet<>(_comparator);
         }
 
         @Override
         public void accept(OSGi.Router<T> router) {
+            AtomicReference<SentEvent<T>> _sent = new AtomicReference<>();
+            final TreeSet<Event<T>> _set = new TreeSet<>(_comparator);
+
             router.onIncoming(ev -> {
                 synchronized (_set) {
                     _set.add(ev);
 
                     if (ev == _set.last()) {
-                        _sent = router.signalAdd(ev);
+                        _sent.set(router.signalAdd(ev));
                     }
                 }
             });
@@ -320,21 +319,18 @@ public class Utils {
 
                     _set.remove(ev);
 
-                    if (_sent != null && _sent.getEvent() == ev) {
-                        _sent = null;
+                    SentEvent<T> sent = _sent.get();
+
+                    if (sent != null && sent.getEvent() == ev) {
+                        sent.terminate();
+
+                        _sent.set(null);
                     }
 
                     if (!_set.isEmpty()) {
-                        _sent = router.signalAdd(_set.last());
+                        _sent.set(router.signalAdd(_set.last()));
                     }
                 }
-            });
-            router.onClose(() -> {
-                if (_sent != null) {
-                    _sent.terminate();
-                }
-
-                _sent = null;
             });
         }
 
@@ -344,11 +340,8 @@ public class Utils {
         implements Consumer<OSGi.Router<T>> {
 
         private final Function<T, K> _keySupplier;
-        private final ConcurrentHashMap<K, TreeSet<Event<T>>> _map =
-            new ConcurrentHashMap<>();
         private final Consumer<T> _onAddingShadowed;
         private final Consumer<T> _onRemovedShadowed;
-        private final Map<K, SentEvent<T>> _sentEvents = new HashMap<>();
 
         public HighestPerRouter(
             Function<T, K> keySupplier,
@@ -361,6 +354,15 @@ public class Utils {
 
         @Override
         public void accept(OSGi.Router<T> router) {
+            /**
+             * These can't be fields on the class or they would be shared among
+             * invocations to OSGiResult.run :-O
+             */
+            final ConcurrentHashMap<K, TreeSet<Event<T>>> _map =
+                new ConcurrentHashMap<>();
+
+            final Map<K, SentEvent<T>> _sentEvents = new HashMap<>();
+
             router.onIncoming(e -> {
                 K key = _keySupplier.apply(e.getContent());
 
@@ -413,6 +415,8 @@ public class Utils {
 
                         _sentEvents.compute(key, (___, sentEvent) -> {
                             if (sentEvent.getEvent() == e) {
+                                sentEvent.terminate();
+
                                 if (!set.isEmpty()) {
                                     Event<T> last = set.last();
 
