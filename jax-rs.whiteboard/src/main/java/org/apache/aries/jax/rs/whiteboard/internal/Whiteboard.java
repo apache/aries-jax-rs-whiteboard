@@ -476,20 +476,32 @@ public class Whiteboard {
                 _runtime::removeNotGettableEndpoint
             ).flatMap(
                 tuple -> serviceObjects(serviceReference).flatMap(
-                    serviceObjects -> registerEndpoint(
-                        registrator, serviceObjects).flatMap(
-                            resourceProvider ->
-                                onClose(
-                                    () -> Utils.unregisterEndpoint(
-                                        registrator, resourceProvider)
-                                )
-                    )
+                    serviceObjects -> {
+                        try {
+                            return registerEndpoint(
+                                registrator, serviceObjects).flatMap(
+                                resourceProvider ->
+                                    onClose(
+                                        () -> Utils.unregisterEndpoint(
+                                            registrator, resourceProvider)
+                                    ).effects(
+                                        __ -> _runtime.addApplicationEndpoint(
+                                            applicationName, serviceReference),
+                                        __ -> _runtime.removeApplicationEndpoint(
+                                            applicationName, serviceReference)
+                                    ));
+                        }
+                        catch (Exception e) {
+                            return
+                                just(serviceReference).
+                                effects(
+                                    _runtime::addErroredEndpoint,
+                                    _runtime::removeErroredEndpoint).
+                                then(nothing());
+                        }
+                    }
+
                 )
-            ).effects(
-                __ -> _runtime.addApplicationEndpoint(
-                    applicationName, serviceReference),
-                __ -> _runtime.removeApplicationEndpoint(
-                    applicationName, serviceReference)
             ));
     }
 

@@ -71,6 +71,8 @@ public class AriesJaxRSServiceRuntime implements JaxRSServiceRuntime {
         new CopyOnWriteArrayList<>();
     private Collection<ServiceReference<Application>> _erroredApplications =
         new CopyOnWriteArrayList<>();
+    private Collection<ServiceReference<?>> _erroredEndpoints =
+        new CopyOnWriteArrayList<>();
     private Collection<ServiceReference<?>> _ungettableEndpoints =
         new CopyOnWriteArrayList<>();
     private Collection<ServiceReference<?>> _ungettableExtensions =
@@ -116,6 +118,10 @@ public class AriesJaxRSServiceRuntime implements JaxRSServiceRuntime {
         ServiceReference<Application> serviceReference) {
 
         _erroredApplications.add(serviceReference);
+    }
+
+    public <T> void addErroredEndpoint(ServiceReference<T> serviceReference) {
+        _erroredEndpoints.add(serviceReference);
     }
 
     public void addInvalidExtension(ServiceReference<?> serviceReference) {
@@ -203,7 +209,10 @@ public class AriesJaxRSServiceRuntime implements JaxRSServiceRuntime {
 
         runtimeDTO.failedResourceDTOs =
             Stream.concat(
-                unreferenciableEndpointsDTOStream(), dependentServiceStreamDTO()
+                unreferenciableEndpointsDTOStream(),
+                Stream.concat(
+                    dependentServiceStreamDTO(),
+                    erroredEndpointsStreamDTO())
             ).toArray(
                 FailedResourceDTO[]::new
             );
@@ -216,6 +225,13 @@ public class AriesJaxRSServiceRuntime implements JaxRSServiceRuntime {
             );
 
         return runtimeDTO;
+    }
+
+    private Stream<FailedResourceDTO> erroredEndpointsStreamDTO() {
+        return _erroredEndpoints.stream().map(
+            sr -> buildFailedResourceDTO(
+                DTOConstants.FAILURE_REASON_UNKNOWN, sr)
+        );
     }
 
     public void removeApplicationEndpoint(
@@ -252,6 +268,10 @@ public class AriesJaxRSServiceRuntime implements JaxRSServiceRuntime {
         ServiceReference<Application> serviceReference) {
 
         _erroredApplications.remove(serviceReference);
+    }
+
+    public <T> void removeErroredEndpoint(ServiceReference<T> serviceReference) {
+        _erroredEndpoints.remove(serviceReference);
     }
 
     public void removeInvalidExtension(ServiceReference<?> serviceReference) {
