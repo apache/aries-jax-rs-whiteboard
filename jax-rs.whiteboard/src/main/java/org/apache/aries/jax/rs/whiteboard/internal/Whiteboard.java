@@ -529,20 +529,39 @@ public class Whiteboard {
                 just(serviceReference),
                 _runtime::addNotGettableExtension,
                 _runtime::removeNotGettableExtension
-            ).effects(
-                registrator::addProvider,
-                registrator::removeProvider
-            ).effects(
-                __ -> _runtime.addApplicationExtension(
-                    applicationName, serviceReference),
-                __ -> _runtime.removeApplicationExtension(
-                    applicationName, serviceReference)
-            ).then(
-                register(
-                    ApplicationExtensionRegistration.class,
-                    new ApplicationExtensionRegistration(){}, properties)
+            ).flatMap(
+                serviceTuple -> {
+                    try {
+                        registrator.addProvider(serviceTuple);
+
+                        _runtime.addApplicationExtension(
+                            applicationName, serviceReference);
+
+                        return
+                            onClose(() -> {
+                                registrator.removeProvider(serviceTuple);
+
+                                _runtime.removeApplicationExtension(
+                                    applicationName, serviceReference);
+                            }).then(
+                            register(
+                                ApplicationExtensionRegistration.class,
+                                new ApplicationExtensionRegistration(){},
+                                properties)
+                        );
+                    }
+                    catch(Exception e) {
+                        return nothing();
+                        /*_runtime.addErroredExtension(serviceReference);
+
+                        return onClose(() -> _runtime.removeErroredExtension(serviceReference)).then(
+                            nothing());*/
+                    }
+                }
             ))));
     }
+
+
 
     private OSGi<ServiceReference<Application>>
         waitForApplicationDependencies(
