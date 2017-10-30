@@ -33,6 +33,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.junit.After;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.PrototypeServiceFactory;
@@ -59,6 +60,8 @@ import javax.ws.rs.client.InvocationCallback;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.container.ContainerResponseFilter;
 import javax.ws.rs.core.Application;
+import javax.ws.rs.core.Feature;
+import javax.ws.rs.core.FeatureContext;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.ExceptionMapper;
 
@@ -741,6 +744,31 @@ public class JaxrsTest extends TestHelper {
         filterRegistration.unregister();
     }
 
+    @Ignore
+    @Test
+    public void testFeatureExtension() {
+        WebTarget webTarget = createDefaultTarget().path("/test-application");
+
+        registerApplication(new TestApplication());
+
+        registerExtension(
+            Feature.class,
+            context -> {
+                context.register(new TestAddonConflict2());
+
+                return true;
+            },
+            "Feature",
+            JAX_RS_APPLICATION_SELECT,
+            "(" + JAX_RS_APPLICATION_BASE + "=/test-application)");
+
+        Response response = webTarget.request().get();
+
+        assertEquals("Hello application", response.readEntity(String.class));
+
+        assertEquals("true", response.getHeaders().getFirst("Filtered"));
+    }
+
     @Test
     public void testGettableAndNotGettableApplication()
         throws InterruptedException {
@@ -1366,6 +1394,27 @@ public class JaxrsTest extends TestHelper {
 
         return serviceRegistration;
     }
+
+    private <T> ServiceRegistration<T> registerExtension(
+        Class<T> clazz, T extension, String name, Object... keyValues) {
+
+        Dictionary<String, Object> properties = new Hashtable<>();
+
+        properties.put(JAX_RS_EXTENSION, true);
+        properties.put(JAX_RS_NAME, name);
+
+        for (int i = 0; i < keyValues.length; i = i + 2) {
+            properties.put(keyValues[i].toString(), keyValues[i + 1]);
+        }
+
+        ServiceRegistration<T> serviceRegistration =
+            bundleContext.registerService(clazz, extension, properties);
+
+        _registrations.add(serviceRegistration);
+
+        return serviceRegistration;
+    }
+
 
     private ServiceRegistration<?> registerInvalidExtension(
         String name, Object... keyValues) {
