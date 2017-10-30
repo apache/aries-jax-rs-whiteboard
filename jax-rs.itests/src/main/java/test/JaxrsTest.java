@@ -364,6 +364,44 @@ public class JaxrsTest extends TestHelper {
     }
 
     @Test
+    public void testApplicationRebase() {
+        assertEquals(0, getRuntimeDTO().applicationDTOs.length);
+
+        ServiceRegistration<Application> serviceRegistration =
+            registerApplication(new TestApplication());
+
+        assertEquals(1, getRuntimeDTO().applicationDTOs.length);
+
+        WebTarget webTarget = createDefaultTarget().path("/test-application");
+
+        Response response = webTarget.request().get();
+
+        assertEquals("Hello application", response.readEntity(String.class));
+
+        serviceRegistration.setProperties(
+            new Hashtable<String, Object>() {{
+                put(JAX_RS_APPLICATION_BASE, "/test-application-rebased");
+            }});
+
+        webTarget = createDefaultTarget().path("/test-application-rebased");
+
+        response = webTarget.request().get();
+
+        assertEquals("Hello application", response.readEntity(String.class));
+
+        serviceRegistration.setProperties(
+            new Hashtable<String, Object>() {{
+                put(JAX_RS_APPLICATION_BASE, "/test-application-rebased-again");
+            }});
+
+        webTarget = createDefaultTarget().path("/test-application-rebased-again");
+
+        response = webTarget.request().get();
+
+        assertEquals("Hello application", response.readEntity(String.class));
+    }
+
+    @Test
     public void testApplicationReplaceDefault() {
         assertEquals(0, getRuntimeDTO().applicationDTOs.length);
         assertEquals(0, getRuntimeDTO().failedApplicationDTOs.length);
