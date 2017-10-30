@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.TreeSet;
 import java.util.stream.Stream;
 
 import javax.ws.rs.core.Application;
@@ -46,7 +47,8 @@ public class CXFJaxRsServiceRegistrator {
 
     private final Application _application;
     private final Bus _bus;
-    private final Collection<ServiceTuple<?>> _providers = new ArrayList<>();
+    private final Collection<ServiceTuple<?>> _providers = new TreeSet<>(
+        Comparator.comparing(ServiceTuple::getServiceReference));
     private final Collection<ResourceProvider> _services = new ArrayList<>();
     private volatile boolean _closed = false;
     private Server _server;
