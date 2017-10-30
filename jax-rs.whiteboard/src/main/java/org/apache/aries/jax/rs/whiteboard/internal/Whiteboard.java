@@ -84,6 +84,7 @@ import static org.apache.aries.osgi.functional.OSGi.join;
 import static org.apache.aries.osgi.functional.OSGi.just;
 import static org.apache.aries.osgi.functional.OSGi.nothing;
 import static org.apache.aries.osgi.functional.OSGi.onClose;
+import static org.apache.aries.osgi.functional.OSGi.once;
 import static org.apache.aries.osgi.functional.OSGi.register;
 import static org.apache.aries.osgi.functional.OSGi.serviceReferences;
 import static org.osgi.service.http.runtime.HttpServiceRuntimeConstants.HTTP_SERVICE_ENDPOINT;
@@ -552,12 +553,10 @@ public class Whiteboard {
             applicationReference.getProperty(JAX_RS_EXTENSION_SELECT));
 
         if (extensionDependencies.length > 0) {
-            program = onClose(
-                () -> _runtime.removeDependentApplication(
-                    applicationReference)).
-                then(program);
-
-            _runtime.addDependentApplication(applicationReference);
+            program = just(0).effects(
+                __ -> _runtime.addDependentApplication(applicationReference),
+                __ -> _runtime.removeDependentApplication(applicationReference)
+            ).then(program);
         }
         else {
             return program;
@@ -570,7 +569,7 @@ public class Whiteboard {
                 extensionDependency);
 
             program =
-                serviceReferences(extensionDependency).
+                once(serviceReferences(extensionDependency)).
                     flatMap(
                         sr -> {
                             Object applicationSelectProperty =
@@ -604,10 +603,6 @@ public class Whiteboard {
                     then(program);
         }
 
-        program = onClose(
-            ()-> _runtime.removeDependentApplication(applicationReference)).
-            then(program);
-
         program = program.effects(
             __ -> _runtime.removeDependentApplication(applicationReference),
             __ -> {}
@@ -639,14 +634,14 @@ public class Whiteboard {
                     extensionDependency);
 
                 program =
-                    serviceReferences(ApplicationExtensionRegistration.class).
+                    once(serviceReferences(ApplicationExtensionRegistration.class).
                         filter(
                             sr -> getApplicationName(sr::getProperty).equals(
                                 applicationName)
                         ).
                         filter(
                             extensionFilter::match
-                        ).effects(
+                        )).effects(
                             __ -> {},
                             __ -> _runtime.addDependentService(serviceReference)
                         ).
