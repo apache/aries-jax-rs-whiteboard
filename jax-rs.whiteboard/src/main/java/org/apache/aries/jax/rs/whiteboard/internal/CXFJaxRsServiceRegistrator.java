@@ -26,6 +26,7 @@ import java.util.stream.Stream;
 
 import javax.ws.rs.core.Application;
 import javax.ws.rs.core.Feature;
+import javax.ws.rs.ext.RuntimeDelegate;
 
 import org.apache.aries.jax.rs.whiteboard.internal.Utils.ServiceReferenceResourceProvider;
 import org.apache.aries.jax.rs.whiteboard.internal.Utils.ServiceTuple;
@@ -92,7 +93,10 @@ public class CXFJaxRsServiceRegistrator {
     }
 
     public <T> T createEndpoint(Application app, Class<T> endpointType) {
-        JAXRSServerFactoryBean bean = ResourceUtils.createApplication(app, false);
+        JAXRSServerFactoryBean bean =
+            RuntimeDelegate.getInstance().createEndpoint(
+                app, JAXRSServerFactoryBean.class);
+
         if (JAXRSServerFactoryBean.class.isAssignableFrom(endpointType)) {
             return endpointType.cast(bean);
         }
