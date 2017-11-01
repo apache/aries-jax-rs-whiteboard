@@ -37,7 +37,6 @@ import org.apache.cxf.jaxrs.lifecycle.ResourceProvider;
 import org.apache.cxf.jaxrs.model.ClassResourceInfo;
 import org.apache.cxf.jaxrs.model.OperationResourceInfo;
 import org.apache.cxf.jaxrs.provider.json.JSONProvider;
-import org.apache.cxf.jaxrs.utils.ResourceUtils;
 import org.apache.cxf.message.Message;
 import org.osgi.framework.ServiceReference;
 
@@ -48,7 +47,7 @@ public class CXFJaxRsServiceRegistrator {
     private final Application _application;
     private final Bus _bus;
     private final Collection<ServiceTuple<?>> _providers = new TreeSet<>(
-        Comparator.comparing(ServiceTuple::getServiceReference));
+        Comparator.comparing(ServiceTuple::getCachingServiceReference));
     private final Collection<ResourceProvider> _services = new ArrayList<>();
     private volatile boolean _closed = false;
     private Server _server;
@@ -129,7 +128,7 @@ public class CXFJaxRsServiceRegistrator {
 
         static {
             comparator = Comparator.comparing(
-                ServiceReferenceResourceProvider::getServiceReference);
+                srrp -> srrp.getImmutableServiceReference());
         }
 
         @Override
@@ -198,7 +197,8 @@ public class CXFJaxRsServiceRegistrator {
             jaxRsServerFactoryBean.setProvider(
                 (Feature) featureContext -> {
                     ServiceReference<?> serviceReference =
-                        provider.getServiceReference();
+                        provider.getCachingServiceReference().
+                            getServiceReference();
 
                     String[] interfaces = canonicalize(
                         serviceReference.getProperty("objectClass"));

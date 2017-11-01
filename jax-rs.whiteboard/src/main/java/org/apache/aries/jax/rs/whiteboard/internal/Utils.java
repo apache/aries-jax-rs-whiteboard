@@ -18,6 +18,7 @@
 package org.apache.aries.jax.rs.whiteboard.internal;
 
 import org.apache.aries.osgi.functional.Event;
+import org.apache.aries.osgi.functional.CachingServiceReference;
 import org.apache.aries.osgi.functional.OSGi;
 import org.apache.aries.osgi.functional.SentEvent;
 import org.apache.cxf.jaxrs.lifecycle.ResourceProvider;
@@ -25,18 +26,15 @@ import org.apache.cxf.message.Message;
 import org.osgi.framework.ServiceObjects;
 import org.osgi.framework.ServiceReference;
 import org.osgi.framework.ServiceRegistration;
-import org.slf4j.Logger;
 
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.Dictionary;
 import java.util.HashMap;
 import java.util.Hashtable;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -77,7 +75,7 @@ public class Utils {
         return ".generated.for." + propertyHolder.get("service.id");
     }
 
-    public static Map<String, Object> getProperties(ServiceReference<?> sref) {
+    public static Map<String, Object> getProperties(CachingServiceReference<?> sref) {
         String[] propertyKeys = sref.getPropertyKeys();
         Map<String, Object> properties = new HashMap<>(propertyKeys.length);
 
@@ -91,8 +89,9 @@ public class Utils {
     public static <T> ResourceProvider getResourceProvider(
         ServiceObjects<T> serviceObjects) {
 
-        ServiceReference<T> serviceReference =
-            serviceObjects.getServiceReference();
+        CachingServiceReference<T> serviceReference =
+            new CachingServiceReference<>(
+                serviceObjects.getServiceReference());
 
         return new ServiceReferenceResourceProvider(
             serviceReference, serviceObjects);
@@ -108,35 +107,37 @@ public class Utils {
     }
 
     public static <T> OSGi<ServiceTuple<T>> onlyGettables(
-        OSGi<ServiceReference<T>> program,
-        Consumer<ServiceReference<T>> whenAddedNotGettable,
-        Consumer<ServiceReference<T>> whenLeavingNotGettable) {
+        OSGi<CachingServiceReference<T>> program,
+        Consumer<CachingServiceReference<T>> whenAddedNotGettable,
+        Consumer<CachingServiceReference<T>> whenLeavingNotGettable) {
 
         return bundleContext().flatMap(bundleContext ->
-            program.flatMap(serviceReference -> {
+            program.flatMap(immutable -> {
                 T service = null;
 
                 try {
-                    service = bundleContext.getService(serviceReference);
+                    service = bundleContext.getService(
+                        immutable.getServiceReference());
                 }
                 catch (Exception e){
                 }
                 if (service == null) {
-                    whenAddedNotGettable.accept(serviceReference);
+                    whenAddedNotGettable.accept(immutable);
 
                     return
                         onClose(
                             () -> whenLeavingNotGettable.accept(
-                                serviceReference)
+                                immutable)
                         ).then(
                             nothing()
                         );
                 }
                 return
                     onClose(
-                        () -> bundleContext.ungetService(serviceReference)
+                        () -> bundleContext.ungetService(
+                            immutable.getServiceReference())
                     ).then(
-                        just(new ServiceTuple<>(serviceReference, service))
+                        just(new ServiceTuple<>(immutable, service))
                     );
             }));
     }
@@ -147,7 +148,12 @@ public class Utils {
         return program.route(new HighestRankedRouter<>());
     }
 
-    public static <T> OSGi<T> service(ServiceReference<T> serviceReference) {
+    public static <T> OSGi<T> service(
+        CachingServiceReference<T> immutableServiceReference) {
+
+        ServiceReference<T> serviceReference =
+            immutableServiceReference.getServiceReference();
+
         return
             bundleContext().flatMap(bundleContext ->
             onClose(() -> bundleContext.ungetService(serviceReference)).then(
@@ -156,11 +162,12 @@ public class Utils {
     }
 
     public static <T> OSGi<ServiceObjects<T>> serviceObjects(
-        ServiceReference<T> serviceReference) {
+        CachingServiceReference<T> immutableServiceReference) {
 
         return
             bundleContext().flatMap(bundleContext ->
-            just(bundleContext.getServiceObjects(serviceReference))
+            just(bundleContext.getServiceObjects(
+                immutableServiceReference.getServiceReference()))
         );
     }
 
@@ -174,8 +181,8 @@ public class Utils {
     public static void updateProperty(
         ServiceRegistration<?> serviceRegistration, String key, Object value) {
 
-        ServiceReference<?> serviceReference =
-            serviceRegistration.getReference();
+        CachingServiceReference<?> serviceReference =
+            new CachingServiceReference<>(serviceRegistration.getReference());
 
         Dictionary<String, Object> properties = new Hashtable<>();
 
@@ -203,10 +210,10 @@ public class Utils {
         implements ResourceProvider {
 
         private final ServiceObjects<?> _serviceObjects;
-        private ServiceReference<?> _serviceReference;
+        private CachingServiceReference<?> _serviceReference;
 
         ServiceReferenceResourceProvider(
-            ServiceReference<?> serviceReference,
+            CachingServiceReference<?> serviceReference,
             ServiceObjects<?> serviceObjects) {
             _serviceReference = serviceReference;
 
@@ -242,7 +249,7 @@ public class Utils {
             return false;
         }
 
-        ServiceReference<?> getServiceReference() {
+        CachingServiceReference<?> getImmutableServiceReference() {
             return _serviceReference;
         }
 
@@ -250,10 +257,10 @@ public class Utils {
 
     public static class ServiceTuple<T> implements Comparable<ServiceTuple<T>> {
 
-        private final ServiceReference<T> _serviceReference;
+        private final CachingServiceReference<T> _serviceReference;
         private final T _service;
 
-        ServiceTuple(ServiceReference<T> a, T service) {
+        ServiceTuple(CachingServiceReference<T> a, T service) {
             _serviceReference = a;
             _service = service;
         }
@@ -282,7 +289,7 @@ public class Utils {
             return _serviceReference.equals(that._serviceReference);
         }
 
-        ServiceReference<T> getServiceReference() {
+        CachingServiceReference<T> getCachingServiceReference() {
             return _serviceReference;
         }
 

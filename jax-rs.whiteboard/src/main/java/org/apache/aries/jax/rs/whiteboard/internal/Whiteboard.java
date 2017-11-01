@@ -20,6 +20,7 @@ package org.apache.aries.jax.rs.whiteboard.internal;
 import org.apache.aries.jax.rs.whiteboard.internal.Utils.ApplicationExtensionRegistration;
 import org.apache.aries.jax.rs.whiteboard.internal.Utils.PropertyHolder;
 import org.apache.aries.jax.rs.whiteboard.internal.Utils.ServiceTuple;
+import org.apache.aries.osgi.functional.CachingServiceReference;
 import org.apache.aries.osgi.functional.OSGi;
 import org.apache.aries.osgi.functional.OSGiResult;
 import org.apache.cxf.Bus;
@@ -125,13 +126,13 @@ public class Whiteboard {
     static final String DEFAULT_NAME = ".default";
     private static final Function<ServiceTuple<Application>, String>
         APPLICATION_BASE =
-        ((Function<ServiceTuple<Application>, ServiceReference<Application>>)
-            ServiceTuple::getServiceReference).andThen(
+        ((Function<ServiceTuple<Application>, CachingServiceReference<Application>>)
+            ServiceTuple::getCachingServiceReference).andThen(
                 sr -> getApplicationBase(sr::getProperty));
     private static final Function<ServiceTuple<Application>, String>
         APPLICATION_NAME =
-        ((Function<ServiceTuple<Application>, ServiceReference<Application>>)
-            ServiceTuple::getServiceReference).andThen(
+        ((Function<ServiceTuple<Application>, CachingServiceReference<Application>>)
+            ServiceTuple::getCachingServiceReference).andThen(
             sr -> getApplicationName(sr::getProperty));
 
     private final AriesJaxRSServiceRuntime _runtime;
@@ -240,21 +241,21 @@ public class Whiteboard {
 
         OSGi<ServiceTuple<Application>> highestRankedPerName = highestPer(
             APPLICATION_NAME, gettableAplicationForWhiteboard,
-            t -> _runtime.addClashingApplication(t.getServiceReference()),
-            t -> _runtime.removeClashingApplication(t.getServiceReference())
+            t -> _runtime.addClashingApplication(t.getCachingServiceReference()),
+            t -> _runtime.removeClashingApplication(t.getCachingServiceReference())
         );
 
         OSGi<ServiceTuple<Application>> highestRankedPerPath = highestPer(
             APPLICATION_BASE, highestRankedPerName,
-            t -> _runtime.addShadowedApplication(t.getServiceReference()),
-            t -> _runtime.removeShadowedApplication(t.getServiceReference())
+            t -> _runtime.addShadowedApplication(t.getCachingServiceReference()),
+            t -> _runtime.removeShadowedApplication(t.getCachingServiceReference())
         );
 
         return
             highestRankedPerPath.flatMap(
                 this::deployApplication
             ).map(
-                ServiceTuple::getServiceReference
+                ServiceTuple::getCachingServiceReference
             ).map(
                 Utils::getProperties
             ).foreach(
@@ -314,7 +315,7 @@ public class Whiteboard {
         return bus;
     }
 
-    private OSGi<ServiceReference<CXFJaxRsServiceRegistrator>>
+    private OSGi<CachingServiceReference<CXFJaxRsServiceRegistrator>>
         defaultApplication() {
 
         return
@@ -335,8 +336,8 @@ public class Whiteboard {
         return
             just(this::createBus).flatMap(bus ->
             just(() -> {
-                ServiceReference<Application> serviceReference =
-                    tuple.getServiceReference();
+                CachingServiceReference<Application> serviceReference =
+                    tuple.getCachingServiceReference();
 
                 Map<String, Object> properties = getProperties(
                     serviceReference);
@@ -371,8 +372,8 @@ public class Whiteboard {
                         );
                 }
                 catch (RuntimeException e) {
-                    ServiceReference<Application> serviceReference =
-                        tuple.getServiceReference();
+                    CachingServiceReference<Application> serviceReference =
+                        tuple.getCachingServiceReference();
 
                     _runtime.addErroredApplication(serviceReference);
 
@@ -386,14 +387,14 @@ public class Whiteboard {
             }));
     }
 
-    private OSGi<ServiceReference<Object>>
+    private OSGi<CachingServiceReference<Object>>
         getApplicationExtensionsForWhiteboard() {
 
         return serviceReferences(getApplicationExtensionsFilter()).
             filter(new TargetFilter<>(_runtimeReference));
     }
 
-    private OSGi<ServiceReference<Application>>
+    private OSGi<CachingServiceReference<Application>>
         getApplicationsForWhiteboard() {
 
         return
@@ -401,7 +402,7 @@ public class Whiteboard {
             filter(new TargetFilter<>(_runtimeReference));
     }
 
-    private OSGi<ServiceReference<Object>> getResourcesForWhiteboard() {
+    private OSGi<CachingServiceReference<Object>> getResourcesForWhiteboard() {
         return serviceReferences(getResourcesFilter()).
             filter(
                 new TargetFilter<>(_runtimeReference));
@@ -463,8 +464,8 @@ public class Whiteboard {
     }
 
     private <T> OSGi<?> safeRegisterEndpoint(
-        ServiceReference<T> serviceReference,
-        ServiceReference<CXFJaxRsServiceRegistrator> registratorReference) {
+        CachingServiceReference<T> serviceReference,
+        CachingServiceReference<CXFJaxRsServiceRegistrator> registratorReference) {
 
         String applicationName = getApplicationName(
             registratorReference::getProperty);
@@ -507,8 +508,8 @@ public class Whiteboard {
     }
 
     private OSGi<?> safeRegisterExtension(
-        ServiceReference<?> serviceReference,
-        ServiceReference<CXFJaxRsServiceRegistrator> registratorReference) {
+        CachingServiceReference<?> serviceReference,
+        CachingServiceReference<CXFJaxRsServiceRegistrator> registratorReference) {
 
         return
             just(() -> getApplicationName(registratorReference::getProperty)).
@@ -563,10 +564,10 @@ public class Whiteboard {
 
 
 
-    private OSGi<ServiceReference<Application>>
+    private OSGi<CachingServiceReference<Application>>
         waitForApplicationDependencies(
-            ServiceReference<Application> applicationReference,
-            OSGi<ServiceReference<Application>> program) {
+            CachingServiceReference<Application> applicationReference,
+            OSGi<CachingServiceReference<Application>> program) {
 
         String[] extensionDependencies = canonicalize(
             applicationReference.getProperty(JAX_RS_EXTENSION_SELECT));
@@ -608,7 +609,9 @@ public class Whiteboard {
                                 return nothing();
                             }
 
-                            if (filter.match(applicationReference)) {
+                            if (filter.match(
+                                applicationReference.getServiceReference())) {
+
                                 return just(applicationReference);
                             }
 
@@ -631,7 +634,7 @@ public class Whiteboard {
     }
 
     private OSGi<?> waitForExtensionDependencies(
-        ServiceReference<?> serviceReference, String applicationName,
+        CachingServiceReference<?> serviceReference, String applicationName,
         OSGi<?> program) {
 
         String[] extensionDependencies = canonicalize(
@@ -657,8 +660,9 @@ public class Whiteboard {
                         filter(
                             sr -> getApplicationName(sr::getProperty).equals(
                                 applicationName)
-                        ).
-                        filter(
+                        ).map(
+                            CachingServiceReference::getServiceReference
+                        ).filter(
                             extensionFilter::match
                         )).effects(
                             __ -> {},
@@ -687,16 +691,16 @@ public class Whiteboard {
         return properties.get(JAX_RS_APPLICATION_BASE).toString();
     }
 
-    private static OSGi<ServiceReference<CXFJaxRsServiceRegistrator>>
+    private static OSGi<CachingServiceReference<CXFJaxRsServiceRegistrator>>
         allApplicationReferences() {
 
         return serviceReferences(CXFJaxRsServiceRegistrator.class);
     }
 
-    private static OSGi<ServiceReference<CXFJaxRsServiceRegistrator>>
+    private static OSGi<CachingServiceReference<CXFJaxRsServiceRegistrator>>
         chooseApplication(
-            ServiceReference<?> serviceReference,
-            Supplier<OSGi<ServiceReference<CXFJaxRsServiceRegistrator>>>
+            CachingServiceReference<?> serviceReference,
+            Supplier<OSGi<CachingServiceReference<CXFJaxRsServiceRegistrator>>>
                 theDefault) {
 
         Object applicationSelectProperty = serviceReference.getProperty(
@@ -747,10 +751,10 @@ public class Whiteboard {
         return format("(%s=true)", JAX_RS_RESOURCE);
     }
 
-    private static OSGi<ServiceReference<Object>> onlySupportedInterfaces(
-        OSGi<ServiceReference<Object>> program,
-        Consumer<ServiceReference<?>> onInvalidAdded,
-        Consumer<ServiceReference<?>> onInvalidRemoved) {
+    private static OSGi<CachingServiceReference<Object>> onlySupportedInterfaces(
+        OSGi<CachingServiceReference<Object>> program,
+        Consumer<CachingServiceReference<?>> onInvalidAdded,
+        Consumer<CachingServiceReference<?>> onInvalidRemoved) {
 
         return program.flatMap(sr -> {
             if (signalsValidInterface(sr)) {
@@ -806,7 +810,7 @@ public class Whiteboard {
     }
 
     private static boolean signalsValidInterface(
-        ServiceReference<Object> serviceReference) {
+        CachingServiceReference<Object> serviceReference) {
 
         String[] objectClasses = canonicalize(serviceReference.getProperty(
             "objectClass"));

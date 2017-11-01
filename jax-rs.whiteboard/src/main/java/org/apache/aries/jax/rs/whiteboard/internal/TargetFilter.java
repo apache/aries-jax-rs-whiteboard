@@ -4,6 +4,7 @@ import static org.osgi.service.jaxrs.whiteboard.JaxRSWhiteboardConstants.JAX_RS_
 
 import java.util.function.Predicate;
 
+import org.apache.aries.osgi.functional.CachingServiceReference;
 import org.osgi.framework.Filter;
 import org.osgi.framework.FrameworkUtil;
 import org.osgi.framework.InvalidSyntaxException;
@@ -11,14 +12,14 @@ import org.osgi.framework.ServiceReference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class TargetFilter<T> implements Predicate<ServiceReference<T>>  {
+public class TargetFilter<T> implements Predicate<CachingServiceReference<T>>  {
 
     public TargetFilter(ServiceReference<?> serviceRuntimeReference) {
         _serviceRuntimeReference = serviceRuntimeReference;
     }
 
     @Override
-    public boolean test(ServiceReference<T> ref) {
+    public boolean test(CachingServiceReference<T> ref) {
         String target = (String)ref.getProperty(JAX_RS_WHITEBOARD_TARGET);
 
         if (target == null) {

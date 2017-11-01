@@ -18,7 +18,7 @@
 package org.apache.aries.jax.rs.whiteboard.internal;
 
 import org.apache.aries.jax.rs.whiteboard.internal.Utils.PropertyHolder;
-import org.osgi.framework.ServiceReference;
+import org.apache.aries.osgi.functional.CachingServiceReference;
 import org.osgi.service.jaxrs.runtime.JaxRSServiceRuntime;
 import org.osgi.service.jaxrs.runtime.dto.ApplicationDTO;
 import org.osgi.service.jaxrs.runtime.dto.DTOConstants;
@@ -57,79 +57,81 @@ public class AriesJaxRSServiceRuntime implements JaxRSServiceRuntime {
         Whiteboard.class);
     private ConcurrentHashMap<String, Map<String, Object>>
         _applications = new ConcurrentHashMap<>();
-    private ConcurrentHashMap<String, Collection<ServiceReference<?>>>
+    private ConcurrentHashMap<String, Collection<CachingServiceReference<?>>>
         _applicationEndpoints = new ConcurrentHashMap<>();
-    private ConcurrentHashMap<String, Collection<ServiceReference<?>>>
+    private ConcurrentHashMap<String, Collection<CachingServiceReference<?>>>
         _applicationExtensions = new ConcurrentHashMap<>();
-    private Collection<ServiceReference<Application>>
+    private Collection<CachingServiceReference<Application>>
         _ungettableApplications = new CopyOnWriteArrayList<>();
-    private Collection<ServiceReference<Application>> _shadowedApplications =
+    private Collection<CachingServiceReference<Application>> _shadowedApplications =
         new CopyOnWriteArrayList<>();
-    private Set<ServiceReference<Application>> _dependentApplications =
+    private Set<CachingServiceReference<Application>> _dependentApplications =
         ConcurrentHashMap.newKeySet();
-    private Collection<ServiceReference<Application>> _clashingApplications =
+    private Collection<CachingServiceReference<Application>> _clashingApplications =
         new CopyOnWriteArrayList<>();
-    private Collection<ServiceReference<Application>> _erroredApplications =
+    private Collection<CachingServiceReference<Application>> _erroredApplications =
         new CopyOnWriteArrayList<>();
-    private Collection<ServiceReference<?>> _erroredEndpoints =
+    private Collection<CachingServiceReference<?>> _erroredEndpoints =
         new CopyOnWriteArrayList<>();
-    private Collection<ServiceReference<?>> _ungettableEndpoints =
+    private Collection<CachingServiceReference<?>> _ungettableEndpoints =
         new CopyOnWriteArrayList<>();
-    private Collection<ServiceReference<?>> _ungettableExtensions =
+    private Collection<CachingServiceReference<?>> _ungettableExtensions =
         new CopyOnWriteArrayList<>();
-    private Set<ServiceReference<?>> _dependentServices =
+    private Set<CachingServiceReference<?>> _dependentServices =
         ConcurrentHashMap.newKeySet();
-    private Collection<ServiceReference<?>> _invalidExtensions =
+    private Collection<CachingServiceReference<?>> _invalidExtensions =
         new CopyOnWriteArrayList<>();
     private volatile Map<String, Object> _defaultApplicationProperties;
 
     public void addApplicationEndpoint(
-        String applicationName, ServiceReference<?> endpointServiceReference) {
+        String applicationName, CachingServiceReference<?> endpointImmutableServiceReference) {
 
         _applicationEndpoints.compute(
-            applicationName, merger(endpointServiceReference));
+            applicationName, merger(endpointImmutableServiceReference));
     }
 
     public void addApplicationExtension(
         String applicationName,
-        ServiceReference<?> extensionServiceReference) {
+        CachingServiceReference<?> extensionImmutableServiceReference) {
 
         _applicationExtensions.compute(
-            applicationName, merger(extensionServiceReference));
+            applicationName, merger(extensionImmutableServiceReference));
     }
 
     public void addClashingApplication(
-        ServiceReference<Application> serviceReference) {
+        CachingServiceReference<Application> serviceReference) {
 
         _clashingApplications.add(serviceReference);
     }
 
     public void addDependentApplication(
-        ServiceReference<Application> applicationReference) {
+        CachingServiceReference<Application> applicationReference) {
 
         _dependentApplications.add(applicationReference);
     }
 
-    public void addDependentService(ServiceReference<?> serviceReference) {
+    public void addDependentService(CachingServiceReference<?> serviceReference) {
         _dependentServices.add(serviceReference);
     }
 
     public void addErroredApplication(
-        ServiceReference<Application> serviceReference) {
+        CachingServiceReference<Application> serviceReference) {
 
         _erroredApplications.add(serviceReference);
     }
 
-    public <T> void addErroredEndpoint(ServiceReference<T> serviceReference) {
+    public <T> void addErroredEndpoint(CachingServiceReference<T> serviceReference) {
         _erroredEndpoints.add(serviceReference);
     }
 
-    public void addInvalidExtension(ServiceReference<?> serviceReference) {
+    public void addInvalidExtension(
+        CachingServiceReference<?> serviceReference) {
+
         _invalidExtensions.add(serviceReference);
     }
 
     public boolean addNotGettableApplication(
-        ServiceReference<Application> serviceReference) {
+        CachingServiceReference<Application> serviceReference) {
 
         if (_LOGGER.isWarnEnabled()) {
             _LOGGER.warn(
@@ -141,7 +143,7 @@ public class AriesJaxRSServiceRuntime implements JaxRSServiceRuntime {
     }
 
     public <T> boolean addNotGettableEndpoint(
-        ServiceReference<T> serviceReference) {
+        CachingServiceReference<T> serviceReference) {
 
         if (_LOGGER.isWarnEnabled()) {
             _LOGGER.warn(
@@ -153,7 +155,7 @@ public class AriesJaxRSServiceRuntime implements JaxRSServiceRuntime {
     }
 
     public <T> void addNotGettableExtension(
-        ServiceReference<T> serviceReference) {
+        CachingServiceReference<T> serviceReference) {
 
         if (_LOGGER.isWarnEnabled()) {
             _LOGGER.warn(
@@ -165,7 +167,7 @@ public class AriesJaxRSServiceRuntime implements JaxRSServiceRuntime {
     }
 
     public boolean addShadowedApplication(
-        ServiceReference<Application> serviceReference) {
+        CachingServiceReference<Application> serviceReference) {
 
         return _shadowedApplications.add(serviceReference);
     }
@@ -235,69 +237,69 @@ public class AriesJaxRSServiceRuntime implements JaxRSServiceRuntime {
     }
 
     public void removeApplicationEndpoint(
-        String applicationName, ServiceReference<?> endpointServiceReference) {
+        String applicationName, CachingServiceReference<?> endpointImmutableServiceReference) {
 
         _applicationEndpoints.compute(
-            applicationName, remover(endpointServiceReference));
+            applicationName, remover(endpointImmutableServiceReference));
     }
 
     public void removeApplicationExtension(
-        String applicationName, ServiceReference<?> extensionServiceReference) {
+        String applicationName, CachingServiceReference<?> extensionImmutableServiceReference) {
 
         _applicationExtensions.computeIfPresent(
-            applicationName, remover(extensionServiceReference));
+            applicationName, remover(extensionImmutableServiceReference));
     }
 
     public void removeClashingApplication(
-        ServiceReference<Application> serviceReference) {
+        CachingServiceReference<Application> serviceReference) {
 
         _clashingApplications.remove(serviceReference);
     }
 
     public void removeDependentApplication(
-        ServiceReference<Application> applicationReference) {
+        CachingServiceReference<Application> applicationReference) {
 
         _dependentApplications.remove(applicationReference);
     }
 
-    public void removeDependentService(ServiceReference<?> serviceReference) {
+    public void removeDependentService(CachingServiceReference<?> serviceReference) {
         _dependentServices.remove(serviceReference);
     }
 
     public void removeErroredApplication(
-        ServiceReference<Application> serviceReference) {
+        CachingServiceReference<Application> serviceReference) {
 
         _erroredApplications.remove(serviceReference);
     }
 
-    public <T> void removeErroredEndpoint(ServiceReference<T> serviceReference) {
+    public <T> void removeErroredEndpoint(CachingServiceReference<T> serviceReference) {
         _erroredEndpoints.remove(serviceReference);
     }
 
-    public void removeInvalidExtension(ServiceReference<?> serviceReference) {
+    public void removeInvalidExtension(CachingServiceReference<?> serviceReference) {
         _invalidExtensions.remove(serviceReference);
     }
 
     public boolean removeNotGettableApplication(
-        ServiceReference<Application> serviceReference) {
+        CachingServiceReference<Application> serviceReference) {
 
         return _ungettableApplications.remove(serviceReference);
     }
 
     public <T> boolean removeNotGettableEndpoint(
-        ServiceReference<T> serviceReference) {
+        CachingServiceReference<T> serviceReference) {
 
         return _ungettableEndpoints.remove(serviceReference);
     }
 
     public <T> void removeNotGettableExtension(
-        ServiceReference<T> serviceReference) {
+        CachingServiceReference<T> serviceReference) {
 
         _ungettableExtensions.remove(serviceReference);
     }
 
     public boolean removeShadowedApplication(
-        ServiceReference<Application> serviceReference) {
+        CachingServiceReference<Application> serviceReference) {
 
         return _shadowedApplications.remove(serviceReference);
     }
@@ -351,7 +353,7 @@ public class AriesJaxRSServiceRuntime implements JaxRSServiceRuntime {
     }
 
     private FailedExtensionDTO buildFailedExtensionDTO(
-        int reason, ServiceReference<?> serviceReference) {
+        int reason, CachingServiceReference<?> serviceReference) {
 
         FailedExtensionDTO failedExtensionDTO = new FailedExtensionDTO();
 
@@ -363,7 +365,7 @@ public class AriesJaxRSServiceRuntime implements JaxRSServiceRuntime {
     }
 
     private FailedResourceDTO buildFailedResourceDTO(
-        int reason, ServiceReference<?> serviceReference) {
+        int reason, CachingServiceReference<?> serviceReference) {
 
         FailedResourceDTO failedResourceDTO = new FailedResourceDTO();
 
@@ -403,10 +405,10 @@ public class AriesJaxRSServiceRuntime implements JaxRSServiceRuntime {
     }
 
     private Stream<ResourceDTO> getApplicationEndpointsStream(String name) {
-        Collection<ServiceReference<?>> applicationEndpoints =
+        Collection<CachingServiceReference<?>> applicationEndpoints =
             _applicationEndpoints.get(name);
 
-        Stream<ServiceReference<?>> applicationEndpointStream =
+        Stream<CachingServiceReference<?>> applicationEndpointStream =
             applicationEndpoints != null ?
                 applicationEndpoints.stream() :
                 Stream.empty();
@@ -418,10 +420,10 @@ public class AriesJaxRSServiceRuntime implements JaxRSServiceRuntime {
     }
 
     private Stream<ExtensionDTO> getApplicationExtensionsStream(String name) {
-        Collection<ServiceReference<?>> applicationExtensions =
+        Collection<CachingServiceReference<?>> applicationExtensions =
             _applicationExtensions.get(name);
 
-        Stream<ServiceReference<?>> applicationExtensionStream =
+        Stream<CachingServiceReference<?>> applicationExtensionStream =
             applicationExtensions != null ?
                 applicationExtensions.stream() :
                 Stream.empty();
@@ -468,7 +470,7 @@ public class AriesJaxRSServiceRuntime implements JaxRSServiceRuntime {
     }
 
     private static FailedApplicationDTO buildFailedApplicationDTO(
-        int reason, ServiceReference<Application> serviceReference) {
+        int reason, CachingServiceReference<Application> serviceReference) {
 
         FailedApplicationDTO failedApplicationDTO = new FailedApplicationDTO();
 
@@ -501,7 +503,7 @@ public class AriesJaxRSServiceRuntime implements JaxRSServiceRuntime {
     }
 
     private static ExtensionDTO populateExtensionDTO(
-        ExtensionDTO extensionDTO, ServiceReference<?> serviceReference) {
+        ExtensionDTO extensionDTO, CachingServiceReference<?> serviceReference) {
 
         extensionDTO.name = serviceReference.getProperty(JAX_RS_NAME).
             toString();
@@ -519,7 +521,7 @@ public class AriesJaxRSServiceRuntime implements JaxRSServiceRuntime {
     }
 
     private static ResourceDTO populateResourceDTO(
-        ResourceDTO resourceDTO, ServiceReference<?> serviceReference) {
+        ResourceDTO resourceDTO, CachingServiceReference<?> serviceReference) {
 
         resourceDTO.name = getApplicationName(serviceReference::getProperty);
         resourceDTO.serviceId = (Long)serviceReference.getProperty(
