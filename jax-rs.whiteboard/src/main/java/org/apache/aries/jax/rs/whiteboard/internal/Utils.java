@@ -421,7 +421,7 @@ public class Utils {
                         set.remove(e);
 
                         _sentEvents.compute(key, (___, sentEvent) -> {
-                            if (sentEvent.getEvent() == e) {
+                            if (sentEvent != null && sentEvent.getEvent() == e) {
                                 sentEvent.terminate();
 
                                 if (!set.isEmpty()) {
