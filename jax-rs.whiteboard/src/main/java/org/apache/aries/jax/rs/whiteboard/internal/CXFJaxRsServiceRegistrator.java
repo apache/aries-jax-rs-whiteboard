@@ -67,7 +67,14 @@ public class CXFJaxRsServiceRegistrator {
 
         _services.add(resourceProvider);
 
-        rewire();
+        try {
+            rewire();
+        }
+        catch (Exception e) {
+            remove(resourceProvider);
+
+            throw e;
+        }
     }
 
     public void addProvider(ServiceTuple<?> tuple) {
@@ -77,7 +84,15 @@ public class CXFJaxRsServiceRegistrator {
 
         _providers.add(tuple);
 
-        rewire();
+        try {
+            rewire();
+        }
+        catch (Exception e) {
+            removeProvider(tuple);
+
+            throw e;
+        }
+
     }
 
     public void close() {
