@@ -21,7 +21,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.Map;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import javax.ws.rs.core.Application;
@@ -30,6 +32,7 @@ import javax.ws.rs.ext.RuntimeDelegate;
 
 import org.apache.aries.jax.rs.whiteboard.internal.Utils.ServiceReferenceResourceProvider;
 import org.apache.aries.jax.rs.whiteboard.internal.Utils.ServiceTuple;
+import org.apache.aries.osgi.functional.CachingServiceReference;
 import org.apache.cxf.Bus;
 import org.apache.cxf.endpoint.Server;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
@@ -47,8 +50,7 @@ public class CXFJaxRsServiceRegistrator {
 
     private final Application _application;
     private final Bus _bus;
-    private final Collection<ServiceTuple<?>> _providers = new TreeSet<>(
-        Comparator.comparing(ServiceTuple::getCachingServiceReference));
+    private final Collection<ServiceTuple<?>> _providers;
     private final Collection<ResourceProvider> _services = new ArrayList<>();
     private volatile boolean _closed = false;
     private Server _server;
@@ -56,6 +58,11 @@ public class CXFJaxRsServiceRegistrator {
     public CXFJaxRsServiceRegistrator(Bus bus, Application application) {
         _bus = bus;
         _application = application;
+
+        Comparator<ServiceTuple<?>> comparing = Comparator.comparing(
+            ServiceTuple::getCachingServiceReference);
+
+        _providers = new TreeSet<>(comparing);
 
         rewire();
     }
@@ -211,35 +218,56 @@ public class CXFJaxRsServiceRegistrator {
         jsonProvider.setSupportUnwrapped(true);
 
         jaxRsServerFactoryBean.setProvider(jsonProvider);
+        jaxRsServerFactoryBean.setProvider(
+            (Feature) featureContext -> {
+                for (ServiceTuple<?> provider : _providers) {
+                    CachingServiceReference<?> cachingServiceReference =
+                        provider.getCachingServiceReference();
 
-        for (ServiceTuple<?> provider : _providers) {
-            jaxRsServerFactoryBean.setProvider(
-                (Feature) featureContext -> {
                     ServiceReference<?> serviceReference =
-                        provider.getCachingServiceReference().
+                        cachingServiceReference.
                             getServiceReference();
+
+                    int ranking = Utils.getRanking(cachingServiceReference);
 
                     String[] interfaces = canonicalize(
                         serviceReference.getProperty("objectClass"));
 
-                    Class[] classes = Arrays.stream(interfaces).flatMap(
-                        className -> {
+                    if (ranking != 0) {
+                        Map<Class<?>, Integer> classesWithPriorities=
+                            Arrays.stream(interfaces).flatMap(
+                                className -> {
+                                    try {
+                                        return Stream.of(
+                                            Class.forName(className));
+                                    }
+                                    catch (ClassNotFoundException e) {
+                                        return Stream.empty();
+                                    }
+                                }
+                            ).collect(
+                                Collectors.toMap(c -> c, __ -> ranking)
+                            );
+
+                        featureContext.register(
+                            provider.getService(), classesWithPriorities);
+                    }
+                    else {
+                        for (String className : interfaces) {
                             try {
-                                return Stream.of(Class.forName(className));
+                                featureContext.register(
+                                    provider.getService(),
+                                    Class.forName(className));
                             }
                             catch (ClassNotFoundException e) {
-                                return Stream.empty();
                             }
                         }
-                    ).toArray(
-                        Class[]::new
-                    );
+                    }
 
-                    featureContext.register(provider.getService(), classes);
-
-                    return true;
-                });
-        }
+                }
+                
+                return true;
+            });
 
         for (ResourceProvider resourceProvider: _services) {
             jaxRsServerFactoryBean.setResourceProvider(resourceProvider);

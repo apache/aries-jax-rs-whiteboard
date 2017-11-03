@@ -86,6 +86,24 @@ public class Utils {
         return properties;
     }
 
+    public static int getRanking(
+        CachingServiceReference<?> cachingServiceReference) {
+
+        Object property = cachingServiceReference.getProperty(
+            "service.ranking");
+
+        if (property == null) {
+            return 0;
+        }
+
+        if (property instanceof Number) {
+            return ((Number)property).intValue();
+        }
+        else {
+            return 0;
+        }
+    }
+
     public static <T> ResourceProvider getResourceProvider(
         ServiceObjects<T> serviceObjects) {
 
