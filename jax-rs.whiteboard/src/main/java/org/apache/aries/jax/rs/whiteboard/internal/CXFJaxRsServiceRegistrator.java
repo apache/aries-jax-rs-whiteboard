@@ -210,14 +210,6 @@ public class CXFJaxRsServiceRegistrator {
 
         jaxRsServerFactoryBean.setBus(_bus);
 
-        JSONProvider<Object> jsonProvider = new JSONProvider<>();
-
-        jsonProvider.setDropCollectionWrapperElement(true);
-        jsonProvider.setDropRootElement(true);
-        jsonProvider.setSerializeAsArray(true);
-        jsonProvider.setSupportUnwrapped(true);
-
-        jaxRsServerFactoryBean.setProvider(jsonProvider);
         jaxRsServerFactoryBean.setProvider(
             (Feature) featureContext -> {
                 for (ServiceTuple<?> provider : _providers) {
