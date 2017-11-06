@@ -239,7 +239,9 @@ public class Whiteboard {
                     _runtime::removeInvalidExtension).
                 flatMap(resourceReference ->
             chooseApplication(
-                    resourceReference, Whiteboard::allApplicationReferences).
+                    resourceReference, Whiteboard::allApplicationReferences,
+                    _runtime::addApplicationDependentExtension,
+                    _runtime::removeApplicationDependentExtension).
                 flatMap(registratorReference ->
             waitForExtensionDependencies(
                 resourceReference,
@@ -252,7 +254,10 @@ public class Whiteboard {
         return
             countChanges(getResourcesForWhiteboard(), _counter).
                 flatMap(resourceReference ->
-            chooseApplication(resourceReference, this::defaultApplication).
+            chooseApplication(
+                resourceReference, this::defaultApplication,
+                _runtime::addApplicationDependentResource,
+                _runtime::removeApplicationDependentResource).
                 flatMap(registratorReference ->
             waitForExtensionDependencies(
                 resourceReference,
@@ -715,7 +720,9 @@ public class Whiteboard {
         chooseApplication(
             CachingServiceReference<?> serviceReference,
             Supplier<OSGi<CachingServiceReference<CXFJaxRsServiceRegistrator>>>
-                theDefault) {
+                theDefault,
+            Consumer<CachingServiceReference<?>> onWaiting,
+            Consumer<CachingServiceReference<?>> onResolved) {
 
         Object applicationSelectProperty = serviceReference.getProperty(
             JAX_RS_APPLICATION_SELECT);
@@ -725,9 +732,14 @@ public class Whiteboard {
         }
 
         return
+            just(0).
+            effects(
+                __ -> onWaiting.accept(serviceReference),
+                __ -> onResolved.accept(serviceReference)).then(
             serviceReferences(
                 CXFJaxRsServiceRegistrator.class,
-                applicationSelectProperty.toString());
+                applicationSelectProperty.toString()).
+            effects(__ -> onResolved.accept(serviceReference), __ -> {}));
     }
 
     private static <T> OSGi<T> countChanges(

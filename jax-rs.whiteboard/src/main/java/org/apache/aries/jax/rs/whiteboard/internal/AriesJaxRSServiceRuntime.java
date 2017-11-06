@@ -67,6 +67,10 @@ public class AriesJaxRSServiceRuntime implements JaxRSServiceRuntime {
         new CopyOnWriteArrayList<>();
     private Set<CachingServiceReference<Application>> _dependentApplications =
         ConcurrentHashMap.newKeySet();
+    private Set<CachingServiceReference<?>> _applicationDependentExtensions =
+        ConcurrentHashMap.newKeySet();
+    private Set<CachingServiceReference<?>> _applicationDependentResources =
+        ConcurrentHashMap.newKeySet();
     private Collection<CachingServiceReference<Application>> _clashingApplications =
         new CopyOnWriteArrayList<>();
     private Collection<CachingServiceReference<Application>> _erroredApplications =
@@ -82,6 +86,18 @@ public class AriesJaxRSServiceRuntime implements JaxRSServiceRuntime {
     private Collection<CachingServiceReference<?>> _invalidExtensions =
         new CopyOnWriteArrayList<>();
     private volatile Map<String, Object> _defaultApplicationProperties;
+
+    public void addApplicationDependentExtension(
+        CachingServiceReference<?> cachingServiceReference) {
+
+        _applicationDependentExtensions.add(cachingServiceReference);
+    }
+
+    public void addApplicationDependentResource(
+        CachingServiceReference<?> cachingServiceReference) {
+
+        _applicationDependentResources.add(cachingServiceReference);
+    }
 
     public void addApplicationEndpoint(
         String applicationName, CachingServiceReference<?> endpointImmutableServiceReference) {
@@ -214,14 +230,18 @@ public class AriesJaxRSServiceRuntime implements JaxRSServiceRuntime {
                 unreferenciableEndpointsDTOStream(),
                 Stream.concat(
                     dependentServiceStreamDTO(),
-                    erroredEndpointsStreamDTO())
+                    Stream.concat(
+                        applicationDependentResourcesDTOStream(),
+                        erroredEndpointsStreamDTO()))
             ).toArray(
                 FailedResourceDTO[]::new
             );
 
         runtimeDTO.failedExtensionDTOs = Stream.concat(
                 unreferenciableExtensionsDTOStream(),
-                invalidExtensionsDTOStream()
+                Stream.concat(
+                    applicationDependentExtensionsDTOStream(),
+                    invalidExtensionsDTOStream())
             ).toArray(
                 FailedExtensionDTO[]::new
             );
@@ -229,11 +249,16 @@ public class AriesJaxRSServiceRuntime implements JaxRSServiceRuntime {
         return runtimeDTO;
     }
 
-    private Stream<FailedResourceDTO> erroredEndpointsStreamDTO() {
-        return _erroredEndpoints.stream().map(
-            sr -> buildFailedResourceDTO(
-                DTOConstants.FAILURE_REASON_UNKNOWN, sr)
-        );
+    public void removeApplicationDependentExtension(
+        CachingServiceReference<?> cachingServiceReference) {
+
+        _applicationDependentExtensions.remove(cachingServiceReference);
+    }
+
+    public void removeApplicationDependentResource(
+        CachingServiceReference<?> cachingServiceReference) {
+
+        _applicationDependentResources.remove(cachingServiceReference);
     }
 
     public void removeApplicationEndpoint(
@@ -404,6 +429,13 @@ public class AriesJaxRSServiceRuntime implements JaxRSServiceRuntime {
         );
     }
 
+    private Stream<FailedResourceDTO> erroredEndpointsStreamDTO() {
+        return _erroredEndpoints.stream().map(
+            sr -> buildFailedResourceDTO(
+                DTOConstants.FAILURE_REASON_UNKNOWN, sr)
+        );
+    }
+
     private Stream<ResourceDTO> getApplicationEndpointsStream(String name) {
         Collection<CachingServiceReference<?>> applicationEndpoints =
             _applicationEndpoints.get(name);
@@ -438,6 +470,20 @@ public class AriesJaxRSServiceRuntime implements JaxRSServiceRuntime {
         return _invalidExtensions.stream().map(
             sr -> buildFailedExtensionDTO(
                 DTOConstants.FAILURE_REASON_NOT_AN_EXTENSION_TYPE, sr)
+        );
+    }
+
+    private Stream<FailedExtensionDTO> applicationDependentExtensionsDTOStream() {
+        return _applicationDependentExtensions.stream().map(
+            sr -> buildFailedExtensionDTO(
+                DTOConstants.FAILURE_REASON_REQUIRED_APPLICATION_UNAVAILABLE, sr)
+        );
+    }
+
+    private Stream<FailedResourceDTO> applicationDependentResourcesDTOStream() {
+        return _applicationDependentResources.stream().map(
+            sr -> buildFailedResourceDTO(
+                DTOConstants.FAILURE_REASON_REQUIRED_APPLICATION_UNAVAILABLE, sr)
         );
     }
 
