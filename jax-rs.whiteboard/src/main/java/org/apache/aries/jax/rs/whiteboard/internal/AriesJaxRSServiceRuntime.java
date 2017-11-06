@@ -551,8 +551,7 @@ public class AriesJaxRSServiceRuntime implements JaxRSServiceRuntime {
     private static ExtensionDTO populateExtensionDTO(
         ExtensionDTO extensionDTO, CachingServiceReference<?> serviceReference) {
 
-        extensionDTO.name = serviceReference.getProperty(JAX_RS_NAME).
-            toString();
+        extensionDTO.name = getApplicationName(serviceReference::getProperty);
         extensionDTO.serviceId = (Long)serviceReference.getProperty(
             "service.id");
         extensionDTO.extensionTypes =

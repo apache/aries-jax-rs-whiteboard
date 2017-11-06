@@ -782,6 +782,29 @@ public class JaxrsTest extends TestHelper {
         filterRegistration.unregister();
     }
 
+    @Test
+    public void testExtensionWithoutAName() {
+        Dictionary<String, Object> properties = new Hashtable<>();
+
+        properties.put(JAX_RS_EXTENSION, true);
+
+        ServiceRegistration<ContainerResponseFilter> registration =
+            bundleContext.registerService(
+                ContainerResponseFilter.class, new TestFilter(), properties);
+
+        try {
+            RuntimeDTO runtimeDTO = _runtime.getRuntimeDTO();
+
+            assertEquals(
+                (long)registration.getReference().getProperty("service.id"),
+                runtimeDTO.defaultApplication.extensionDTOs[0].serviceId);
+        }
+        finally {
+            registration.unregister();
+        }
+
+    }
+
     @Ignore
     @Test
     public void testFeatureExtension() {
