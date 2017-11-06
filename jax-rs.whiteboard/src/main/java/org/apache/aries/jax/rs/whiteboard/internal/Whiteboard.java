@@ -179,6 +179,38 @@ public class Whiteboard {
         return new Whiteboard(bundleContext, configuration);
     }
 
+    private OSGi<ServiceTuple<Application>> filterErroringApplications(
+        OSGi<ServiceTuple<Application>> program) {
+
+        return program.flatMap(tuple -> {
+            ExtensionManagerBus bus = createBus();
+
+            try {
+                CXFJaxRsServiceRegistrator registrator =
+                    new CXFJaxRsServiceRegistrator(bus, tuple.getService());
+
+                registrator.close();
+                bus.shutdown();
+
+                return just(tuple);
+            }
+            catch (Exception e) {
+                CachingServiceReference<Application> serviceReference =
+                    tuple.getCachingServiceReference();
+
+                _runtime.addErroredApplication(serviceReference);
+
+                return onClose(
+                    () ->
+                        _runtime.removeErroredApplication(serviceReference)
+                ).then(
+                    nothing()
+                );
+            }
+        });
+
+    }
+
     public void start() {
         _osgiResult = _program.run(_bundleContext);
     }
@@ -238,6 +270,9 @@ public class Whiteboard {
                     sr -> waitForApplicationDependencies(sr, just(sr))),
                 _runtime::addNotGettableApplication,
                 _runtime::removeNotGettableApplication);
+
+        gettableAplicationForWhiteboard = filterErroringApplications(
+            gettableAplicationForWhiteboard);
 
         OSGi<ServiceTuple<Application>> highestRankedPerName = highestPer(
             APPLICATION_NAME, gettableAplicationForWhiteboard,
@@ -359,32 +394,11 @@ public class Whiteboard {
         Bus bus, ServiceTuple<Application> tuple, Map<String, Object> props) {
 
         return
-            join(just(() -> {
-                try {
-                    CXFJaxRsServiceRegistrator registrator =
-                        new CXFJaxRsServiceRegistrator(bus, tuple.getService());
+            just(() -> new CXFJaxRsServiceRegistrator(bus, tuple.getService())).
+                flatMap(registrator ->
 
-                    return
-                        onClose(registrator::close).then(
-                            register(
-                                CXFJaxRsServiceRegistrator.class, registrator,
-                                props)
-                        );
-                }
-                catch (RuntimeException e) {
-                    CachingServiceReference<Application> serviceReference =
-                        tuple.getCachingServiceReference();
-
-                    _runtime.addErroredApplication(serviceReference);
-
-                    return onClose(
-                        () ->
-                            _runtime.removeErroredApplication(serviceReference)
-                    ).then(
-                        nothing()
-                    );
-                }
-            }));
+            onClose(registrator::close).then(
+            register(CXFJaxRsServiceRegistrator.class, registrator, props)));
     }
 
     private OSGi<CachingServiceReference<Object>>
