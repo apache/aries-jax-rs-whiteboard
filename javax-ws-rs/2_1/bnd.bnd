@@ -1,0 +1,13 @@
+# Keep -include instruction first because order matters
+-include: ~jar:file:${.}/target/lib/jaxrs-api.jar!/META-INF/MANIFEST.MF
+
+Bundle-SymbolicName: ${project.artifactId}
+Bundle-Version: ${project.version}
+Provide-Capability:\
+	osgi.contract;\
+		osgi.contract=JavaJAXRS;\
+		uses:="javax.ws.rs,javax.ws.rs.client,javax.ws.rs.container,javax.ws.rs.core,javax.ws.rs.ext";\
+		version:List<Version>="2.1"
+
+-includeresource:\
+	@${.}/target/lib/jaxrs-api.jar!/!META-INF/maven/(javax.ws.rs|org.apache.servicemix.specs)/*
