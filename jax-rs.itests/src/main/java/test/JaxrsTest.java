@@ -117,13 +117,10 @@ public class JaxrsTest extends TestHelper {
         Long changeCount = (Long)_runtimeServiceReference.getProperty(
             "service.changecount");
 
-        Dictionary<String, Object> properties = new Hashtable<>();
-
-        properties.put(JAX_RS_APPLICATION_BASE, "/test-counter");
-
         ServiceRegistration<?> serviceRegistration =
-            bundleContext.registerService(
-                Application.class, new TestApplication(), properties);
+            registerApplication(
+                new TestApplication(), JAX_RS_APPLICATION_BASE,
+                "/test-counter");
 
         Long newCount = (Long)_runtimeServiceReference.getProperty(
             "service.changecount");
