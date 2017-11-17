@@ -76,18 +76,17 @@ import static org.apache.aries.jax.rs.whiteboard.internal.Utils.getResourceProvi
 import static org.apache.aries.jax.rs.whiteboard.internal.Utils.highestPer;
 import static org.apache.aries.jax.rs.whiteboard.internal.Utils.ignoreResult;
 import static org.apache.aries.jax.rs.whiteboard.internal.Utils.onlyGettables;
-import static org.apache.aries.jax.rs.whiteboard.internal.Utils.highestRanked;
 import static org.apache.aries.jax.rs.whiteboard.internal.Utils.service;
 import static org.apache.aries.jax.rs.whiteboard.internal.Utils.serviceObjects;
 import static org.apache.aries.jax.rs.whiteboard.internal.Utils.updateProperty;
 import static org.apache.aries.osgi.functional.OSGi.all;
-import static org.apache.aries.osgi.functional.OSGi.join;
 import static org.apache.aries.osgi.functional.OSGi.just;
 import static org.apache.aries.osgi.functional.OSGi.nothing;
 import static org.apache.aries.osgi.functional.OSGi.onClose;
 import static org.apache.aries.osgi.functional.OSGi.once;
 import static org.apache.aries.osgi.functional.OSGi.register;
 import static org.apache.aries.osgi.functional.OSGi.serviceReferences;
+import static org.apache.aries.osgi.functional.Utils.highest;
 import static org.osgi.service.http.runtime.HttpServiceRuntimeConstants.HTTP_SERVICE_ENDPOINT;
 import static org.osgi.service.http.whiteboard.HttpWhiteboardConstants.HTTP_WHITEBOARD_CONTEXT_NAME;
 import static org.osgi.service.http.whiteboard.HttpWhiteboardConstants.HTTP_WHITEBOARD_CONTEXT_SELECT;
@@ -257,7 +256,17 @@ public class Whiteboard {
         );
 
         return
-            highestRankedPerPath.flatMap(
+            highestRankedPerPath.recoverWith(
+                (t, e) ->
+                    just(t).map(
+                        ServiceTuple::getCachingServiceReference
+                    ).effects(
+                        _runtime::addErroredApplication,
+                        _runtime::removeErroredApplication
+                    ).then(
+                        nothing()
+                    )
+            ).flatMap(
                 this::deployApplication
             ).map(
                 ServiceTuple::getCachingServiceReference
@@ -324,7 +333,7 @@ public class Whiteboard {
         defaultApplication() {
 
         return
-            highestRanked(
+            highest(
                 serviceReferences(
                     CXFJaxRsServiceRegistrator.class,
                     String.format(
@@ -364,32 +373,11 @@ public class Whiteboard {
         Bus bus, ServiceTuple<Application> tuple, Map<String, Object> props) {
 
         return
-            join(just(() -> {
-                try {
-                    CXFJaxRsServiceRegistrator registrator =
-                        new CXFJaxRsServiceRegistrator(bus, tuple.getService());
+            just(() -> new CXFJaxRsServiceRegistrator(bus, tuple.getService())).
+                flatMap(registrator ->
 
-                    return
-                        onClose(registrator::close).then(
-                            register(
-                                CXFJaxRsServiceRegistrator.class, registrator,
-                                props)
-                        );
-                }
-                catch (RuntimeException e) {
-                    CachingServiceReference<Application> serviceReference =
-                        tuple.getCachingServiceReference();
-
-                    _runtime.addErroredApplication(serviceReference);
-
-                    return onClose(
-                        () ->
-                            _runtime.removeErroredApplication(serviceReference)
-                    ).then(
-                        nothing()
-                    );
-                }
-            }));
+            onClose(registrator::close).then(
+            register(CXFJaxRsServiceRegistrator.class, registrator, props)));
     }
 
     private OSGi<CachingServiceReference<Object>>

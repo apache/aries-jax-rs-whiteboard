@@ -599,7 +599,6 @@ public class JaxrsTest extends TestHelper {
 
     @Test
     public void testApplicationWithErrorAndHigherRanking() {
-
         RuntimeDTO runtimeDTO = getRuntimeDTO();
 
         assertEquals(0, runtimeDTO.applicationDTOs.length);
@@ -625,23 +624,8 @@ public class JaxrsTest extends TestHelper {
 
         runtimeDTO = getRuntimeDTO();
 
-        assertEquals(1, runtimeDTO.applicationDTOs.length);
-        assertEquals(1, runtimeDTO.failedApplicationDTOs.length);
-        assertEquals(
-            DTOConstants.FAILURE_REASON_UNKNOWN,
-            runtimeDTO.failedApplicationDTOs[0].failureReason);
-
-        assertEquals(
-            applicationRegistration.getReference().getProperty("service.id"),
-            runtimeDTO.applicationDTOs[0].serviceId);
-        assertEquals(
-            erroredRegistration.getReference().getProperty("service.id"),
-            runtimeDTO.failedApplicationDTOs[0].serviceId);
-
-        WebTarget webTarget = createDefaultTarget().path("/test-application");
-
-        assertEquals(200, webTarget.request().get().getStatus());
-        assertEquals("Hello application ", webTarget.request().get(String.class));
+        assertEquals(0, runtimeDTO.applicationDTOs.length);
+        assertEquals(2, runtimeDTO.failedApplicationDTOs.length);
 
         erroredRegistration.unregister();
 
@@ -649,9 +633,11 @@ public class JaxrsTest extends TestHelper {
 
         assertEquals(1, runtimeDTO.applicationDTOs.length);
         assertEquals(0, runtimeDTO.failedApplicationDTOs.length);
-        assertEquals(
-            applicationRegistration.getReference().getProperty("service.id"),
-            runtimeDTO.applicationDTOs[0].serviceId);
+
+        WebTarget webTarget = createDefaultTarget().path("/test-application");
+
+        assertEquals(200, webTarget.request().get().getStatus());
+        assertEquals("Hello application", webTarget.request().get(String.class));
     }
 
     @Test
