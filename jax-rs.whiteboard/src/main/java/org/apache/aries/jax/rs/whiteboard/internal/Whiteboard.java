@@ -462,34 +462,26 @@ public class Whiteboard {
                 just(serviceReference),
                 _runtime::addNotGettableEndpoint,
                 _runtime::removeNotGettableEndpoint
+            ).recoverWith((t, e) ->
+                just(serviceReference).
+                effects(
+                    _runtime::addErroredEndpoint,
+                    _runtime::removeErroredEndpoint).
+                then(nothing())
+            ).map(
+                ServiceTuple::getCachingServiceReference
             ).flatMap(
-                tuple -> serviceObjects(serviceReference).flatMap(
-                    serviceObjects -> {
-                        try {
-                            return registerEndpoint(
-                                registrator, serviceObjects).flatMap(
-                                resourceProvider ->
-                                    onClose(
-                                        () -> Utils.unregisterEndpoint(
-                                            registrator, resourceProvider)
-                                    ).effects(
-                                        __ -> _runtime.addApplicationEndpoint(
-                                            applicationName, serviceReference),
-                                        __ -> _runtime.removeApplicationEndpoint(
-                                            applicationName, serviceReference)
-                                    ));
-                        }
-                        catch (Exception e) {
-                            return
-                                just(serviceReference).
-                                effects(
-                                    _runtime::addErroredEndpoint,
-                                    _runtime::removeErroredEndpoint).
-                                then(nothing());
-                        }
-                    }
-
-                )
+                Utils::serviceObjects
+            ).map(
+                Utils::getResourceProvider
+            ).effects(
+                registrator::add,
+                registrator::remove
+            ).effects(
+                __ -> _runtime.addApplicationEndpoint(
+                    applicationName, serviceReference),
+                __ -> _runtime.removeApplicationEndpoint(
+                    applicationName, serviceReference)
             ));
     }
 
@@ -646,11 +638,12 @@ public class Whiteboard {
                             CachingServiceReference::getServiceReference
                         ).filter(
                             extensionFilter::match
-                        )).effects(
-                            __ -> {},
-                            __ -> _runtime.addDependentService(serviceReference)
-                        ).
-                        then(program);
+                        )
+                    ).effects(
+                        __ -> {},
+                        __ -> _runtime.addDependentService(serviceReference)
+                    ).
+                    then(program);
             }
             catch (InvalidSyntaxException e) {
 
@@ -790,9 +783,8 @@ public class Whiteboard {
 
     private static <T> OSGi<ResourceProvider> registerEndpoint(
         CXFJaxRsServiceRegistrator registrator,
-        ServiceObjects<T> serviceObjects) {
+        ResourceProvider resourceProvider) {
 
-        ResourceProvider resourceProvider = getResourceProvider(serviceObjects);
         registrator.add(resourceProvider);
 
         return just(resourceProvider);
