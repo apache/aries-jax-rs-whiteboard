@@ -71,9 +71,6 @@ import static org.junit.Assert.assertNull;
 
 public class JaxrsTest extends TestHelper {
 
-    private Collection<ServiceRegistration<?>> _registrations =
-        new ArrayList<>();
-
     @After
     public void tearDown() {
         Iterator<ServiceRegistration<?>> iterator = _registrations.iterator();
@@ -1378,8 +1375,8 @@ public class JaxrsTest extends TestHelper {
 
         assertEquals(0, runtimeDTO.failedExtensionDTOs.length);
     }
-
-
+    private Collection<ServiceRegistration<?>> _registrations =
+        new ArrayList<>();
 
     private JaxRSServiceRuntime getJaxRSServiceRuntime()
         throws InterruptedException {
