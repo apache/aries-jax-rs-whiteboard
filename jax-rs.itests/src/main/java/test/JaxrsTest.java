@@ -803,6 +803,30 @@ public class JaxrsTest extends TestHelper {
     }
 
     @Test
+    public void testErroredExtension() {
+        registerApplication(new TestApplication());
+
+        ServiceRegistration<Feature> serviceRegistration = registerExtension(
+            Feature.class,
+            context -> {
+                throw new RuntimeException();
+            },
+            "ErrorFeature",
+            JAX_RS_APPLICATION_SELECT,
+            "(" + JAX_RS_APPLICATION_BASE + "=/test-application)");
+
+        RuntimeDTO runtimeDTO = _runtime.getRuntimeDTO();
+
+        assertEquals(1, runtimeDTO.failedExtensionDTOs.length);
+        assertEquals(
+            serviceRegistration.getReference().getProperty("service.id"),
+            runtimeDTO.failedExtensionDTOs[0].serviceId);
+        assertEquals(
+            DTOConstants.FAILURE_REASON_UNKNOWN,
+            runtimeDTO.failedExtensionDTOs[0].failureReason);
+    }
+
+    @Test
     public void testExtensionRegisterOnlySignalledInterfaces()
         throws InterruptedException {
 

@@ -55,6 +55,19 @@ public class AriesJaxRSServiceRuntime implements JaxRSServiceRuntime {
     private static final long serialVersionUID = 1L;
     private static final Logger _LOGGER = LoggerFactory.getLogger(
         Whiteboard.class);
+
+    public void addErroredExtension(
+        CachingServiceReference<?> cachingServiceReference) {
+
+        _erroredExtensions.add(cachingServiceReference);
+    }
+
+    public void removeErroredExtension(
+        CachingServiceReference<?> cachingServiceReference) {
+
+        _erroredExtensions.remove(cachingServiceReference);
+    }
+
     private ConcurrentHashMap<String, Map<String, Object>>
         _applications = new ConcurrentHashMap<>();
     private ConcurrentHashMap<String, Collection<CachingServiceReference<?>>>
@@ -76,6 +89,8 @@ public class AriesJaxRSServiceRuntime implements JaxRSServiceRuntime {
     private Collection<CachingServiceReference<Application>> _erroredApplications =
         new CopyOnWriteArrayList<>();
     private Collection<CachingServiceReference<?>> _erroredEndpoints =
+        new CopyOnWriteArrayList<>();
+    private Collection<CachingServiceReference<?>> _erroredExtensions =
         new CopyOnWriteArrayList<>();
     private Collection<CachingServiceReference<?>> _ungettableEndpoints =
         new CopyOnWriteArrayList<>();
@@ -241,7 +256,9 @@ public class AriesJaxRSServiceRuntime implements JaxRSServiceRuntime {
                 unreferenciableExtensionsDTOStream(),
                 Stream.concat(
                     applicationDependentExtensionsDTOStream(),
-                    invalidExtensionsDTOStream())
+                    Stream.concat(
+                        erroredExtensionsDTOStream(),
+                        invalidExtensionsDTOStream()))
             ).toArray(
                 FailedExtensionDTO[]::new
             );
@@ -435,6 +452,14 @@ public class AriesJaxRSServiceRuntime implements JaxRSServiceRuntime {
                 DTOConstants.FAILURE_REASON_UNKNOWN, sr)
         );
     }
+
+    private Stream<FailedExtensionDTO> erroredExtensionsDTOStream() {
+        return _erroredExtensions.stream().map(
+            sr -> buildFailedExtensionDTO(
+                DTOConstants.FAILURE_REASON_UNKNOWN, sr)
+        );
+    }
+
 
     private Stream<ResourceDTO> getApplicationEndpointsStream(String name) {
         Collection<CachingServiceReference<?>> applicationEndpoints =

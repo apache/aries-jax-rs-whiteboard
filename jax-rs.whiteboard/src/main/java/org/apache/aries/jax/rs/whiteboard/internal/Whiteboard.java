@@ -148,20 +148,13 @@ public class Whiteboard {
         BundleContext bundleContext, Dictionary<String, ?> configuration) {
 
         _bundleContext = bundleContext;
-
         _runtime = new AriesJaxRSServiceRuntime();
-
         _configurationMap = Maps.from(configuration);
-
         _endpoints = new ArrayList<>();
-
         _runtimeRegistration = registerJaxRSServiceRuntime(
             new HashMap<>(_configurationMap));
-
         _runtimeReference = _runtimeRegistration.getReference();
-
         _counter = new ServiceRegistrationChangeCounter(_runtimeRegistration);
-
         _program =
             all(
                 ignoreResult(bestEffortCalculationOfEnpoints()),
@@ -523,35 +516,31 @@ public class Whiteboard {
                 just(serviceReference),
                 _runtime::addNotGettableExtension,
                 _runtime::removeNotGettableExtension
-            ).flatMap(
-                serviceTuple -> {
-                    try {
-                        registrator.addProvider(serviceTuple);
+            ).recoverWith(
+                (t, e) -> {
+                    _runtime.addErroredExtension(
+                        t.getCachingServiceReference());
 
-                        _runtime.addApplicationExtension(
-                            applicationName, serviceReference);
-
-                        return
-                            onClose(() -> {
-                                registrator.removeProvider(serviceTuple);
-
-                                _runtime.removeApplicationExtension(
-                                    applicationName, serviceReference);
-                            }).then(
-                            register(
-                                ApplicationExtensionRegistration.class,
-                                new ApplicationExtensionRegistration(){},
-                                properties)
+                    return
+                        onClose(
+                            () -> _runtime.removeErroredExtension(
+                                t.getCachingServiceReference())
+                        ).then(
+                            nothing()
                         );
-                    }
-                    catch(Exception e) {
-                        return nothing();
-                        /*_runtime.addErroredExtension(serviceReference);
-
-                        return onClose(() -> _runtime.removeErroredExtension(serviceReference)).then(
-                            nothing());*/
-                    }
                 }
+            ).effects(
+                registrator::addProvider,
+                registrator::removeProvider
+            ).effects(
+                __ -> _runtime.addApplicationExtension(
+                    applicationName, serviceReference),
+                __ -> _runtime.removeApplicationExtension(
+                    applicationName, serviceReference)
+            ).then(
+            register(
+                ApplicationExtensionRegistration.class,
+                new ApplicationExtensionRegistration(){}, properties)
             ))));
     }
 
