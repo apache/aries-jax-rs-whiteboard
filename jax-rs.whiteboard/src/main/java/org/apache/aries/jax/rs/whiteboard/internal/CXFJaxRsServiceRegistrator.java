@@ -48,13 +48,6 @@ import static org.apache.aries.jax.rs.whiteboard.internal.Utils.canonicalize;
 
 public class CXFJaxRsServiceRegistrator {
 
-    private final Application _application;
-    private final Bus _bus;
-    private final Collection<ServiceTuple<?>> _providers;
-    private final Collection<ResourceProvider> _services = new ArrayList<>();
-    private volatile boolean _closed = false;
-    private Server _server;
-
     public CXFJaxRsServiceRegistrator(Bus bus, Application application) {
         _bus = bus;
         _application = application;
@@ -147,10 +140,15 @@ public class CXFJaxRsServiceRegistrator {
         rewire();
     }
 
+    private final Application _application;
+    private final Bus _bus;
+    private final Collection<ServiceTuple<?>> _providers;
+    private final Collection<ResourceProvider> _services = new ArrayList<>();
+    private volatile boolean _closed = false;
+    private Server _server;
+
     private static class ComparableResourceComparator
         implements ResourceComparator {
-
-        private static Comparator<ServiceReferenceResourceProvider> comparator;
 
         static {
             comparator = Comparator.comparing(
@@ -190,6 +188,7 @@ public class CXFJaxRsServiceRegistrator {
 
             return 0;
         }
+        private static Comparator<ServiceReferenceResourceProvider> comparator;
 
     }
 
