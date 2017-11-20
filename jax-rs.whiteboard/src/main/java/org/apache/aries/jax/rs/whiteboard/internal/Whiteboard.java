@@ -80,6 +80,7 @@ import static org.apache.aries.jax.rs.whiteboard.internal.Utils.service;
 import static org.apache.aries.jax.rs.whiteboard.internal.Utils.serviceObjects;
 import static org.apache.aries.jax.rs.whiteboard.internal.Utils.updateProperty;
 import static org.apache.aries.osgi.functional.OSGi.all;
+import static org.apache.aries.osgi.functional.OSGi.effects;
 import static org.apache.aries.osgi.functional.OSGi.just;
 import static org.apache.aries.osgi.functional.OSGi.nothing;
 import static org.apache.aries.osgi.functional.OSGi.onClose;
@@ -329,8 +330,7 @@ public class Whiteboard {
             highest(
                 serviceReferences(
                     CXFJaxRsServiceRegistrator.class,
-                    String.format(
-                        "(%s=%s)", JAX_RS_NAME, DEFAULT_NAME)
+                    String.format("(%s=%s)", JAX_RS_NAME, DEFAULT_NAME)
                 ).filter(
                     new TargetFilter<>(_runtimeReference)
                 )
@@ -431,8 +431,8 @@ public class Whiteboard {
             properties));
     }
 
-    private ServiceRegistration<?>
-        registerJaxRSServiceRuntime(Map<String, Object> properties) {
+    private ServiceRegistration<?> registerJaxRSServiceRuntime(
+        Map<String, Object> properties) {
 
         properties.putIfAbsent(Constants.SERVICE_RANKING, Integer.MIN_VALUE);
 
@@ -509,18 +509,13 @@ public class Whiteboard {
                 _runtime::addNotGettableExtension,
                 _runtime::removeNotGettableExtension
             ).recoverWith(
-                (t, e) -> {
-                    _runtime.addErroredExtension(
-                        t.getCachingServiceReference());
-
-                    return
-                        onClose(
-                            () -> _runtime.removeErroredExtension(
-                                t.getCachingServiceReference())
-                        ).then(
-                            nothing()
-                        );
-                }
+                (t, e) ->
+                    just(t.getCachingServiceReference()).
+                    effects(
+                        _runtime::addErroredExtension,
+                        _runtime::removeErroredExtension
+                    ).
+                    then(nothing())
             ).effects(
                 registrator::addProvider,
                 registrator::removeProvider
@@ -547,9 +542,9 @@ public class Whiteboard {
             applicationReference.getProperty(JAX_RS_EXTENSION_SELECT));
 
         if (extensionDependencies.length > 0) {
-            program = just(0).effects(
-                __ -> _runtime.addDependentApplication(applicationReference),
-                __ -> _runtime.removeDependentApplication(applicationReference)
+            program = effects(
+                () -> _runtime.addDependentApplication(applicationReference),
+                () -> _runtime.removeDependentApplication(applicationReference)
             ).then(program);
         }
         else {
@@ -779,15 +774,6 @@ public class Whiteboard {
         CXFNonSpringServlet cxfNonSpringServlet = createCXFServlet(bus);
 
         return register(Servlet.class, cxfNonSpringServlet, properties);
-    }
-
-    private static <T> OSGi<ResourceProvider> registerEndpoint(
-        CXFJaxRsServiceRegistrator registrator,
-        ResourceProvider resourceProvider) {
-
-        registrator.add(resourceProvider);
-
-        return just(resourceProvider);
     }
 
     private static boolean signalsValidInterface(

@@ -186,13 +186,6 @@ public class Utils {
         );
     }
 
-    public static void unregisterEndpoint(
-        CXFJaxRsServiceRegistrator registrator,
-        ResourceProvider resourceProvider) {
-
-        registrator.remove(resourceProvider);
-    }
-
     public static void updateProperty(
         ServiceRegistration<?> serviceRegistration, String key, Object value) {
 

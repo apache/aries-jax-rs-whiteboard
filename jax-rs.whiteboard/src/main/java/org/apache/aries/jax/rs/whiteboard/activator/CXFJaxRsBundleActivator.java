@@ -24,7 +24,6 @@ import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.ext.RuntimeDelegate;
 
 import org.apache.aries.jax.rs.whiteboard.internal.ClientBuilderFactory;
-import org.apache.aries.jax.rs.whiteboard.internal.Utils;
 import org.apache.aries.jax.rs.whiteboard.internal.Whiteboard;
 import org.apache.aries.osgi.functional.OSGi;
 import org.apache.aries.osgi.functional.OSGiResult;
@@ -40,7 +39,6 @@ import static org.apache.aries.jax.rs.whiteboard.internal.Whiteboard.createWhite
 import static org.apache.aries.osgi.functional.OSGi.all;
 import static org.apache.aries.osgi.functional.OSGi.configurations;
 import static org.apache.aries.osgi.functional.OSGi.just;
-import static org.apache.aries.osgi.functional.OSGi.onClose;
 import static org.apache.aries.osgi.functional.OSGi.register;
 
 public class CXFJaxRsBundleActivator implements BundleActivator {
@@ -106,11 +104,12 @@ public class CXFJaxRsBundleActivator implements BundleActivator {
     private static OSGi<?> runWhiteboard(
         BundleContext bundleContext, Dictionary<String, ?> configuration) {
 
-        Whiteboard whiteboard = createWhiteboard(bundleContext, configuration);
-
-        whiteboard.start();
-
-        return onClose(whiteboard::stop);
+        return just(
+            createWhiteboard(bundleContext, configuration)
+        ).effects(
+            Whiteboard::start,
+            Whiteboard::stop
+        );
     }
 
 }
