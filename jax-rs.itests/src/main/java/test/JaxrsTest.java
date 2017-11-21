@@ -23,6 +23,7 @@ import static org.osgi.service.jaxrs.whiteboard.JaxRSWhiteboardConstants.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Dictionary;
 import java.util.Hashtable;
 import java.util.Iterator;
@@ -1050,6 +1051,20 @@ public class JaxrsTest extends TestHelper {
 
         assertEquals(0, getRuntimeDTO().applicationDTOs.length);
         assertEquals(0, getRuntimeDTO().failedApplicationDTOs.length);
+    }
+
+    @Test
+    public void testRegisterApplicationWithOnlyExtensions() {
+        ServiceRegistration<Application> serviceRegistration =
+            registerApplication(new Application() {
+                @Override
+                public Set<Class<?>> getClasses() {
+                    return Collections.singleton(TestFilter.class);
+                }
+            }, JAX_RS_NAME, JAX_RS_DEFAULT_APPLICATION);
+
+        assertEquals(getServiceId(serviceRegistration),
+            getRuntimeDTO().defaultApplication.serviceId);
     }
 
     @Test

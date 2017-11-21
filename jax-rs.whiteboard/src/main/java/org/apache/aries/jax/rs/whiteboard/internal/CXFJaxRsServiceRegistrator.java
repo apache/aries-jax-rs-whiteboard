@@ -264,6 +264,10 @@ public class CXFJaxRsServiceRegistrator {
             jaxRsServerFactoryBean.setResourceProvider(resourceProvider);
         }
 
+        if (jaxRsServerFactoryBean.getResourceClasses().isEmpty()) {
+            return;
+        }
+
         jaxRsServerFactoryBean.setResourceComparator(
             new ComparableResourceComparator());
 
