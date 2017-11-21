@@ -21,6 +21,7 @@ import static org.junit.Assert.assertTrue;
 import static org.osgi.service.jaxrs.whiteboard.JaxRSWhiteboardConstants.*;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Dictionary;
 import java.util.Hashtable;
@@ -31,7 +32,10 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Function;
+import java.util.function.Predicate;
 
+import org.apache.aries.jax.rs.whiteboard.internal.Utils;
 import org.junit.After;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -42,6 +46,7 @@ import org.osgi.framework.ServiceRegistration;
 
 import org.osgi.service.jaxrs.runtime.JaxRSServiceRuntime;
 import org.osgi.service.jaxrs.runtime.dto.DTOConstants;
+import org.osgi.service.jaxrs.runtime.dto.FailedApplicationDTO;
 import org.osgi.service.jaxrs.runtime.dto.RuntimeDTO;
 import org.osgi.util.tracker.ServiceTracker;
 import test.types.TestAddon;
@@ -913,16 +918,16 @@ public class JaxrsTest extends TestHelper {
         ServiceRegistration<Application> ungettableServiceRegistration =
             registerUngettableApplication("service.ranking", 1);
 
-        assertEquals(1, getRuntimeDTO().applicationDTOs.length);
-        assertEquals(1, getRuntimeDTO().failedApplicationDTOs.length);
+        assertEquals(0, getRuntimeDTO().applicationDTOs.length);
+        assertEquals(2, getRuntimeDTO().failedApplicationDTOs.length);
 
-        assertEquals(
-            DTOConstants.FAILURE_REASON_SERVICE_NOT_GETTABLE,
-            getRuntimeDTO().failedApplicationDTOs[0].failureReason);
+        assertThatInRuntime(
+            FAILED_APPLICATIONS,
+            fa -> fa.serviceId == getServiceId(ungettableServiceRegistration) &&
+                DTOConstants.FAILURE_REASON_SERVICE_NOT_GETTABLE ==
+                fa.failureReason);
 
-        assertEquals(
-            "Hello application",
-            webTarget.request().get().readEntity(String.class));
+        assertEquals(404, webTarget.request().get().getStatus());
 
         serviceRegistration.unregister();
 
@@ -963,7 +968,7 @@ public class JaxrsTest extends TestHelper {
         assertEquals(1, getRuntimeDTO().failedApplicationDTOs.length);
 
         assertEquals(
-            DTOConstants.FAILURE_REASON_SERVICE_NOT_GETTABLE,
+            DTOConstants.FAILURE_REASON_SHADOWED_BY_OTHER_SERVICE,
             getRuntimeDTO().failedApplicationDTOs[0].failureReason);
 
         assertEquals(
@@ -1375,8 +1380,29 @@ public class JaxrsTest extends TestHelper {
 
         assertEquals(0, runtimeDTO.failedExtensionDTOs.length);
     }
+    private static Function<RuntimeDTO, FailedApplicationDTO[]>
+        FAILED_APPLICATIONS = r -> r.failedApplicationDTOs;
     private Collection<ServiceRegistration<?>> _registrations =
         new ArrayList<>();
+
+    private static long getServiceId(ServiceRegistration propertyHolder) {
+        return (long)propertyHolder.getReference().getProperty("service.id");
+    }
+
+    private void assertFailedApplication(long serviceId, int reason) {
+        assertTrue(Arrays.stream(
+            getRuntimeDTO().failedApplicationDTOs
+        ).anyMatch(
+            fa -> fa.serviceId == serviceId && fa.failureReason == reason
+        ));
+    }
+
+    private <T> void assertThatInRuntime(
+        Function<RuntimeDTO, T[]> getter, Predicate<T> predicate) {
+
+        assertTrue(
+            Arrays.stream(getter.apply(getRuntimeDTO())).anyMatch(predicate));
+    }
 
     private JaxRSServiceRuntime getJaxRSServiceRuntime()
         throws InterruptedException {
@@ -1539,7 +1565,6 @@ public class JaxrsTest extends TestHelper {
         return serviceRegistration;
     }
 
-
     private ServiceRegistration<?> registerInvalidExtension(
         String name, Object... keyValues) {
 
@@ -1642,5 +1667,4 @@ public class JaxrsTest extends TestHelper {
 
         return serviceRegistration;
     }
-
 }

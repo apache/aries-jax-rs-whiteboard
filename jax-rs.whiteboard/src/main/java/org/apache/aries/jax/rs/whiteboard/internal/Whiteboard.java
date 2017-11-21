@@ -118,16 +118,10 @@ public class Whiteboard {
                 DynamicFeature.class.getName()
         )));
     static final String DEFAULT_NAME = ".default";
-    private static final Function<ServiceTuple<Application>, String>
-        APPLICATION_BASE =
-        ((Function<ServiceTuple<Application>, CachingServiceReference<Application>>)
-            ServiceTuple::getCachingServiceReference).andThen(
-                sr -> getApplicationBase(sr::getProperty));
-    private static final Function<ServiceTuple<Application>, String>
-        APPLICATION_NAME =
-        ((Function<ServiceTuple<Application>, CachingServiceReference<Application>>)
-            ServiceTuple::getCachingServiceReference).andThen(
-            sr -> getApplicationName(sr::getProperty));
+    private static final Function<CachingServiceReference<Application>, String>
+        APPLICATION_BASE = sr -> getApplicationBase(sr::getProperty);
+    private static final Function<CachingServiceReference<Application>, String>
+        APPLICATION_NAME = sr -> getApplicationName(sr::getProperty);
 
     private final AriesJaxRSServiceRuntime _runtime;
     private final Map<String, ?> _configurationMap;
@@ -221,29 +215,33 @@ public class Whiteboard {
     }
 
     private OSGi<?> applications() {
-        OSGi<ServiceTuple<Application>> gettableAplicationForWhiteboard =
-            onlyGettables(
-                countChanges(
-                    getApplicationsForWhiteboard(), _counter).
-                flatMap(
-                    sr -> waitForApplicationDependencies(sr, just(sr))),
-                _runtime::addNotGettableApplication,
-                _runtime::removeNotGettableApplication);
+        OSGi<CachingServiceReference<Application>> applicationsForWhiteboard =
+            countChanges(
+                getApplicationsForWhiteboard(), _counter).
+            flatMap(
+                sr -> waitForApplicationDependencies(sr, just(sr)));
 
-        OSGi<ServiceTuple<Application>> highestRankedPerName = highestPer(
-            APPLICATION_NAME, gettableAplicationForWhiteboard,
-            t -> _runtime.addClashingApplication(t.getCachingServiceReference()),
-            t -> _runtime.removeClashingApplication(t.getCachingServiceReference())
+        OSGi<CachingServiceReference<Application>> highestRankedPerName =
+            highestPer(
+                APPLICATION_NAME, applicationsForWhiteboard,
+                _runtime::addClashingApplication,
+                _runtime::removeClashingApplication
         );
 
-        OSGi<ServiceTuple<Application>> highestRankedPerPath = highestPer(
-            APPLICATION_BASE, highestRankedPerName,
-            t -> _runtime.addShadowedApplication(t.getCachingServiceReference()),
-            t -> _runtime.removeShadowedApplication(t.getCachingServiceReference())
+        OSGi<CachingServiceReference<Application>> highestRankedPerPath =
+            highestPer(
+                APPLICATION_BASE, highestRankedPerName,
+                _runtime::addShadowedApplication,
+                _runtime::removeShadowedApplication
         );
+
+        OSGi<ServiceTuple<Application>> highestGettables = onlyGettables(
+            highestRankedPerPath,
+            _runtime::addNotGettableApplication,
+            _runtime::removeNotGettableApplication);
 
         return
-            highestRankedPerPath.recoverWith(
+            highestGettables.recoverWith(
                 (t, e) ->
                     just(t).map(
                         ServiceTuple::getCachingServiceReference
