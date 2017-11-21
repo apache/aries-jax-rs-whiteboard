@@ -25,17 +25,14 @@ import org.apache.aries.osgi.functional.OSGi;
 import org.apache.aries.osgi.functional.OSGiResult;
 import org.apache.cxf.Bus;
 import org.apache.cxf.bus.extension.ExtensionManagerBus;
-import org.apache.cxf.jaxrs.lifecycle.ResourceProvider;
 import org.apache.cxf.transport.servlet.CXFNonSpringServlet;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.Constants;
 import org.osgi.framework.Filter;
 import org.osgi.framework.InvalidSyntaxException;
-import org.osgi.framework.ServiceObjects;
 import org.osgi.framework.ServiceReference;
 import org.osgi.framework.ServiceRegistration;
 import org.osgi.framework.wiring.BundleWiring;
-import org.osgi.service.http.runtime.HttpServiceRuntime;
 import org.osgi.service.jaxrs.runtime.JaxRSServiceRuntime;
 
 import javax.servlet.Servlet;
@@ -72,12 +69,10 @@ import static org.apache.aries.jax.rs.whiteboard.internal.AriesJaxRSServiceRunti
 import static org.apache.aries.jax.rs.whiteboard.internal.Utils.canonicalize;
 import static org.apache.aries.jax.rs.whiteboard.internal.Utils.generateApplicationName;
 import static org.apache.aries.jax.rs.whiteboard.internal.Utils.getProperties;
-import static org.apache.aries.jax.rs.whiteboard.internal.Utils.getResourceProvider;
 import static org.apache.aries.jax.rs.whiteboard.internal.Utils.highestPer;
 import static org.apache.aries.jax.rs.whiteboard.internal.Utils.ignoreResult;
 import static org.apache.aries.jax.rs.whiteboard.internal.Utils.onlyGettables;
 import static org.apache.aries.jax.rs.whiteboard.internal.Utils.service;
-import static org.apache.aries.jax.rs.whiteboard.internal.Utils.serviceObjects;
 import static org.apache.aries.jax.rs.whiteboard.internal.Utils.updateProperty;
 import static org.apache.aries.osgi.functional.OSGi.all;
 import static org.apache.aries.osgi.functional.OSGi.effects;
@@ -88,7 +83,6 @@ import static org.apache.aries.osgi.functional.OSGi.once;
 import static org.apache.aries.osgi.functional.OSGi.register;
 import static org.apache.aries.osgi.functional.OSGi.serviceReferences;
 import static org.apache.aries.osgi.functional.Utils.highest;
-import static org.osgi.service.http.runtime.HttpServiceRuntimeConstants.HTTP_SERVICE_ENDPOINT;
 import static org.osgi.service.http.whiteboard.HttpWhiteboardConstants.HTTP_WHITEBOARD_CONTEXT_NAME;
 import static org.osgi.service.http.whiteboard.HttpWhiteboardConstants.HTTP_WHITEBOARD_CONTEXT_SELECT;
 import static org.osgi.service.http.whiteboard.HttpWhiteboardConstants.HTTP_WHITEBOARD_DEFAULT_CONTEXT_NAME;
@@ -138,11 +132,10 @@ public class Whiteboard {
     private final AriesJaxRSServiceRuntime _runtime;
     private final Map<String, ?> _configurationMap;
     private final BundleContext _bundleContext;
-    private final ServiceRegistrationChangeCounter _counter;
-    private final ServiceReference<?> _runtimeReference;
-    private final OSGi<Void> _program;
+    private ServiceRegistrationChangeCounter _counter;
+    private ServiceReference<?> _runtimeReference;
     private final List<Object> _endpoints;
-    private final ServiceRegistration<?> _runtimeRegistration;
+    private ServiceRegistration<?> _runtimeRegistration;
     private OSGiResult _osgiResult;
 
     private Whiteboard(
@@ -152,18 +145,6 @@ public class Whiteboard {
         _runtime = new AriesJaxRSServiceRuntime();
         _configurationMap = Maps.from(configuration);
         _endpoints = new ArrayList<>();
-        _runtimeRegistration = registerJaxRSServiceRuntime(
-            new HashMap<>(_configurationMap));
-        _runtimeReference = _runtimeRegistration.getReference();
-        _counter = new ServiceRegistrationChangeCounter(_runtimeRegistration);
-        _program =
-            all(
-                ignoreResult(bestEffortCalculationOfEnpoints()),
-                ignoreResult(registerDefaultApplication()),
-                ignoreResult(applications()),
-                ignoreResult(applicationResources()),
-                ignoreResult(applicationExtensions()
-            ));
     }
 
     public static Whiteboard createWhiteboard(
@@ -173,7 +154,19 @@ public class Whiteboard {
     }
 
     public void start() {
-        _osgiResult = _program.run(_bundleContext);
+        _runtimeRegistration = registerJaxRSServiceRuntime(
+            new HashMap<>(_configurationMap));
+        _runtimeReference = _runtimeRegistration.getReference();
+        _counter = new ServiceRegistrationChangeCounter(_runtimeRegistration);
+
+        OSGi<Void> program = all(
+            ignoreResult(registerDefaultApplication()),
+            ignoreResult(applications()),
+            ignoreResult(applicationResources()),
+            ignoreResult(applicationExtensions()
+        ));
+
+        _osgiResult = program.run(_bundleContext);
     }
 
     public void stop() {
@@ -182,7 +175,7 @@ public class Whiteboard {
         _runtimeRegistration.unregister();
     }
 
-    private void addHttpEndpoints(List<String> endpoints) {
+    public void addHttpEndpoints(List<String> endpoints) {
         synchronized (_runtimeRegistration) {
             _endpoints.addAll(endpoints);
 
@@ -272,40 +265,6 @@ public class Whiteboard {
                 p -> _runtime.unsetApplicationForPath(
                     getApplicationBase(p::get))
             );
-    }
-
-    private OSGi<?> bestEffortCalculationOfEnpoints() {
-        Object whiteBoardTargetProperty = _configurationMap.get(
-            HTTP_WHITEBOARD_TARGET);
-
-        String targetFilter =
-            whiteBoardTargetProperty != null ?
-                whiteBoardTargetProperty.toString() :
-                "(osgi.http.endpoint=*)";
-
-        Filter filter;
-
-        try {
-            filter = _bundleContext.createFilter(
-                format(
-                    "(&(objectClass=%s)%s)", HttpServiceRuntime.class.getName(),
-                    targetFilter));
-        }
-        catch (InvalidSyntaxException ise) {
-            throw new IllegalArgumentException(
-                format("Invalid syntax for filter %s", targetFilter));
-        }
-
-        return
-            serviceReferences(HttpServiceRuntime.class, filter.toString()).
-                map(
-                    r -> Arrays.asList(
-                        canonicalize(r.getProperty(HTTP_SERVICE_ENDPOINT)))
-                ).
-                foreach(
-                    this::addHttpEndpoints,
-                    this::removeHttpEndpoints
-                );
     }
 
     private ExtensionManagerBus createBus() {
@@ -440,7 +399,7 @@ public class Whiteboard {
             JaxRSServiceRuntime.class, _runtime, new Hashtable<>(properties));
     }
 
-    private void removeHttpEndpoints(List<String> endpoints) {
+    public void removeHttpEndpoints(List<String> endpoints) {
         synchronized (_runtimeRegistration) {
             _endpoints.removeAll(endpoints);
 

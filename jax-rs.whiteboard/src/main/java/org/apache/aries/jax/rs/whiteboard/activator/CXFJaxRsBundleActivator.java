@@ -17,29 +17,48 @@
 
 package org.apache.aries.jax.rs.whiteboard.activator;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Dictionary;
 import java.util.Hashtable;
+import java.util.List;
+import java.util.function.Supplier;
 
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.ext.RuntimeDelegate;
 
 import org.apache.aries.jax.rs.whiteboard.internal.ClientBuilderFactory;
+import org.apache.aries.jax.rs.whiteboard.internal.Utils;
+import org.apache.aries.jax.rs.whiteboard.internal.Utils.PropertyHolder;
 import org.apache.aries.jax.rs.whiteboard.internal.Whiteboard;
+import org.apache.aries.osgi.functional.CachingServiceReference;
 import org.apache.aries.osgi.functional.OSGi;
 import org.apache.aries.osgi.functional.OSGiResult;
 import org.apache.cxf.jaxrs.impl.RuntimeDelegateImpl;
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.Constants;
+import org.osgi.framework.Filter;
+import org.osgi.framework.InvalidSyntaxException;
+import org.osgi.service.http.runtime.HttpServiceRuntime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static java.lang.String.format;
+import static org.apache.aries.jax.rs.whiteboard.internal.Utils.canonicalize;
 import static org.apache.aries.jax.rs.whiteboard.internal.Utils.ignoreResult;
 import static org.apache.aries.jax.rs.whiteboard.internal.Whiteboard.createWhiteboard;
 import static org.apache.aries.osgi.functional.OSGi.all;
 import static org.apache.aries.osgi.functional.OSGi.configurations;
+import static org.apache.aries.osgi.functional.OSGi.effects;
+import static org.apache.aries.osgi.functional.OSGi.ignore;
 import static org.apache.aries.osgi.functional.OSGi.just;
+import static org.apache.aries.osgi.functional.OSGi.nothing;
+import static org.apache.aries.osgi.functional.OSGi.once;
 import static org.apache.aries.osgi.functional.OSGi.register;
+import static org.apache.aries.osgi.functional.OSGi.serviceReferences;
+import static org.osgi.service.http.runtime.HttpServiceRuntimeConstants.HTTP_SERVICE_ENDPOINT;
+import static org.osgi.service.http.whiteboard.HttpWhiteboardConstants.HTTP_WHITEBOARD_TARGET;
 
 public class CXFJaxRsBundleActivator implements BundleActivator {
 
@@ -104,12 +123,41 @@ public class CXFJaxRsBundleActivator implements BundleActivator {
     private static OSGi<?> runWhiteboard(
         BundleContext bundleContext, Dictionary<String, ?> configuration) {
 
-        return just(
-            createWhiteboard(bundleContext, configuration)
-        ).effects(
-            Whiteboard::start,
-            Whiteboard::stop
-        );
+        OSGi<List<String>> endpoints =
+            serviceReferences(
+                endpointFilter(bundleContext, configuration::get)
+            ).map(
+                r -> Arrays.asList(
+                    canonicalize(r.getProperty(HTTP_SERVICE_ENDPOINT)))
+            );
+
+        return
+            just(createWhiteboard(bundleContext, configuration)).flatMap(
+                whiteboard ->
+            endpoints.distribute(
+                e -> once(e).effects(
+                    __ -> whiteboard.start(), __ -> whiteboard.stop()),
+                e -> e.effects(
+                    whiteboard::addHttpEndpoints,
+                    whiteboard::removeHttpEndpoints)
+        ));
+    }
+
+    private static String endpointFilter(
+        BundleContext bundleContext, PropertyHolder configuration ) {
+
+        Object whiteBoardTargetProperty = configuration.get(
+            HTTP_WHITEBOARD_TARGET);
+
+        String targetFilter =
+            whiteBoardTargetProperty != null ?
+                whiteBoardTargetProperty.toString() :
+                "(osgi.http.endpoint=*)";
+
+
+        return format(
+            "(&(objectClass=%s)%s)", HttpServiceRuntime.class.getName(),
+            targetFilter);
     }
 
 }
