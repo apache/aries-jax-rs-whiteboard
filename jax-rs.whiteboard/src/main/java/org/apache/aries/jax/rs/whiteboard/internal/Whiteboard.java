@@ -656,11 +656,10 @@ public class Whiteboard {
     private static <T> OSGi<T> countChanges(
         OSGi<T> program, ChangeCounter counter) {
 
-        return program.flatMap(t -> {
-            counter.inc();
-
-            return onClose(counter::inc).then(just(t));
-        });
+        return program.effects(
+            __ -> counter.inc(),
+            __ -> counter.inc()
+        );
     }
 
     private static CXFNonSpringServlet createCXFServlet(Bus bus) {
@@ -698,9 +697,10 @@ public class Whiteboard {
                 return just(sr);
             }
             else {
-                onInvalidAdded.accept(sr);
-                return
-                    onClose(() -> onInvalidRemoved.accept(sr)).then(nothing());
+                return effects(
+                    () -> onInvalidAdded.accept(sr),
+                    () -> onInvalidRemoved.accept(sr)).
+                    then(nothing());
             }
         });
     }

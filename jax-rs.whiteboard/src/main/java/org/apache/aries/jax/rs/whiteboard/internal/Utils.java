@@ -35,6 +35,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 import static org.apache.aries.osgi.functional.OSGi.bundleContext;
+import static org.apache.aries.osgi.functional.OSGi.effects;
 import static org.apache.aries.osgi.functional.OSGi.just;
 import static org.apache.aries.osgi.functional.OSGi.nothing;
 import static org.apache.aries.osgi.functional.OSGi.onClose;
@@ -143,12 +144,10 @@ public class Utils {
                 catch (Exception e){
                 }
                 if (service == null) {
-                    whenAddedNotGettable.accept(immutable);
-
                     return
-                        onClose(
-                            () -> whenLeavingNotGettable.accept(
-                                immutable)
+                        effects(
+                            () -> whenAddedNotGettable.accept(immutable),
+                            () -> whenLeavingNotGettable.accept(immutable)
                         ).then(
                             nothing()
                         );
