@@ -17,29 +17,22 @@
 
 package org.apache.aries.jax.rs.whiteboard.activator;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Dictionary;
 import java.util.Hashtable;
 import java.util.List;
-import java.util.function.Supplier;
 
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.ext.RuntimeDelegate;
 
 import org.apache.aries.jax.rs.whiteboard.internal.ClientBuilderFactory;
-import org.apache.aries.jax.rs.whiteboard.internal.Utils;
 import org.apache.aries.jax.rs.whiteboard.internal.Utils.PropertyHolder;
-import org.apache.aries.jax.rs.whiteboard.internal.Whiteboard;
-import org.apache.aries.osgi.functional.CachingServiceReference;
 import org.apache.aries.osgi.functional.OSGi;
 import org.apache.aries.osgi.functional.OSGiResult;
 import org.apache.cxf.jaxrs.impl.RuntimeDelegateImpl;
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.Constants;
-import org.osgi.framework.Filter;
-import org.osgi.framework.InvalidSyntaxException;
 import org.osgi.service.http.runtime.HttpServiceRuntime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -53,7 +46,6 @@ import static org.apache.aries.osgi.functional.OSGi.configurations;
 import static org.apache.aries.osgi.functional.OSGi.effects;
 import static org.apache.aries.osgi.functional.OSGi.ignore;
 import static org.apache.aries.osgi.functional.OSGi.just;
-import static org.apache.aries.osgi.functional.OSGi.nothing;
 import static org.apache.aries.osgi.functional.OSGi.once;
 import static org.apache.aries.osgi.functional.OSGi.register;
 import static org.apache.aries.osgi.functional.OSGi.serviceReferences;
@@ -68,9 +60,6 @@ public class CXFJaxRsBundleActivator implements BundleActivator {
     static {
         RuntimeDelegate.setInstance(new RuntimeDelegateImpl());
     }
-
-    private OSGiResult _defaultOSGiResult;
-    private OSGiResult _whiteboardsResult;
 
     @Override
     public void start(BundleContext bundleContext) throws Exception {
@@ -119,32 +108,10 @@ public class CXFJaxRsBundleActivator implements BundleActivator {
             _log.debug("Stopped whiteboard factory");
         }
     }
+    private OSGiResult _defaultOSGiResult;
+    private OSGiResult _whiteboardsResult;
 
-    private static OSGi<?> runWhiteboard(
-        BundleContext bundleContext, Dictionary<String, ?> configuration) {
-
-        OSGi<List<String>> endpoints =
-            serviceReferences(
-                endpointFilter(bundleContext, configuration::get)
-            ).map(
-                r -> Arrays.asList(
-                    canonicalize(r.getProperty(HTTP_SERVICE_ENDPOINT)))
-            );
-
-        return
-            just(createWhiteboard(bundleContext, configuration)).flatMap(
-                whiteboard ->
-            endpoints.distribute(
-                e -> once(e).effects(
-                    __ -> whiteboard.start(), __ -> whiteboard.stop()),
-                e -> e.effects(
-                    whiteboard::addHttpEndpoints,
-                    whiteboard::removeHttpEndpoints)
-        ));
-    }
-
-    private static String endpointFilter(
-        BundleContext bundleContext, PropertyHolder configuration ) {
+    private static String endpointFilter(PropertyHolder configuration ) {
 
         Object whiteBoardTargetProperty = configuration.get(
             HTTP_WHITEBOARD_TARGET);
@@ -158,6 +125,37 @@ public class CXFJaxRsBundleActivator implements BundleActivator {
         return format(
             "(&(objectClass=%s)%s)", HttpServiceRuntime.class.getName(),
             targetFilter);
+    }
+
+    private static OSGi<?> runWhiteboard(
+        BundleContext bundleContext, Dictionary<String, ?> configuration) {
+
+        OSGi<List<String>> endpoints =
+            serviceReferences(endpointFilter(configuration::get)
+            ).map(
+                r -> Arrays.asList(
+                    canonicalize(r.getProperty(HTTP_SERVICE_ENDPOINT)))
+            );
+
+        return
+            once(
+                serviceReferences(
+                    endpointFilter(configuration::get),
+                    __ -> false //never reload
+                ).then(
+                    just(createWhiteboard(bundleContext, configuration))
+                .flatMap(
+                    whiteboard ->
+                        all(
+                            ignore(
+                                endpoints.effects(
+                                    whiteboard::addHttpEndpoints,
+                                    whiteboard::removeHttpEndpoints)
+                            ),
+                            effects(whiteboard::start, whiteboard::stop)
+                        )
+                ))
+            );
     }
 
 }

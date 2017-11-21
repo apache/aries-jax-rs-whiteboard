@@ -132,10 +132,11 @@ public class Whiteboard {
     private final AriesJaxRSServiceRuntime _runtime;
     private final Map<String, ?> _configurationMap;
     private final BundleContext _bundleContext;
-    private ServiceRegistrationChangeCounter _counter;
-    private ServiceReference<?> _runtimeReference;
+    private final ServiceRegistrationChangeCounter _counter;
+    private final ServiceReference<?> _runtimeReference;
+    private final OSGi<Void> _program;
     private final List<Object> _endpoints;
-    private ServiceRegistration<?> _runtimeRegistration;
+    private final ServiceRegistration<?> _runtimeRegistration;
     private OSGiResult _osgiResult;
 
     private Whiteboard(
@@ -145,6 +146,17 @@ public class Whiteboard {
         _runtime = new AriesJaxRSServiceRuntime();
         _configurationMap = Maps.from(configuration);
         _endpoints = new ArrayList<>();
+        _runtimeRegistration = registerJaxRSServiceRuntime(
+            new HashMap<>(_configurationMap));
+        _runtimeReference = _runtimeRegistration.getReference();
+        _counter = new ServiceRegistrationChangeCounter(_runtimeRegistration);
+        _program =
+            all(
+                ignoreResult(registerDefaultApplication()),
+                ignoreResult(applications()),
+                ignoreResult(applicationResources()),
+                ignoreResult(applicationExtensions()
+            ));
     }
 
     public static Whiteboard createWhiteboard(
@@ -154,19 +166,7 @@ public class Whiteboard {
     }
 
     public void start() {
-        _runtimeRegistration = registerJaxRSServiceRuntime(
-            new HashMap<>(_configurationMap));
-        _runtimeReference = _runtimeRegistration.getReference();
-        _counter = new ServiceRegistrationChangeCounter(_runtimeRegistration);
-
-        OSGi<Void> program = all(
-            ignoreResult(registerDefaultApplication()),
-            ignoreResult(applications()),
-            ignoreResult(applicationResources()),
-            ignoreResult(applicationExtensions()
-        ));
-
-        _osgiResult = program.run(_bundleContext);
+        _osgiResult = _program.run(_bundleContext);
     }
 
     public void stop() {
