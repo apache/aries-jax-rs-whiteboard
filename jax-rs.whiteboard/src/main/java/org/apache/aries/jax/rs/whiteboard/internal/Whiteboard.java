@@ -33,9 +33,11 @@ import org.osgi.framework.InvalidSyntaxException;
 import org.osgi.framework.ServiceReference;
 import org.osgi.framework.ServiceRegistration;
 import org.osgi.framework.wiring.BundleWiring;
+import org.osgi.service.http.context.ServletContextHelper;
 import org.osgi.service.jaxrs.runtime.JaxRSServiceRuntime;
 
 import javax.servlet.Servlet;
+import javax.servlet.ServletContext;
 import javax.ws.rs.container.ContainerRequestFilter;
 import javax.ws.rs.container.ContainerResponseFilter;
 import javax.ws.rs.container.DynamicFeature;
@@ -84,6 +86,7 @@ import static org.apache.aries.osgi.functional.OSGi.register;
 import static org.apache.aries.osgi.functional.OSGi.serviceReferences;
 import static org.apache.aries.osgi.functional.Utils.highest;
 import static org.osgi.service.http.whiteboard.HttpWhiteboardConstants.HTTP_WHITEBOARD_CONTEXT_NAME;
+import static org.osgi.service.http.whiteboard.HttpWhiteboardConstants.HTTP_WHITEBOARD_CONTEXT_PATH;
 import static org.osgi.service.http.whiteboard.HttpWhiteboardConstants.HTTP_WHITEBOARD_CONTEXT_SELECT;
 import static org.osgi.service.http.whiteboard.HttpWhiteboardConstants.HTTP_WHITEBOARD_DEFAULT_CONTEXT_NAME;
 import static org.osgi.service.http.whiteboard.HttpWhiteboardConstants.HTTP_WHITEBOARD_SERVLET_ASYNC_SUPPORTED;
@@ -92,6 +95,7 @@ import static org.osgi.service.http.whiteboard.HttpWhiteboardConstants.HTTP_WHIT
 import static org.osgi.service.jaxrs.runtime.JaxRSServiceRuntimeConstants.JAX_RS_SERVICE_ENDPOINT;
 import static org.osgi.service.jaxrs.whiteboard.JaxRSWhiteboardConstants.JAX_RS_APPLICATION_BASE;
 import static org.osgi.service.jaxrs.whiteboard.JaxRSWhiteboardConstants.JAX_RS_APPLICATION_SELECT;
+import static org.osgi.service.jaxrs.whiteboard.JaxRSWhiteboardConstants.JAX_RS_DEFAULT_APPLICATION;
 import static org.osgi.service.jaxrs.whiteboard.JaxRSWhiteboardConstants.JAX_RS_EXTENSION;
 import static org.osgi.service.jaxrs.whiteboard.JaxRSWhiteboardConstants.JAX_RS_EXTENSION_SELECT;
 import static org.osgi.service.jaxrs.whiteboard.JaxRSWhiteboardConstants.JAX_RS_NAME;
@@ -313,8 +317,7 @@ public class Whiteboard {
                 return properties;
             }).flatMap(properties ->
             deployRegistrator(bus, tuple, properties).then(
-            registerCXFServletService(
-                bus, getApplicationBase(properties::get), properties)).then(
+            registerCXFServletService(bus, properties)).then(
             just(tuple)
         )));
     }
@@ -703,19 +706,14 @@ public class Whiteboard {
     }
 
     private static OSGi<ServiceRegistration<Servlet>> registerCXFServletService(
-        Bus bus, String address, Map<String, ?> configuration) {
+        Bus bus, Map<String, ?> configuration) {
 
         Map<String, Object> properties = new HashMap<>(configuration);
 
         properties.putIfAbsent(
             HTTP_WHITEBOARD_TARGET, "(osgi.http.endpoint=*)");
 
-        properties.putIfAbsent(
-            HTTP_WHITEBOARD_CONTEXT_SELECT,
-            format(
-                "(%s=%s)",
-                HTTP_WHITEBOARD_CONTEXT_NAME,
-                HTTP_WHITEBOARD_DEFAULT_CONTEXT_NAME));
+        String address = getApplicationBase(configuration::get);
 
         if (!address.startsWith("/")) {
             address = "/" + address;
@@ -725,12 +723,40 @@ public class Whiteboard {
             address = address.substring(0, address.length() - 1);
         }
 
-        properties.putIfAbsent(HTTP_WHITEBOARD_SERVLET_PATTERN, address + "/*");
-        properties.putIfAbsent(HTTP_WHITEBOARD_SERVLET_ASYNC_SUPPORTED, true);
+        String applicationName = getApplicationName(configuration::get);
 
-        CXFNonSpringServlet cxfNonSpringServlet = createCXFServlet(bus);
+        HashMap<String, Object> contextProperties = new HashMap<>();
 
-        return register(Servlet.class, cxfNonSpringServlet, properties);
+        String contextName;
+
+        if (JAX_RS_DEFAULT_APPLICATION.equals(applicationName)) {
+            contextName = HTTP_WHITEBOARD_DEFAULT_CONTEXT_NAME;
+        }
+        else {
+            contextName = "context.for" + applicationName;
+        }
+
+        contextProperties.put(HTTP_WHITEBOARD_CONTEXT_NAME, contextName);
+        contextProperties.put(HTTP_WHITEBOARD_CONTEXT_PATH, address);
+
+        HashMap<String, Object> servletProperties = new HashMap<>(properties);
+
+        servletProperties.put(
+            HTTP_WHITEBOARD_CONTEXT_SELECT,
+            format("(%s=%s)", HTTP_WHITEBOARD_CONTEXT_NAME,
+                contextProperties.get(HTTP_WHITEBOARD_CONTEXT_NAME)));
+
+        servletProperties.put(
+            HTTP_WHITEBOARD_SERVLET_PATTERN, "/*");
+        servletProperties.put(
+            HTTP_WHITEBOARD_SERVLET_ASYNC_SUPPORTED, true);
+
+        return
+            register(
+                ServletContextHelper.class,
+                new ServletContextHelper() {}, contextProperties).
+            then(
+            register(Servlet.class, createCXFServlet(bus), servletProperties));
     }
 
     private static boolean signalsValidInterface(
