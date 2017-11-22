@@ -196,8 +196,11 @@ public class Whiteboard {
                     _runtime::removeApplicationDependentExtension).
                 flatMap(registratorReference ->
             waitForExtensionDependencies(
-                resourceReference,
-                getApplicationName(registratorReference::getProperty),
+                    resourceReference,
+                    getApplicationName(registratorReference::getProperty),
+                    _runtime::addDependentExtension,
+                    _runtime::removeDependentExtension).
+                then(
             safeRegisterExtension(resourceReference, registratorReference)
         )));
     }
@@ -214,16 +217,18 @@ public class Whiteboard {
             waitForExtensionDependencies(
                 resourceReference,
                 getApplicationName(registratorReference::getProperty),
-            safeRegisterEndpoint(resourceReference, registratorReference)
-        )));
+                _runtime::addDependentService,
+                _runtime::removeDependentService).
+            then(
+                safeRegisterEndpoint(resourceReference, registratorReference)
+            )));
     }
 
     private OSGi<?> applications() {
         OSGi<CachingServiceReference<Application>> applicationsForWhiteboard =
-            countChanges(
-                getApplicationsForWhiteboard(), _counter).
-            flatMap(
-                sr -> waitForApplicationDependencies(sr, just(sr)));
+            countChanges(getApplicationsForWhiteboard(), _counter).flatMap(
+                this::waitForApplicationDependencies
+            );
 
         OSGi<CachingServiceReference<Application>> highestRankedPerName =
             highestPer(
@@ -495,11 +500,13 @@ public class Whiteboard {
 
     private OSGi<CachingServiceReference<Application>>
         waitForApplicationDependencies(
-            CachingServiceReference<Application> applicationReference,
-            OSGi<CachingServiceReference<Application>> program) {
+            CachingServiceReference<Application> applicationReference) {
 
         String[] extensionDependencies = canonicalize(
             applicationReference.getProperty(JAX_RS_EXTENSION_SELECT));
+
+        OSGi<CachingServiceReference<Application>> program = just(
+            applicationReference);
 
         if (extensionDependencies.length > 0) {
             program = effects(
@@ -564,13 +571,16 @@ public class Whiteboard {
 
     private OSGi<?> waitForExtensionDependencies(
         CachingServiceReference<?> serviceReference, String applicationName,
-        OSGi<?> program) {
+        Consumer<CachingServiceReference<?>> onAddingDependent,
+        Consumer<CachingServiceReference<?>> onRemovingDependent) {
 
         String[] extensionDependencies = canonicalize(
             serviceReference.getProperty(JAX_RS_EXTENSION_SELECT));
 
+        OSGi<CachingServiceReference<?>> program = just(serviceReference);
+
         if (extensionDependencies.length > 0) {
-            _runtime.addDependentService(serviceReference);
+            onAddingDependent.accept(serviceReference);
         }
         else {
             return program;
@@ -596,7 +606,7 @@ public class Whiteboard {
                         )
                     ).effects(
                         __ -> {},
-                        __ -> _runtime.addDependentService(serviceReference)
+                        __ -> onAddingDependent.accept(serviceReference)
                     ).
                     then(program);
             }
@@ -606,11 +616,11 @@ public class Whiteboard {
         }
 
         program = onClose(
-            () -> _runtime.removeDependentService(serviceReference)).
+            () -> onRemovingDependent.accept(serviceReference)).
             then(program);
 
-        program = program.foreach(
-            __ -> _runtime.removeDependentService(serviceReference),
+        program = program.effects(
+            __ -> onRemovingDependent.accept(serviceReference),
             __ -> {}
         );
 

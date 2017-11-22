@@ -105,6 +105,12 @@ public class AriesJaxRSServiceRuntime implements JaxRSServiceRuntime {
         _dependentApplications.add(applicationReference);
     }
 
+    public void addDependentExtension(
+        CachingServiceReference<?> cachingServiceReference) {
+
+        _dependentExtensions.add(cachingServiceReference);
+    }
+
     public void addDependentService(CachingServiceReference<?> serviceReference) {
         _dependentServices.add(serviceReference);
     }
@@ -218,7 +224,8 @@ public class AriesJaxRSServiceRuntime implements JaxRSServiceRuntime {
                     applicationDependentExtensionsDTOStream(),
                     Stream.concat(
                         erroredExtensionsDTOStream(),
-                        invalidExtensionsDTOStream()))
+                        Stream.concat(dependentExtensionsStreamDTO(),
+                            invalidExtensionsDTOStream())))
             ).toArray(
                 FailedExtensionDTO[]::new
             );
@@ -262,6 +269,12 @@ public class AriesJaxRSServiceRuntime implements JaxRSServiceRuntime {
         CachingServiceReference<Application> applicationReference) {
 
         _dependentApplications.remove(applicationReference);
+    }
+
+    public void removeDependentExtension(
+        CachingServiceReference<?> cachingServiceReference) {
+
+        _dependentExtensions.add(cachingServiceReference);
     }
 
     public void removeDependentService(CachingServiceReference<?> serviceReference) {
@@ -339,14 +352,18 @@ public class AriesJaxRSServiceRuntime implements JaxRSServiceRuntime {
         _ungettableApplications = new CopyOnWriteArrayList<>();
     private Collection<CachingServiceReference<Application>> _shadowedApplications =
         new CopyOnWriteArrayList<>();
-    private Set<CachingServiceReference<Application>> _dependentApplications =
-        ConcurrentHashMap.newKeySet();
     private Set<CachingServiceReference<?>> _applicationDependentExtensions =
         ConcurrentHashMap.newKeySet();
     private Set<CachingServiceReference<?>> _applicationDependentResources =
         ConcurrentHashMap.newKeySet();
     private Collection<CachingServiceReference<Application>> _clashingApplications =
         new CopyOnWriteArrayList<>();
+    private Set<CachingServiceReference<Application>> _dependentApplications =
+        ConcurrentHashMap.newKeySet();
+    private Set<CachingServiceReference<?>> _dependentExtensions =
+        ConcurrentHashMap.newKeySet();
+    private Set<CachingServiceReference<?>> _dependentServices =
+        ConcurrentHashMap.newKeySet();
     private Collection<CachingServiceReference<Application>> _erroredApplications =
         new CopyOnWriteArrayList<>();
     private Collection<CachingServiceReference<?>> _erroredEndpoints =
@@ -357,8 +374,6 @@ public class AriesJaxRSServiceRuntime implements JaxRSServiceRuntime {
         new CopyOnWriteArrayList<>();
     private Collection<CachingServiceReference<?>> _ungettableExtensions =
         new CopyOnWriteArrayList<>();
-    private Set<CachingServiceReference<?>> _dependentServices =
-        ConcurrentHashMap.newKeySet();
     private Collection<CachingServiceReference<?>> _invalidExtensions =
         new CopyOnWriteArrayList<>();
     private volatile Map<String, Object> _defaultApplicationProperties;
@@ -519,6 +534,13 @@ public class AriesJaxRSServiceRuntime implements JaxRSServiceRuntime {
             sr -> buildFailedApplicationDTO(
                 DTOConstants.FAILURE_REASON_REQUIRED_EXTENSIONS_UNAVAILABLE, sr)
         );
+    }
+
+    private Stream<FailedExtensionDTO> dependentExtensionsStreamDTO() {
+        return _dependentExtensions.stream().map(
+            sr -> buildFailedExtensionDTO(
+                DTOConstants.FAILURE_REASON_REQUIRED_EXTENSIONS_UNAVAILABLE,
+                sr));
     }
 
     private Stream<FailedResourceDTO> dependentServiceStreamDTO() {
