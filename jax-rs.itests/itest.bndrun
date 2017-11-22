@@ -17,6 +17,7 @@
 	logback.configurationFile=file:${.}/logback.xml,\
 	osgi.console.enable.builtin=false, \
 	osgi.console=, \
+	org.apache.felix.http.host=localhost,\
 	org.osgi.service.http.port=*
 -runblacklist:\
 	osgi.identity;filter:='(osgi.identity=org.osgi.compendium)',\
