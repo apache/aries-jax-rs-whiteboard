@@ -29,6 +29,11 @@
     <description>Apache Aries JAX-RS Executable Example</description>
     <name>Apache Aries JAX-RS Executable Example</name>
 
+    <properties>
+        <maven.deploy.skip>true</maven.deploy.skip>
+        <maven.install.skip>true</maven.install.skip>
+    </properties>
+
     <build>
         <plugins>
             <plugin>
