@@ -33,14 +33,19 @@
 
     <dependencies>
         <dependency>
+            <groupId>org.apache.aries.cdi</groupId>
+            <artifactId>org.apache.aries.javax.annotation-api</artifactId>
+            <version>0.0.1-SNAPSHOT</version>
+        </dependency>
+        <dependency>
             <groupId>org.apache.aries.component-dsl</groupId>
             <artifactId>org.apache.aries.component-dsl.component-dsl</artifactId>
             <version>0.0.1-SNAPSHOT</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>org.apache.aries.jax.rs</groupId>
-            <artifactId>org.apache.aries.jax.rs.jaxrs.api</artifactId>
+            <groupId>org.apache.aries.spec</groupId>
+            <artifactId>org.apache.aries.javax.jax.rs-api</artifactId>
             <version>0.0.1-SNAPSHOT</version>
         </dependency>
         <dependency>
@@ -60,6 +65,12 @@
             <artifactId>cxf-rt-databinding-jaxb</artifactId>
             <version>${cxf.version}</version>
             <scope>provided</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.ow2.asm</groupId>
+                    <artifactId>asm</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.apache.cxf</groupId>
@@ -82,12 +93,6 @@
         <dependency>
             <groupId>org.apache.cxf</groupId>
             <artifactId>cxf-tools-common</artifactId>
-            <version>${cxf.version}</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.cxf</groupId>
-            <artifactId>cxf-tools-validator</artifactId>
             <version>${cxf.version}</version>
             <scope>provided</scope>
         </dependency>

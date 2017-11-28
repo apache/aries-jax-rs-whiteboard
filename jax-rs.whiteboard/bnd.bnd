@@ -31,13 +31,14 @@ Import-Package:\
     !org.jvnet.fastinfoset.*,\
     !org.jvnet.staxex.*,\
     !org.ietf.jgss.*,\
+    !org.objectweb.asm.*,\
     !org.osgi.service.blueprint.*,\
     !org.relaxng.datatype.*,\
     !org.slf4j.spi.*,\
     !org.springframework.*,\
     *
 
--contract: JavaJAXRS, JavaServlet
+-contract: JavaAnnotation, JavaJAXRS, JavaServlet
 
 -exportcontents:\
     org.apache.aries.jax.rs.whiteboard,\
@@ -52,5 +53,5 @@ Import-Package:\
     lib/cxf-rt-rs-extension-providers.jar=cxf-rt-rs-extension-providers-*.jar;lib:=true,\
     lib/cxf-rt-transports-http.jar=cxf-rt-transports-http-*.jar;lib:=true,\
     lib/cxf-tools-common.jar=cxf-tools-common-*.jar;lib:=true,\
-    lib/cxf-tools-validator.jar=cxf-tools-validator-*.jar;lib:=true,\
-    lib/jettison.jar=jettison-*.jar;lib:=true
+    lib/jettison.jar=jettison-*.jar;lib:=true,\
+    lib/xmlschema-core.jar=xmlschema-core-*.jar;lib:=true

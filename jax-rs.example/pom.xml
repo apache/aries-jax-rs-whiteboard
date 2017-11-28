@@ -83,9 +83,9 @@
             <version>6.0.0</version>
         </dependency>
         <dependency>
-            <groupId>javax.annotation</groupId>
-            <artifactId>javax.annotation-api</artifactId>
-            <version>1.2</version>
+            <groupId>org.apache.aries.cdi</groupId>
+            <artifactId>org.apache.aries.javax.annotation-api</artifactId>
+            <version>0.0.1-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>javax.json</groupId>
@@ -94,18 +94,12 @@
         </dependency>
         <dependency>
             <groupId>org.apache.aries.jax.rs</groupId>
-            <artifactId>org.apache.aries.jax.rs.jaxrs.api</artifactId>
+            <artifactId>org.apache.aries.jax.rs.whiteboard</artifactId>
             <version>0.0.1-SNAPSHOT</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.apache.servicemix.specs</groupId>
-                    <artifactId>org.apache.servicemix.specs.jsr339-api-2.0.1</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
-            <groupId>org.apache.aries.jax.rs</groupId>
-            <artifactId>org.apache.aries.jax.rs.whiteboard</artifactId>
+            <groupId>org.apache.aries.spec</groupId>
+            <artifactId>org.apache.aries.javax.jax.rs-api</artifactId>
             <version>0.0.1-SNAPSHOT</version>
         </dependency>
         <dependency>
@@ -135,23 +129,18 @@
         </dependency>
         <dependency>
             <groupId>org.apache.felix</groupId>
-            <artifactId>org.apache.felix.gogo.jline</artifactId>
-            <version>1.0.6</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.felix</groupId>
             <artifactId>org.apache.felix.gogo.runtime</artifactId>
             <version>1.0.6</version>
         </dependency>
         <dependency>
             <groupId>org.apache.felix</groupId>
-            <artifactId>org.apache.felix.scr</artifactId>
-            <version>2.0.8</version>
+            <artifactId>org.apache.felix.gogo.shell</artifactId>
+            <version>1.0.0</version>
         </dependency>
         <dependency>
-            <groupId>org.apache.ws.xmlschema</groupId>
-            <artifactId>xmlschema-core</artifactId>
-            <version>2.2.1</version>
+            <groupId>org.apache.felix</groupId>
+            <artifactId>org.apache.felix.scr</artifactId>
+            <version>2.0.8</version>
         </dependency>
         <dependency>
             <groupId>org.osgi</groupId>
@@ -177,11 +166,6 @@
             <groupId>org.osgi</groupId>
             <artifactId>org.osgi.service.jaxrs</artifactId>
             <version>LATEST</version>
-        </dependency>
-        <dependency>
-            <groupId>org.ow2.asm</groupId>
-            <artifactId>asm</artifactId>
-            <version>5.0.4</version>
         </dependency>
     </dependencies>
 </project>
