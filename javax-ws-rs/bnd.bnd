@@ -1,0 +1,14 @@
+# Keep -include instruction first because order matters
+-include: ${.}/target/sources/META-INF/MANIFEST.MF
+
+Bundle-License: CDDL-1.1;link="https://spdx.org/licenses/CDDL-1.1.html"
+Provide-Capability:\
+	osgi.contract;\
+		osgi.contract=JavaJAXRS;\
+		uses:="javax.ws.rs,javax.ws.rs.client,javax.ws.rs.container,javax.ws.rs.core,javax.ws.rs.ext,javax.ws.rs.sse";\
+		version:List<Version>="2.1,2,1.1"
+
+-exportcontents: javax.ws.rs.*;version='2.1'
+
+-includeresource: META-INF/README=README
+-removeheaders: Archiver-Version, Created-By, Built-By, Build-Jdk
