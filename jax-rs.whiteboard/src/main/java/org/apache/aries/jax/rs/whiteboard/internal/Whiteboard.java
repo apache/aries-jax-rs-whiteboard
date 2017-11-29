@@ -196,8 +196,7 @@ public class Whiteboard {
                     _runtime::removeApplicationDependentExtension).
                 flatMap(registratorReference ->
             waitForExtensionDependencies(
-                    resourceReference,
-                    getApplicationName(registratorReference::getProperty),
+                    resourceReference, registratorReference,
                     _runtime::addDependentExtension,
                     _runtime::removeDependentExtension).
                 then(
@@ -215,8 +214,7 @@ public class Whiteboard {
                 _runtime::removeApplicationDependentResource).
                 flatMap(registratorReference ->
             waitForExtensionDependencies(
-                resourceReference,
-                getApplicationName(registratorReference::getProperty),
+                resourceReference, registratorReference,
                 _runtime::addDependentService,
                 _runtime::removeDependentService).
             then(
@@ -570,9 +568,14 @@ public class Whiteboard {
     }
 
     private OSGi<?> waitForExtensionDependencies(
-        CachingServiceReference<?> serviceReference, String applicationName,
+        CachingServiceReference<?> serviceReference,
+        CachingServiceReference<CXFJaxRsServiceRegistrator>
+            applicationRegistratorReference,
         Consumer<CachingServiceReference<?>> onAddingDependent,
         Consumer<CachingServiceReference<?>> onRemovingDependent) {
+
+        String applicationName = getApplicationName(
+            applicationRegistratorReference::getProperty);
 
         String[] extensionDependencies = canonicalize(
             serviceReference.getProperty(JAX_RS_EXTENSION_SELECT));
@@ -593,6 +596,14 @@ public class Whiteboard {
 
                 Filter extensionFilter = _bundleContext.createFilter(
                     extensionDependency);
+
+                if (
+                    extensionFilter.match(_runtimeReference) ||
+                    extensionFilter.match(
+                        applicationRegistratorReference.getServiceReference())) {
+                    
+                    continue;
+                }
 
                 program =
                     once(serviceReferences(ApplicationExtensionRegistration.class).
