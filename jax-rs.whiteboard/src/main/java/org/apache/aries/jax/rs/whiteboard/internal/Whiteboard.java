@@ -653,10 +653,9 @@ public class Whiteboard {
         }
 
         return
-            just(0).
             effects(
-                __ -> onWaiting.accept(serviceReference),
-                __ -> onResolved.accept(serviceReference)).then(
+                () -> onWaiting.accept(serviceReference),
+                () -> onResolved.accept(serviceReference)).then(
             serviceReferences(
                 CXFJaxRsServiceRegistrator.class,
                 applicationSelectProperty.toString()).
