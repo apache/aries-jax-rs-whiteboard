@@ -37,7 +37,6 @@ import org.osgi.service.http.context.ServletContextHelper;
 import org.osgi.service.jaxrs.runtime.JaxRSServiceRuntime;
 
 import javax.servlet.Servlet;
-import javax.servlet.ServletContext;
 import javax.ws.rs.container.ContainerRequestFilter;
 import javax.ws.rs.container.ContainerResponseFilter;
 import javax.ws.rs.container.DynamicFeature;
