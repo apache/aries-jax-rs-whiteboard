@@ -96,13 +96,13 @@
             <version>1.0</version>
         </dependency>
         <dependency>
-            <groupId>org.apache.aries.cdi</groupId>
-            <artifactId>org.apache.aries.javax.annotation-api</artifactId>
+            <groupId>org.apache.aries.jax.rs</groupId>
+            <artifactId>org.apache.aries.jax.rs.whiteboard</artifactId>
             <version>0.0.1-SNAPSHOT</version>
         </dependency>
         <dependency>
-            <groupId>org.apache.aries.jax.rs</groupId>
-            <artifactId>org.apache.aries.jax.rs.whiteboard</artifactId>
+            <groupId>org.apache.aries.spec</groupId>
+            <artifactId>org.apache.aries.javax.annotation-api</artifactId>
             <version>0.0.1-SNAPSHOT</version>
         </dependency>
         <dependency>
