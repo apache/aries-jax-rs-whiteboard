@@ -23,7 +23,6 @@ import javax.ws.rs.container.ContainerResponseFilter;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.ExceptionMapper;
-import javax.ws.rs.ext.Provider;
 import java.io.IOException;
 import java.util.Collections;
 
@@ -46,7 +45,8 @@ public class TestFilterAndExceptionMapper implements
         return Response.ok().entity("This is fine").build();
     }
 
-    public static class MyException extends RuntimeException {
+    @SuppressWarnings("serial")
+	public static class MyException extends RuntimeException {
 
     }
 

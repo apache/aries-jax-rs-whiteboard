@@ -74,7 +74,8 @@ public class TestHelper {
         _runtimeServiceReference = _runtimeTracker.getServiceReference();
     }
 
-    private static String[] canonicalize(Object propertyValue) {
+    @SuppressWarnings("unchecked")
+	private static String[] canonicalize(Object propertyValue) {
         if (propertyValue == null) {
             return new String[0];
         }

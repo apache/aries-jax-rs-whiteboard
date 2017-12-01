@@ -23,6 +23,7 @@ Import-Package:\
     !org.apache.abdera.*,\
     !org.apache.aries.*,\
     !org.apache.cxf.*,\
+    !org.apache.log4j.*,\
     !org.apache.neethi.*,\
     !org.apache.velocity.*,\
     !org.apache.xerces.*,\
@@ -36,6 +37,7 @@ Import-Package:\
     !org.ietf.jgss.*,\
     !org.objectweb.asm.*,\
     !org.osgi.service.blueprint.*,\
+    !org.osgi.service.http,\
     !org.relaxng.datatype.*,\
     !org.slf4j.spi.*,\
     !org.springframework.*,\

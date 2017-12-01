@@ -36,7 +36,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
-import org.apache.aries.jax.rs.whiteboard.internal.Utils;
 import org.junit.After;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -67,7 +66,6 @@ import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.container.ContainerResponseFilter;
 import javax.ws.rs.core.Application;
 import javax.ws.rs.core.Feature;
-import javax.ws.rs.core.FeatureContext;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.ExceptionMapper;
 
@@ -363,7 +361,8 @@ public class JaxrsTest extends TestHelper {
         testCase.run();
     }
 
-    @Test
+    @SuppressWarnings("serial")
+	@Test
     public void testApplicationRebase() {
         assertEquals(0, getRuntimeDTO().applicationDTOs.length);
 
@@ -607,37 +606,41 @@ public class JaxrsTest extends TestHelper {
         ServiceRegistration<Application> applicationRegistration =
             registerApplication(new TestApplication());
 
-        runtimeDTO = getRuntimeDTO();
-
-        assertEquals(1, runtimeDTO.applicationDTOs.length);
-        assertEquals(0, runtimeDTO.failedApplicationDTOs.length);
-
-        ServiceRegistration<?> erroredRegistration = registerApplication(
-            new TestApplication() {
-
-                @Override
-                public Set<Object> getSingletons() {
-                    throw new RuntimeException();
-                }
-
-            }, "service.ranking", 10);
-
-        runtimeDTO = getRuntimeDTO();
-
-        assertEquals(0, runtimeDTO.applicationDTOs.length);
-        assertEquals(2, runtimeDTO.failedApplicationDTOs.length);
-
-        erroredRegistration.unregister();
-
-        runtimeDTO = getRuntimeDTO();
-
-        assertEquals(1, runtimeDTO.applicationDTOs.length);
-        assertEquals(0, runtimeDTO.failedApplicationDTOs.length);
-
-        WebTarget webTarget = createDefaultTarget().path("/test-application");
-
-        assertEquals(200, webTarget.request().get().getStatus());
-        assertEquals("Hello application", webTarget.request().get(String.class));
+        try {
+	        runtimeDTO = getRuntimeDTO();
+	
+	        assertEquals(1, runtimeDTO.applicationDTOs.length);
+	        assertEquals(0, runtimeDTO.failedApplicationDTOs.length);
+	
+	        ServiceRegistration<?> erroredRegistration = registerApplication(
+	            new TestApplication() {
+	
+	                @Override
+	                public Set<Object> getSingletons() {
+	                    throw new RuntimeException();
+	                }
+	
+	            }, "service.ranking", 10);
+	
+	        runtimeDTO = getRuntimeDTO();
+	
+	        assertEquals(0, runtimeDTO.applicationDTOs.length);
+	        assertEquals(2, runtimeDTO.failedApplicationDTOs.length);
+	
+	        erroredRegistration.unregister();
+	
+	        runtimeDTO = getRuntimeDTO();
+	
+	        assertEquals(1, runtimeDTO.applicationDTOs.length);
+	        assertEquals(0, runtimeDTO.failedApplicationDTOs.length);
+	
+	        WebTarget webTarget = createDefaultTarget().path("/test-application");
+	
+	        assertEquals(200, webTarget.request().get().getStatus());
+	        assertEquals("Hello application", webTarget.request().get(String.class));
+        } finally {
+        	applicationRegistration.unregister();
+        }
     }
 
     @Test
@@ -1400,16 +1403,8 @@ public class JaxrsTest extends TestHelper {
     private Collection<ServiceRegistration<?>> _registrations =
         new ArrayList<>();
 
-    private static long getServiceId(ServiceRegistration propertyHolder) {
+    private static long getServiceId(ServiceRegistration<?> propertyHolder) {
         return (long)propertyHolder.getReference().getProperty("service.id");
-    }
-
-    private void assertFailedApplication(long serviceId, int reason) {
-        assertTrue(Arrays.stream(
-            getRuntimeDTO().failedApplicationDTOs
-        ).anyMatch(
-            fa -> fa.serviceId == serviceId && fa.failureReason == reason
-        ));
     }
 
     private <T> void assertThatInRuntime(
