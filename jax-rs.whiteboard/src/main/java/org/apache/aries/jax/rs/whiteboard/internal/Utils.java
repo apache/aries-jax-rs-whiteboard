@@ -134,32 +134,44 @@ public class Utils {
         Consumer<CachingServiceReference<T>> whenLeavingNotGettable) {
 
         return bundleContext().flatMap(bundleContext ->
-            program.flatMap(immutable -> {
-                T service = null;
+            program.recoverWith(
+                (serviceReference, e) ->
+                    notGettableResult(
+                        whenAddedNotGettable, whenLeavingNotGettable,
+                        serviceReference)
+            ).flatMap(serviceReference -> {
+                ServiceObjects<T> serviceObjects =
+                    bundleContext.getServiceObjects(
+                        serviceReference.getServiceReference());
+                T service = serviceObjects.getService();
 
-                try {
-                    service = bundleContext.getService(
-                        immutable.getServiceReference());
-                }
-                catch (Exception e){
-                }
                 if (service == null) {
-                    return
-                        effects(
-                            () -> whenAddedNotGettable.accept(immutable),
-                            () -> whenLeavingNotGettable.accept(immutable)
-                        ).then(
-                            nothing()
-                        );
+                    return notGettableResult(
+                        whenAddedNotGettable, whenLeavingNotGettable,
+                        serviceReference);
                 }
+
                 return
                     onClose(
-                        () -> bundleContext.ungetService(
-                            immutable.getServiceReference())
+                        () -> serviceObjects.ungetService(service)
                     ).then(
-                        just(new ServiceTuple<>(immutable, service))
+                        just(new ServiceTuple<>(
+                            serviceReference, serviceObjects, service))
                     );
             }));
+    }
+
+    private static <T, S> OSGi<S> notGettableResult(
+        Consumer<CachingServiceReference<T>> whenAddedNotGettable,
+        Consumer<CachingServiceReference<T>> whenLeavingNotGettable,
+        CachingServiceReference<T> immutable) {
+
+        return effects(
+            () -> whenAddedNotGettable.accept(immutable),
+            () -> whenLeavingNotGettable.accept(immutable)
+        ).then(
+            nothing()
+        );
     }
 
     public static <T> OSGi<T> service(
@@ -265,10 +277,16 @@ public class Utils {
     public static class ServiceTuple<T> implements Comparable<ServiceTuple<T>> {
 
         private final CachingServiceReference<T> _serviceReference;
+        private ServiceObjects<T> _serviceObjects;
         private final T _service;
 
-        ServiceTuple(CachingServiceReference<T> a, T service) {
+        ServiceTuple(
+            CachingServiceReference<T> a, ServiceObjects<T> serviceObjects,
+            T service) {
+
             _serviceReference = a;
+
+            _serviceObjects = serviceObjects;
             _service = service;
         }
 
@@ -279,6 +297,10 @@ public class Utils {
 
         public T getService() {
             return _service;
+        }
+
+        public ServiceObjects<T> getServiceObjects() {
+            return _serviceObjects;
         }
 
         @Override

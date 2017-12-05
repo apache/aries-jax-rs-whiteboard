@@ -413,7 +413,8 @@ public class Whiteboard {
 
     private <T> OSGi<?> safeRegisterEndpoint(
         CachingServiceReference<T> serviceReference,
-        CachingServiceReference<CXFJaxRsServiceRegistrator> registratorReference) {
+        CachingServiceReference<CXFJaxRsServiceRegistrator>
+            registratorReference) {
 
         String applicationName = getApplicationName(
             registratorReference::getProperty);
@@ -431,9 +432,7 @@ public class Whiteboard {
                     _runtime::removeErroredEndpoint).
                 then(nothing())
             ).map(
-                ServiceTuple::getCachingServiceReference
-            ).flatMap(
-                Utils::serviceObjects
+                ServiceTuple::getServiceObjects
             ).map(
                 Utils::getResourceProvider
             ).effects(
