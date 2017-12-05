@@ -20,7 +20,9 @@ package org.apache.aries.jax.rs.whiteboard.internal;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
@@ -48,9 +50,12 @@ import static org.apache.aries.jax.rs.whiteboard.internal.Utils.canonicalize;
 
 public class CXFJaxRsServiceRegistrator {
 
-    public CXFJaxRsServiceRegistrator(Bus bus, Application application) {
+    public CXFJaxRsServiceRegistrator(
+        Bus bus, Application application, Map<String, Object> properties) {
         _bus = bus;
         _application = application;
+        _properties = Collections.unmodifiableMap(new HashMap<>(properties));
+
 
         Comparator<ServiceTuple<?>> comparing = Comparator.comparing(
             ServiceTuple::getCachingServiceReference);
@@ -141,6 +146,7 @@ public class CXFJaxRsServiceRegistrator {
     }
 
     private final Application _application;
+    private Map<String, Object> _properties;
     private final Bus _bus;
     private final Collection<ServiceTuple<?>> _providers;
     private final Collection<ResourceProvider> _services = new ArrayList<>();
@@ -211,6 +217,10 @@ public class CXFJaxRsServiceRegistrator {
 
         jaxRsServerFactoryBean.setProvider(
             (Feature) featureContext -> {
+                featureContext.property(
+                    "osgi.jaxrs.application.serviceProperties",
+                    _properties);
+
                 for (ServiceTuple<?> provider : _providers) {
                     CachingServiceReference<?> cachingServiceReference =
                         provider.getCachingServiceReference();

@@ -328,9 +328,9 @@ public class Whiteboard {
         Bus bus, ServiceTuple<Application> tuple, Map<String, Object> props) {
 
         return
-            just(() -> new CXFJaxRsServiceRegistrator(bus, tuple.getService())).
+            just(() -> new CXFJaxRsServiceRegistrator(
+                bus, tuple.getService(), props)).
                 flatMap(registrator ->
-
             onClose(registrator::close).then(
             register(CXFJaxRsServiceRegistrator.class, registrator, props)));
     }

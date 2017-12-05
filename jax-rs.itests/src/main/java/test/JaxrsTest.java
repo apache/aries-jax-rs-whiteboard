@@ -25,14 +25,17 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Dictionary;
+import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
@@ -61,6 +64,7 @@ import test.types.TestFilter;
 import test.types.TestFilterAndExceptionMapper;
 import test.types.TestHelper;
 
+import javax.ws.rs.GET;
 import javax.ws.rs.client.InvocationCallback;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.container.ContainerResponseFilter;
@@ -779,6 +783,29 @@ public class JaxrsTest extends TestHelper {
     }
 
     @Test
+    public void testDefaultServiceReferencePropertiesAreAvailableInFeatures() {
+        AtomicBoolean executed = new AtomicBoolean();
+        AtomicReference<Object> propertyvalue = new AtomicReference<>();
+
+        registerExtension(
+            Feature.class, featureContext -> {
+                executed.set(true);
+
+                Map<String, Object> properties =
+                    (Map<String, Object>)
+                        featureContext.getConfiguration().getProperty(
+                            "osgi.jaxrs.application.serviceProperties");
+                propertyvalue.set(properties.get(JAX_RS_NAME));
+
+                return false;
+            }, "Feature", JAX_RS_APPLICATION_SELECT,
+            "("+ JAX_RS_NAME + "=" + JAX_RS_DEFAULT_APPLICATION + ")");
+
+        assertTrue(executed.get());
+        assertEquals(JAX_RS_DEFAULT_APPLICATION, propertyvalue.get());
+    }
+
+    @Test
     public void testEndpointsOverride() {
         WebTarget webTarget = createDefaultTarget().path("conflict");
 
@@ -1110,6 +1137,43 @@ public class JaxrsTest extends TestHelper {
             "service.changecount");
 
         assertTrue(changeCount < newCount);
+    }
+
+    @Test
+    public void testServiceReferencePropertiesAreAvailableInFeatures() {
+        AtomicBoolean executed = new AtomicBoolean();
+        AtomicReference<Object> propertyvalue = new AtomicReference<>();
+
+        registerExtension(
+            Feature.class, featureContext -> {
+                executed.set(true);
+
+                Map<String, Object> properties =
+                    (Map<String, Object>)
+                        featureContext.getConfiguration().getProperty(
+                            "osgi.jaxrs.application.serviceProperties");
+                propertyvalue.set(properties.get("property"));
+
+                return false;
+            }, "Feature", JAX_RS_APPLICATION_SELECT, "(property=true)");
+
+        registerApplication(
+            new Application() {
+            @Override
+            public Set<Object> getSingletons() {
+                return Collections.singleton(
+                    new Object() {
+
+                        @GET
+                        public String hello() {
+                            return "hello";
+                        }
+                    });
+            }
+        }, JAX_RS_NAME, "test", "property", true);
+
+        assertTrue(executed.get());
+        assertEquals(true, propertyvalue.get());
     }
 
     @Test
