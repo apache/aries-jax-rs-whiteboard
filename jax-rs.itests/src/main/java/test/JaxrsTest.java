@@ -902,7 +902,6 @@ public class JaxrsTest extends TestHelper {
 
     }
 
-    @Ignore
     @Test
     public void testFeatureExtension() {
         WebTarget webTarget = createDefaultTarget().path("/test-application");
@@ -912,7 +911,7 @@ public class JaxrsTest extends TestHelper {
         registerExtension(
             Feature.class,
             context -> {
-                context.register(new TestAddonConflict2());
+                context.register(new TestFilter());
 
                 return true;
             },
