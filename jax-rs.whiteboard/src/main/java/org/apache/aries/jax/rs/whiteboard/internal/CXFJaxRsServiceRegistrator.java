@@ -28,8 +28,10 @@ import java.util.TreeSet;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import javax.ws.rs.RuntimeType;
 import javax.ws.rs.core.Application;
 import javax.ws.rs.core.Feature;
+import javax.ws.rs.core.FeatureContext;
 import javax.ws.rs.ext.RuntimeDelegate;
 
 import org.apache.aries.jax.rs.whiteboard.internal.Utils.ServiceReferenceResourceProvider;
@@ -39,10 +41,12 @@ import org.apache.cxf.Bus;
 import org.apache.cxf.endpoint.Server;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.ext.ResourceComparator;
+import org.apache.cxf.jaxrs.impl.ConfigurableImpl;
 import org.apache.cxf.jaxrs.lifecycle.ResourceProvider;
+import org.apache.cxf.jaxrs.model.ApplicationInfo;
 import org.apache.cxf.jaxrs.model.ClassResourceInfo;
 import org.apache.cxf.jaxrs.model.OperationResourceInfo;
-import org.apache.cxf.jaxrs.provider.json.JSONProvider;
+import org.apache.cxf.jaxrs.provider.ServerConfigurableFactory;
 import org.apache.cxf.message.Message;
 import org.osgi.framework.ServiceReference;
 
@@ -146,10 +150,10 @@ public class CXFJaxRsServiceRegistrator {
     }
 
     private final Application _application;
-    private Map<String, Object> _properties;
     private final Bus _bus;
     private final Collection<ServiceTuple<?>> _providers;
     private final Collection<ResourceProvider> _services = new ArrayList<>();
+    private Map<String, Object> _properties;
     private volatile boolean _closed = false;
     private Server _server;
 
@@ -215,12 +219,25 @@ public class CXFJaxRsServiceRegistrator {
 
         jaxRsServerFactoryBean.setBus(_bus);
 
+        _bus.setExtension(
+            context -> {
+                ConfigurableImpl<FeatureContext> configurable =
+                    new ConfigurableImpl<>(
+                        context, RuntimeType.SERVER,
+                        ServerConfigurableFactory.
+                            SERVER_FILTER_INTERCEPTOR_CLASSES);
+
+                configurable.property(
+                    "osgi.jaxrs.application.serviceProperties", _properties);
+
+                return configurable;
+            },
+            ServerConfigurableFactory.class);
+
+        jaxRsServerFactoryBean.setStart(false);
+
         jaxRsServerFactoryBean.setProvider(
             (Feature) featureContext -> {
-                featureContext.property(
-                    "osgi.jaxrs.application.serviceProperties",
-                    _properties);
-
                 for (ServiceTuple<?> provider : _providers) {
                     CachingServiceReference<?> cachingServiceReference =
                         provider.getCachingServiceReference();
@@ -282,6 +299,13 @@ public class CXFJaxRsServiceRegistrator {
             new ComparableResourceComparator());
 
         _server = jaxRsServerFactoryBean.create();
+
+        ApplicationInfo applicationInfo = (ApplicationInfo)
+            _server.getEndpoint().get(Application.class.getName());
+
+        applicationInfo.setOverridingProps(new HashMap<String, Object>() {{
+            put("osgi.jaxrs.application.serviceProperties", _properties);
+        }});
 
         _server.start();
     }

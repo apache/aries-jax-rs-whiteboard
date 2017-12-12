@@ -40,7 +40,6 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 
 import org.junit.After;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.PrototypeServiceFactory;
@@ -52,6 +51,7 @@ import org.osgi.service.jaxrs.runtime.dto.DTOConstants;
 import org.osgi.service.jaxrs.runtime.dto.FailedApplicationDTO;
 import org.osgi.service.jaxrs.runtime.dto.RuntimeDTO;
 import org.osgi.util.tracker.ServiceTracker;
+import test.types.ConfigurationAwareResource;
 import test.types.TestAddon;
 import test.types.TestAddonConflict;
 import test.types.TestAddonConflict2;
@@ -1139,6 +1139,23 @@ public class JaxrsTest extends TestHelper {
     }
 
     @Test
+    public void testServiceReferencePropertiesAreAvailableInConfigurationInjection() {
+        registerApplication(
+            new Application() {
+                @Override
+                public Set<Object> getSingletons() {
+                    return new HashSet<>(Collections.singleton(
+                        new ConfigurationAwareResource()
+                    ));
+                }
+            }, JAX_RS_NAME, "test", "property", "aValue");
+
+        WebTarget webTarget = createDefaultTarget().path("test-application");
+
+        assertEquals("aValue", webTarget.request().get(String.class));
+    }
+
+    @Test
     public void testServiceReferencePropertiesAreAvailableInFeatures() {
         AtomicBoolean executed = new AtomicBoolean();
         AtomicReference<Object> propertyvalue = new AtomicReference<>();
@@ -1170,6 +1187,42 @@ public class JaxrsTest extends TestHelper {
                     });
             }
         }, JAX_RS_NAME, "test", "property", true);
+
+        assertTrue(executed.get());
+        assertEquals(true, propertyvalue.get());
+    }
+
+    @Test
+    public void testServiceReferencePropertiesAreAvailableInStaticFeatures() {
+        AtomicBoolean executed = new AtomicBoolean();
+        AtomicReference<Object> propertyvalue = new AtomicReference<>();
+
+        registerApplication(
+            new Application() {
+                @Override
+                public Set<Object> getSingletons() {
+                    return new HashSet<>(Arrays.asList(
+                        (Feature)featureContext -> {
+                            executed.set(true);
+
+                            Map<String, Object> properties =
+                                (Map<String, Object>)
+                                    featureContext.getConfiguration().getProperty(
+                                        "osgi.jaxrs.application.serviceProperties");
+                            propertyvalue.set(properties.get("property"));
+
+                            return false;
+                        },
+                        new Object() {
+
+                            @GET
+                            public String hello() {
+                                return "hello";
+                            }
+                        }
+                        ));
+                }
+            }, JAX_RS_NAME, "test", "property", true);
 
         assertTrue(executed.get());
         assertEquals(true, propertyvalue.get());
