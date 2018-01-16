@@ -60,7 +60,6 @@ public class CXFJaxRsServiceRegistrator {
         _application = application;
         _properties = Collections.unmodifiableMap(new HashMap<>(properties));
 
-
         Comparator<ServiceTuple<?>> comparing = Comparator.comparing(
             ServiceTuple::getCachingServiceReference);
 
@@ -243,8 +242,7 @@ public class CXFJaxRsServiceRegistrator {
                         provider.getCachingServiceReference();
 
                     ServiceReference<?> serviceReference =
-                        cachingServiceReference.
-                            getServiceReference();
+                        cachingServiceReference.getServiceReference();
 
                     int ranking = Utils.getRanking(cachingServiceReference);
 

@@ -281,11 +281,10 @@ public class Utils {
         private final T _service;
 
         ServiceTuple(
-            CachingServiceReference<T> a, ServiceObjects<T> serviceObjects,
-            T service) {
+            CachingServiceReference<T> cachingServiceReference,
+            ServiceObjects<T> serviceObjects, T service) {
 
-            _serviceReference = a;
-
+            _serviceReference = cachingServiceReference;
             _serviceObjects = serviceObjects;
             _service = service;
         }
