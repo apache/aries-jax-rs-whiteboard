@@ -17,6 +17,7 @@
 
 package test;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertTrue;
 import static org.osgi.service.jaxrs.whiteboard.JaxRSWhiteboardConstants.*;
 
@@ -47,8 +48,11 @@ import org.osgi.framework.ServiceFactory;
 import org.osgi.framework.ServiceRegistration;
 
 import org.osgi.service.jaxrs.runtime.JaxRSServiceRuntime;
+import org.osgi.service.jaxrs.runtime.dto.ApplicationDTO;
 import org.osgi.service.jaxrs.runtime.dto.DTOConstants;
 import org.osgi.service.jaxrs.runtime.dto.FailedApplicationDTO;
+import org.osgi.service.jaxrs.runtime.dto.ResourceDTO;
+import org.osgi.service.jaxrs.runtime.dto.ResourceMethodInfoDTO;
 import org.osgi.service.jaxrs.runtime.dto.RuntimeDTO;
 import org.osgi.util.tracker.ServiceTracker;
 import test.types.ConfigurationAwareResource;
@@ -65,11 +69,13 @@ import test.types.TestFilterAndExceptionMapper;
 import test.types.TestHelper;
 
 import javax.ws.rs.GET;
+import javax.ws.rs.HttpMethod;
 import javax.ws.rs.client.InvocationCallback;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.container.ContainerResponseFilter;
 import javax.ws.rs.core.Application;
 import javax.ws.rs.core.Feature;
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.ExceptionMapper;
 
@@ -187,6 +193,35 @@ public class JaxrsTest extends TestHelper {
         assertEquals(
             "Hello extended",
             webTarget.request().get().readEntity(String.class));
+    }
+
+    @Test
+    public void testApplicationEndpointExtensionRuntimeDTO() {
+        registerApplication(new TestApplication());
+
+        registerAddon(
+            new TestAddon(), JAX_RS_APPLICATION_SELECT,
+            "(" + JAX_RS_APPLICATION_BASE + "=/test-application)");
+
+        RuntimeDTO runtimeDTO = _runtime.getRuntimeDTO();
+
+        assertEquals(1, runtimeDTO.applicationDTOs.length);
+
+        ApplicationDTO applicationDTO = runtimeDTO.applicationDTOs[0];
+        assertEquals(applicationDTO.base, "/test-application");
+        assertEquals(1, applicationDTO.resourceDTOs.length);
+
+        ResourceDTO resourceDTO = applicationDTO.resourceDTOs[0];
+        assertEquals(1, resourceDTO.resourceMethods.length);
+
+        ResourceMethodInfoDTO resourceMethod = resourceDTO.resourceMethods[0];
+        assertEquals(HttpMethod.GET, resourceMethod.method);
+        assertEquals("/{name}", resourceMethod.path);
+        assertArrayEquals(
+            new String[]{MediaType.WILDCARD}, resourceMethod.consumingMimeType);
+        assertArrayEquals(
+            new String[]{MediaType.WILDCARD}, resourceMethod.producingMimeType);
+        assertArrayEquals(new String[]{}, resourceMethod.nameBindings);
     }
 
     @Test

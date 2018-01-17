@@ -37,7 +37,9 @@ import java.util.stream.Stream;
 import javax.ws.rs.core.Application;
 
 import org.apache.aries.jax.rs.whiteboard.internal.Utils.PropertyHolder;
+import org.apache.aries.jax.rs.whiteboard.internal.introspection.ClassIntrospector;
 import org.apache.aries.osgi.functional.CachingServiceReference;
+import org.apache.cxf.Bus;
 import org.osgi.service.jaxrs.runtime.JaxRSServiceRuntime;
 import org.osgi.service.jaxrs.runtime.dto.ApplicationDTO;
 import org.osgi.service.jaxrs.runtime.dto.BaseDTO;
@@ -82,10 +84,15 @@ public class AriesJaxRSServiceRuntime implements JaxRSServiceRuntime {
     }
 
     public void addApplicationEndpoint(
-        String applicationName, CachingServiceReference<?> endpointImmutableServiceReference) {
+        String applicationName,
+        CachingServiceReference<?> endpointImmutableServiceReference,
+        Bus bus, Class<?> theClass) {
 
         _applicationEndpoints.compute(
-            applicationName, merger(endpointImmutableServiceReference));
+            applicationName,
+            merger(
+                new EndpointRuntimeInformation(
+                    endpointImmutableServiceReference, bus, theClass)));
     }
 
     public void addApplicationExtension(
@@ -249,10 +256,13 @@ public class AriesJaxRSServiceRuntime implements JaxRSServiceRuntime {
     }
 
     public void removeApplicationEndpoint(
-        String applicationName, CachingServiceReference<?> endpointImmutableServiceReference) {
+        String applicationName,
+        CachingServiceReference<?> cachingServiceReference) {
 
         _applicationEndpoints.compute(
-            applicationName, remover(endpointImmutableServiceReference));
+            applicationName,
+            remover(new EndpointRuntimeInformation(
+                cachingServiceReference, null, null)));
     }
 
     public void removeApplicationExtension(
@@ -347,7 +357,7 @@ public class AriesJaxRSServiceRuntime implements JaxRSServiceRuntime {
     }
     private ConcurrentHashMap<String, Map<String, Object>>
         _applications = new ConcurrentHashMap<>();
-    private ConcurrentHashMap<String, Collection<CachingServiceReference<?>>>
+    private ConcurrentHashMap<String, Collection<EndpointRuntimeInformation>>
         _applicationEndpoints = new ConcurrentHashMap<>();
     private ConcurrentHashMap<String, Collection<CachingServiceReference<?>>>
         _applicationExtensions = new ConcurrentHashMap<>();
@@ -414,12 +424,22 @@ public class AriesJaxRSServiceRuntime implements JaxRSServiceRuntime {
         };
     }
 
-    private static <T extends BaseExtensionDTO> T populateExtensionDTO(
-    		T extensionDTO, CachingServiceReference<?> serviceReference) {
+    private static <T extends BaseDTO> T populateBaseDTO(
+    		T baseDTO, CachingServiceReference<?> serviceReference) {
 
-        extensionDTO.name = getApplicationName(serviceReference::getProperty);
-        extensionDTO.serviceId = (Long)serviceReference.getProperty(
+        baseDTO.name = getApplicationName(serviceReference::getProperty);
+        baseDTO.serviceId = (Long)serviceReference.getProperty(
             "service.id");
+        
+        return baseDTO;
+    }
+
+    private static void populateBaseExtensionDTO(
+        BaseExtensionDTO extensionDTO,
+        CachingServiceReference<?> serviceReference) {
+
+        populateBaseDTO(extensionDTO, serviceReference);
+
         extensionDTO.extensionTypes =
             Arrays.stream(
                 canonicalize(serviceReference.getProperty("objectClass"))).
@@ -427,16 +447,27 @@ public class AriesJaxRSServiceRuntime implements JaxRSServiceRuntime {
                 SUPPORTED_EXTENSION_INTERFACES::contains
             ).
             toArray(String[]::new);
+    }
+
+    private static ExtensionDTO populateExtensionDTO(
+        ExtensionDTO extensionDTO,
+        CachingServiceReference<?> serviceReference) {
+
+        populateBaseExtensionDTO(extensionDTO, serviceReference);
 
         return extensionDTO;
     }
 
-    private static <T extends BaseDTO> T populateResourceDTO(
-    		T resourceDTO, CachingServiceReference<?> serviceReference) {
+    private static ResourceDTO populateResourceDTO(
+        ResourceDTO resourceDTO,
+        EndpointRuntimeInformation endpointRuntimeInformation) {
 
-        resourceDTO.name = getApplicationName(serviceReference::getProperty);
-        resourceDTO.serviceId = (Long)serviceReference.getProperty(
-            "service.id");
+        populateBaseDTO(
+            resourceDTO, endpointRuntimeInformation._cachingServiceReference);
+
+        resourceDTO.resourceMethods = ClassIntrospector.getResourceMethodInfos(
+            endpointRuntimeInformation._class,
+            endpointRuntimeInformation._bus);
 
         return resourceDTO;
     }
@@ -506,7 +537,7 @@ public class AriesJaxRSServiceRuntime implements JaxRSServiceRuntime {
 
         FailedExtensionDTO failedExtensionDTO = new FailedExtensionDTO();
 
-        populateExtensionDTO(failedExtensionDTO, serviceReference);
+        populateBaseExtensionDTO(failedExtensionDTO, serviceReference);
 
         failedExtensionDTO.failureReason = reason;
 
@@ -518,7 +549,7 @@ public class AriesJaxRSServiceRuntime implements JaxRSServiceRuntime {
 
         FailedResourceDTO failedResourceDTO = new FailedResourceDTO();
 
-        populateResourceDTO(failedResourceDTO, serviceReference);
+        populateBaseDTO(failedResourceDTO, serviceReference);
 
         failedResourceDTO.failureReason = reason;
 
@@ -575,12 +606,12 @@ public class AriesJaxRSServiceRuntime implements JaxRSServiceRuntime {
     }
 
     private Stream<ResourceDTO> getApplicationEndpointsStream(String name) {
-        Collection<CachingServiceReference<?>> applicationEndpoints =
+        Collection<EndpointRuntimeInformation> endpointRuntimeInformations =
             _applicationEndpoints.get(name);
 
-        Stream<CachingServiceReference<?>> applicationEndpointStream =
-            applicationEndpoints != null ?
-                applicationEndpoints.stream() :
+        Stream<EndpointRuntimeInformation> applicationEndpointStream =
+            endpointRuntimeInformations != null ?
+                endpointRuntimeInformations.stream() :
                 Stream.empty();
 
         return
@@ -637,6 +668,36 @@ public class AriesJaxRSServiceRuntime implements JaxRSServiceRuntime {
             sr -> buildFailedExtensionDTO(
                 DTOConstants.FAILURE_REASON_SERVICE_NOT_GETTABLE, sr)
         );
+    }
+
+    private static class EndpointRuntimeInformation {
+        public EndpointRuntimeInformation(
+            CachingServiceReference cachingServiceReference, Bus bus,
+            Class<?> aClass) {
+
+            _cachingServiceReference = cachingServiceReference;
+            _bus = bus;
+            _class = aClass;
+        }
+
+        @Override
+        public int hashCode() {
+            return _cachingServiceReference.hashCode();
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            EndpointRuntimeInformation that = (EndpointRuntimeInformation) o;
+
+            return _cachingServiceReference.equals(
+                that._cachingServiceReference);
+        }
+        CachingServiceReference _cachingServiceReference;
+        Bus _bus;
+        Class<?> _class;
     }
 
 }

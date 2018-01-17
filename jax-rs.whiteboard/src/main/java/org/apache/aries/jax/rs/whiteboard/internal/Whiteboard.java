@@ -431,19 +431,20 @@ public class Whiteboard {
                     _runtime::addErroredEndpoint,
                     _runtime::removeErroredEndpoint).
                 then(nothing())
-            ).map(
-                ServiceTuple::getServiceObjects
-            ).map(
-                Utils::getResourceProvider
-            ).effects(
-                registrator::add,
-                registrator::remove
-            ).effects(
-                __ -> _runtime.addApplicationEndpoint(
-                    applicationName, serviceReference),
-                __ -> _runtime.removeApplicationEndpoint(
-                    applicationName, serviceReference)
-            ));
+            ).flatMap(st ->
+                just(st.getServiceObjects()).
+                    map(
+                        Utils::getResourceProvider
+                ).effects(
+                    rp -> _runtime.addApplicationEndpoint(
+                        applicationName, st.getCachingServiceReference(),
+                        registrator.getBus(), st.getService().getClass()),
+                    rp -> _runtime.removeApplicationEndpoint(
+                        applicationName, st.getCachingServiceReference())
+                ).effects(
+                    registrator::add,
+                    registrator::remove
+            )));
     }
 
     private OSGi<?> safeRegisterExtension(

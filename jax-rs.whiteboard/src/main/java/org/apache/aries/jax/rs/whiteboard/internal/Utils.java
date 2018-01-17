@@ -101,7 +101,7 @@ public class Utils {
         }
     }
 
-    public static <T> ResourceProvider getResourceProvider(
+    public static <T> ServiceReferenceResourceProvider getResourceProvider(
         ServiceObjects<T> serviceObjects) {
 
         CachingServiceReference<T> serviceReference =

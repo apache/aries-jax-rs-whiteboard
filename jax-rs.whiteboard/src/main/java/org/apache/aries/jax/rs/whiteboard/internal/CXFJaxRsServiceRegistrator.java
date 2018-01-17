@@ -68,6 +68,10 @@ public class CXFJaxRsServiceRegistrator {
         rewire();
     }
 
+    public Bus getBus() {
+        return _bus;
+    }
+
     public void add(ResourceProvider resourceProvider) {
         if (_closed) {
             return;
