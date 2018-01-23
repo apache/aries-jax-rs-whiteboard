@@ -17,22 +17,13 @@
 
 package org.apache.aries.jax.rs.whiteboard.internal;
 
-import org.apache.aries.jax.rs.whiteboard.internal.Utils.PropertyHolder;
-import org.apache.aries.osgi.functional.CachingServiceReference;
-import org.osgi.service.jaxrs.runtime.JaxRSServiceRuntime;
-import org.osgi.service.jaxrs.runtime.dto.ApplicationDTO;
-import org.osgi.service.jaxrs.runtime.dto.DTOConstants;
-import org.osgi.service.jaxrs.runtime.dto.ExtensionDTO;
-import org.osgi.service.jaxrs.runtime.dto.FailedApplicationDTO;
-import org.osgi.service.jaxrs.runtime.dto.FailedExtensionDTO;
-import org.osgi.service.jaxrs.runtime.dto.FailedResourceDTO;
-import org.osgi.service.jaxrs.runtime.dto.ResourceDTO;
-import org.osgi.service.jaxrs.runtime.dto.RuntimeDTO;
-import org.osgi.service.jaxrs.whiteboard.JaxRSWhiteboardConstants;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import static org.apache.aries.jax.rs.whiteboard.internal.Utils.canonicalize;
+import static org.apache.aries.jax.rs.whiteboard.internal.Utils.generateApplicationName;
+import static org.apache.aries.jax.rs.whiteboard.internal.Whiteboard.DEFAULT_NAME;
+import static org.apache.aries.jax.rs.whiteboard.internal.Whiteboard.SUPPORTED_EXTENSION_INTERFACES;
+import static org.apache.aries.jax.rs.whiteboard.internal.Whiteboard.getApplicationBase;
+import static org.osgi.service.jaxrs.whiteboard.JaxRSWhiteboardConstants.JAX_RS_NAME;
 
-import javax.ws.rs.core.Application;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -43,12 +34,24 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.BiFunction;
 import java.util.stream.Stream;
 
-import static org.apache.aries.jax.rs.whiteboard.internal.Utils.canonicalize;
-import static org.apache.aries.jax.rs.whiteboard.internal.Utils.generateApplicationName;
-import static org.apache.aries.jax.rs.whiteboard.internal.Whiteboard.DEFAULT_NAME;
-import static org.apache.aries.jax.rs.whiteboard.internal.Whiteboard.SUPPORTED_EXTENSION_INTERFACES;
-import static org.apache.aries.jax.rs.whiteboard.internal.Whiteboard.getApplicationBase;
-import static org.osgi.service.jaxrs.whiteboard.JaxRSWhiteboardConstants.JAX_RS_NAME;
+import javax.ws.rs.core.Application;
+
+import org.apache.aries.jax.rs.whiteboard.internal.Utils.PropertyHolder;
+import org.apache.aries.osgi.functional.CachingServiceReference;
+import org.osgi.service.jaxrs.runtime.JaxRSServiceRuntime;
+import org.osgi.service.jaxrs.runtime.dto.ApplicationDTO;
+import org.osgi.service.jaxrs.runtime.dto.BaseDTO;
+import org.osgi.service.jaxrs.runtime.dto.BaseExtensionDTO;
+import org.osgi.service.jaxrs.runtime.dto.DTOConstants;
+import org.osgi.service.jaxrs.runtime.dto.ExtensionDTO;
+import org.osgi.service.jaxrs.runtime.dto.FailedApplicationDTO;
+import org.osgi.service.jaxrs.runtime.dto.FailedExtensionDTO;
+import org.osgi.service.jaxrs.runtime.dto.FailedResourceDTO;
+import org.osgi.service.jaxrs.runtime.dto.ResourceDTO;
+import org.osgi.service.jaxrs.runtime.dto.RuntimeDTO;
+import org.osgi.service.jaxrs.whiteboard.JaxRSWhiteboardConstants;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class AriesJaxRSServiceRuntime implements JaxRSServiceRuntime {
 
@@ -411,8 +414,8 @@ public class AriesJaxRSServiceRuntime implements JaxRSServiceRuntime {
         };
     }
 
-    private static ExtensionDTO populateExtensionDTO(
-        ExtensionDTO extensionDTO, CachingServiceReference<?> serviceReference) {
+    private static <T extends BaseExtensionDTO> T populateExtensionDTO(
+    		T extensionDTO, CachingServiceReference<?> serviceReference) {
 
         extensionDTO.name = getApplicationName(serviceReference::getProperty);
         extensionDTO.serviceId = (Long)serviceReference.getProperty(
@@ -428,8 +431,8 @@ public class AriesJaxRSServiceRuntime implements JaxRSServiceRuntime {
         return extensionDTO;
     }
 
-    private static ResourceDTO populateResourceDTO(
-        ResourceDTO resourceDTO, CachingServiceReference<?> serviceReference) {
+    private static <T extends BaseDTO> T populateResourceDTO(
+    		T resourceDTO, CachingServiceReference<?> serviceReference) {
 
         resourceDTO.name = getApplicationName(serviceReference::getProperty);
         resourceDTO.serviceId = (Long)serviceReference.getProperty(
@@ -582,7 +585,7 @@ public class AriesJaxRSServiceRuntime implements JaxRSServiceRuntime {
 
         return
             applicationEndpointStream.map(
-                sr -> populateResourceDTO(new ResourceDTO(){}, sr)
+                sr -> populateResourceDTO(new ResourceDTO(), sr)
             );
     }
 
@@ -597,7 +600,7 @@ public class AriesJaxRSServiceRuntime implements JaxRSServiceRuntime {
 
         return
             applicationExtensionStream.map(
-                sr -> populateExtensionDTO(new ExtensionDTO(){}, sr)
+                sr -> populateExtensionDTO(new ExtensionDTO(), sr)
             );
     }
 
