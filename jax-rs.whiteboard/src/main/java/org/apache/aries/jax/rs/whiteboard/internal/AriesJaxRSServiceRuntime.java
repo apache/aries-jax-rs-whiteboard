@@ -55,7 +55,7 @@ import org.osgi.service.jaxrs.whiteboard.JaxrsWhiteboardConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class AriesJaxRSServiceRuntime implements JaxrsServiceRuntime {
+public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
 
     private static final long serialVersionUID = 1L;
     private static final Logger _LOGGER = LoggerFactory.getLogger(

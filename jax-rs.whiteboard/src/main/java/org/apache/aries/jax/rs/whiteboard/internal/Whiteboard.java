@@ -66,7 +66,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 import static java.lang.String.format;
-import static org.apache.aries.jax.rs.whiteboard.internal.AriesJaxRSServiceRuntime.getApplicationName;
+import static org.apache.aries.jax.rs.whiteboard.internal.AriesJaxrsServiceRuntime.getApplicationName;
 import static org.apache.aries.jax.rs.whiteboard.internal.Utils.canonicalize;
 import static org.apache.aries.jax.rs.whiteboard.internal.Utils.generateApplicationName;
 import static org.apache.aries.jax.rs.whiteboard.internal.Utils.getProperties;
@@ -126,7 +126,7 @@ public class Whiteboard {
     private static final Function<CachingServiceReference<Application>, String>
         APPLICATION_NAME = sr -> getApplicationName(sr::getProperty);
 
-    private final AriesJaxRSServiceRuntime _runtime;
+    private final AriesJaxrsServiceRuntime _runtime;
     private final Map<String, ?> _configurationMap;
     private final BundleContext _bundleContext;
     private final ServiceRegistrationChangeCounter _counter;
@@ -140,7 +140,7 @@ public class Whiteboard {
         BundleContext bundleContext, Dictionary<String, ?> configuration) {
 
         _bundleContext = bundleContext;
-        _runtime = new AriesJaxRSServiceRuntime();
+        _runtime = new AriesJaxrsServiceRuntime();
         _configurationMap = Maps.from(configuration);
         _endpoints = new ArrayList<>();
         _runtimeRegistration = registerJaxRSServiceRuntime(
