@@ -33,7 +33,7 @@ import org.osgi.framework.FrameworkUtil;
 import org.osgi.framework.ServiceReference;
 import org.osgi.service.cm.Configuration;
 import org.osgi.service.cm.ConfigurationAdmin;
-import org.osgi.service.jaxrs.runtime.JaxRSServiceRuntime;
+import org.osgi.service.jaxrs.runtime.JaxrsServiceRuntime;
 import org.osgi.util.tracker.ServiceTracker;
 import test.types.TestHelper;
 
@@ -54,12 +54,12 @@ public class WhiteboardFactoryTest extends TestHelper {
         CountDownLatch removedCountLatch = new CountDownLatch(1);
 
         ServiceTracker<?, ?> serviceTracker = new ServiceTracker
-            <JaxRSServiceRuntime, JaxRSServiceRuntime>(
-            bundleContext, JaxRSServiceRuntime.class, null) {
+            <JaxrsServiceRuntime, JaxrsServiceRuntime>(
+            bundleContext, JaxrsServiceRuntime.class, null) {
 
             @Override
-            public JaxRSServiceRuntime addingService(
-                ServiceReference<JaxRSServiceRuntime> reference) {
+            public JaxrsServiceRuntime addingService(
+                ServiceReference<JaxrsServiceRuntime> reference) {
 
                 if ("/new-whiteboard".equals(
                     reference.getProperty(
@@ -75,8 +75,8 @@ public class WhiteboardFactoryTest extends TestHelper {
 
             @Override
             public void removedService(
-                ServiceReference<JaxRSServiceRuntime> reference,
-                JaxRSServiceRuntime service) {
+                ServiceReference<JaxrsServiceRuntime> reference,
+                JaxrsServiceRuntime service) {
 
                 removedCountLatch.countDown();
             }
@@ -87,7 +87,7 @@ public class WhiteboardFactoryTest extends TestHelper {
 
             serviceTracker.open();
 
-            ServiceReference<JaxRSServiceRuntime> serviceReference =
+            ServiceReference<JaxrsServiceRuntime> serviceReference =
                 _runtimeTracker.getServiceReference();
 
             assertNotNull(serviceReference);

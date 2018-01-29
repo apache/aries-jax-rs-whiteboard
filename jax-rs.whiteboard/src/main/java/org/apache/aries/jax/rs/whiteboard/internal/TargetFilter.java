@@ -1,6 +1,6 @@
 package org.apache.aries.jax.rs.whiteboard.internal;
 
-import static org.osgi.service.jaxrs.whiteboard.JaxRSWhiteboardConstants.JAX_RS_WHITEBOARD_TARGET;
+import static org.osgi.service.jaxrs.whiteboard.JaxrsWhiteboardConstants.JAX_RS_WHITEBOARD_TARGET;
 
 import java.util.function.Predicate;
 

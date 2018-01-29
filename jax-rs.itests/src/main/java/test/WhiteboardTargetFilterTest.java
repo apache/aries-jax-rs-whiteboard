@@ -26,7 +26,8 @@ import javax.ws.rs.client.WebTarget;
 
 import org.junit.Test;
 import org.osgi.framework.ServiceRegistration;
-import org.osgi.service.jaxrs.whiteboard.JaxRSWhiteboardConstants;
+
+import org.osgi.service.jaxrs.whiteboard.JaxrsWhiteboardConstants;
 
 import test.types.TestAddon;
 import test.types.TestHelper;
@@ -42,8 +43,8 @@ public class WhiteboardTargetFilterTest extends TestHelper {
             webTarget.request().get().getStatus());
 
         Dictionary<String, Object> properties = new Hashtable<>();
-        properties.put(JaxRSWhiteboardConstants.JAX_RS_RESOURCE, "true");
-        properties.put(JaxRSWhiteboardConstants.JAX_RS_WHITEBOARD_TARGET, "//");
+        properties.put(JaxrsWhiteboardConstants.JAX_RS_RESOURCE, "true");
+        properties.put(JaxrsWhiteboardConstants.JAX_RS_WHITEBOARD_TARGET, "//");
 
         ServiceRegistration<Object> serviceRegistration =
             bundleContext.registerService(
@@ -68,9 +69,9 @@ public class WhiteboardTargetFilterTest extends TestHelper {
             webTarget.request().get().getStatus());
 
         Dictionary<String, Object> properties = new Hashtable<>();
-        properties.put(JaxRSWhiteboardConstants.JAX_RS_RESOURCE, "true");
+        properties.put(JaxrsWhiteboardConstants.JAX_RS_RESOURCE, "true");
         properties.put(
-            JaxRSWhiteboardConstants.JAX_RS_WHITEBOARD_TARGET,
+            JaxrsWhiteboardConstants.JAX_RS_WHITEBOARD_TARGET,
             "(crazy=the joker)");
 
         ServiceRegistration<Object> serviceRegistration =
@@ -96,9 +97,9 @@ public class WhiteboardTargetFilterTest extends TestHelper {
             webTarget.request().get().getStatus());
 
         Dictionary<String, Object> properties = new Hashtable<>();
-        properties.put(JaxRSWhiteboardConstants.JAX_RS_RESOURCE, "true");
+        properties.put(JaxrsWhiteboardConstants.JAX_RS_RESOURCE, "true");
         properties.put(
-            JaxRSWhiteboardConstants.JAX_RS_WHITEBOARD_TARGET,
+            JaxrsWhiteboardConstants.JAX_RS_WHITEBOARD_TARGET,
             "(service.pid=org.apache.aries.jax.rs.whiteboard.default)");
 
         ServiceRegistration<Object> serviceRegistration =

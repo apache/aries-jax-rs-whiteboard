@@ -18,7 +18,7 @@
 package org.apache.aries.jax.rs.example;
 
 import org.osgi.service.component.annotations.Component;
-import org.osgi.service.jaxrs.whiteboard.JaxRSWhiteboardConstants;
+import org.osgi.service.jaxrs.whiteboard.JaxrsWhiteboardConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,8 +30,8 @@ import javax.ws.rs.core.UriInfo;
 
 @Component(
     property = {
-        JaxRSWhiteboardConstants.JAX_RS_APPLICATION_SELECT + "=(osgi.jaxrs.name=.default)",
-        JaxRSWhiteboardConstants.JAX_RS_RESOURCE + "=true"
+        JaxrsWhiteboardConstants.JAX_RS_APPLICATION_SELECT + "=(osgi.jaxrs.name=.default)",
+        JaxrsWhiteboardConstants.JAX_RS_RESOURCE + "=true"
     },
     service = ExampleAddon.class
 )

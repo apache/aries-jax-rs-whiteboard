@@ -19,7 +19,7 @@ package test;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertTrue;
-import static org.osgi.service.jaxrs.whiteboard.JaxRSWhiteboardConstants.*;
+import static org.osgi.service.jaxrs.whiteboard.JaxrsWhiteboardConstants.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -47,7 +47,7 @@ import org.osgi.framework.PrototypeServiceFactory;
 import org.osgi.framework.ServiceFactory;
 import org.osgi.framework.ServiceRegistration;
 
-import org.osgi.service.jaxrs.runtime.JaxRSServiceRuntime;
+import org.osgi.service.jaxrs.runtime.JaxrsServiceRuntime;
 import org.osgi.service.jaxrs.runtime.dto.ApplicationDTO;
 import org.osgi.service.jaxrs.runtime.dto.DTOConstants;
 import org.osgi.service.jaxrs.runtime.dto.FailedApplicationDTO;
@@ -264,7 +264,7 @@ public class JaxrsTest extends TestHelper {
     public void testApplicationOverride() throws InterruptedException {
         WebTarget webTarget = createDefaultTarget().path("test-application");
 
-        JaxRSServiceRuntime runtime = getJaxRSServiceRuntime();
+        JaxrsServiceRuntime runtime = getJaxrsServiceRuntime();
 
         ServiceRegistration<?> serviceRegistration2;
 
@@ -1342,7 +1342,7 @@ public class JaxrsTest extends TestHelper {
 
         WebTarget webTarget = createDefaultTarget().path("test");
 
-        JaxRSServiceRuntime runtime = getJaxRSServiceRuntime();
+        JaxrsServiceRuntime runtime = getJaxrsServiceRuntime();
 
         ServiceRegistration<?> serviceRegistration;
         ServiceRegistration<?> extensionRegistration1;
@@ -1437,7 +1437,7 @@ public class JaxrsTest extends TestHelper {
     public void testStandaloneFilter() throws InterruptedException {
         WebTarget webTarget = createDefaultTarget().path("test");
 
-        JaxRSServiceRuntime runtime = getJaxRSServiceRuntime();
+        JaxrsServiceRuntime runtime = getJaxrsServiceRuntime();
 
         RuntimeDTO runtimeDTO = runtime.getRuntimeDTO();
 
@@ -1509,7 +1509,7 @@ public class JaxrsTest extends TestHelper {
     public void testUngettableExtension() throws InterruptedException {
         WebTarget webTarget = createDefaultTarget().path("test");
 
-        JaxRSServiceRuntime runtime = getJaxRSServiceRuntime();
+        JaxrsServiceRuntime runtime = getJaxrsServiceRuntime();
 
         RuntimeDTO runtimeDTO = runtime.getRuntimeDTO();
 
@@ -1565,11 +1565,11 @@ public class JaxrsTest extends TestHelper {
             Arrays.stream(getter.apply(getRuntimeDTO())).anyMatch(predicate));
     }
 
-    private JaxRSServiceRuntime getJaxRSServiceRuntime()
+    private JaxrsServiceRuntime getJaxrsServiceRuntime()
         throws InterruptedException {
 
         _runtimeTracker = new ServiceTracker<>(
-            bundleContext, JaxRSServiceRuntime.class, null);
+            bundleContext, JaxrsServiceRuntime.class, null);
 
         _runtimeTracker.open();
 

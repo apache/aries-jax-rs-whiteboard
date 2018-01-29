@@ -22,7 +22,7 @@ import static org.apache.aries.jax.rs.whiteboard.internal.Utils.generateApplicat
 import static org.apache.aries.jax.rs.whiteboard.internal.Whiteboard.DEFAULT_NAME;
 import static org.apache.aries.jax.rs.whiteboard.internal.Whiteboard.SUPPORTED_EXTENSION_INTERFACES;
 import static org.apache.aries.jax.rs.whiteboard.internal.Whiteboard.getApplicationBase;
-import static org.osgi.service.jaxrs.whiteboard.JaxRSWhiteboardConstants.JAX_RS_NAME;
+import static org.osgi.service.jaxrs.whiteboard.JaxrsWhiteboardConstants.JAX_RS_NAME;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -40,7 +40,7 @@ import org.apache.aries.jax.rs.whiteboard.internal.Utils.PropertyHolder;
 import org.apache.aries.jax.rs.whiteboard.internal.introspection.ClassIntrospector;
 import org.apache.aries.osgi.functional.CachingServiceReference;
 import org.apache.cxf.Bus;
-import org.osgi.service.jaxrs.runtime.JaxRSServiceRuntime;
+import org.osgi.service.jaxrs.runtime.JaxrsServiceRuntime;
 import org.osgi.service.jaxrs.runtime.dto.ApplicationDTO;
 import org.osgi.service.jaxrs.runtime.dto.BaseDTO;
 import org.osgi.service.jaxrs.runtime.dto.BaseExtensionDTO;
@@ -51,11 +51,11 @@ import org.osgi.service.jaxrs.runtime.dto.FailedExtensionDTO;
 import org.osgi.service.jaxrs.runtime.dto.FailedResourceDTO;
 import org.osgi.service.jaxrs.runtime.dto.ResourceDTO;
 import org.osgi.service.jaxrs.runtime.dto.RuntimeDTO;
-import org.osgi.service.jaxrs.whiteboard.JaxRSWhiteboardConstants;
+import org.osgi.service.jaxrs.whiteboard.JaxrsWhiteboardConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class AriesJaxRSServiceRuntime implements JaxRSServiceRuntime {
+public class AriesJaxRSServiceRuntime implements JaxrsServiceRuntime {
 
     private static final long serialVersionUID = 1L;
     private static final Logger _LOGGER = LoggerFactory.getLogger(
@@ -397,7 +397,7 @@ public class AriesJaxRSServiceRuntime implements JaxRSServiceRuntime {
         FailedApplicationDTO failedApplicationDTO = new FailedApplicationDTO();
 
         Object nameProperty = serviceReference.getProperty(
-            JaxRSWhiteboardConstants.JAX_RS_NAME);
+            JaxrsWhiteboardConstants.JAX_RS_NAME);
 
         failedApplicationDTO.name = nameProperty == null ?
             generateApplicationName(serviceReference::getProperty) :

@@ -26,7 +26,8 @@ import org.junit.Before;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.FrameworkUtil;
 import org.osgi.framework.ServiceReference;
-import org.osgi.service.jaxrs.runtime.JaxRSServiceRuntime;
+import org.osgi.service.jaxrs.runtime.JaxrsServiceRuntime;
+import org.osgi.service.jaxrs.runtime.JaxrsServiceRuntime;
 import org.osgi.util.tracker.ServiceTracker;
 
 import java.util.Collection;
@@ -38,12 +39,12 @@ public class TestHelper {
             getBundle(TestHelper.class).
             getBundleContext();
 
-    protected ServiceTracker<JaxRSServiceRuntime, JaxRSServiceRuntime>
+    protected ServiceTracker<JaxrsServiceRuntime, JaxrsServiceRuntime>
         _runtimeTracker;
     protected ServiceTracker<ClientBuilder, ClientBuilder>
         _clientBuilderTracker;
-    protected JaxRSServiceRuntime _runtime;
-    protected ServiceReference<JaxRSServiceRuntime> _runtimeServiceReference;
+    protected JaxrsServiceRuntime _runtime;
+    protected ServiceReference<JaxrsServiceRuntime> _runtimeServiceReference;
 
     @After
     public void after() {
@@ -60,7 +61,7 @@ public class TestHelper {
         _clientBuilderTracker.open();
 
         _runtimeTracker = new ServiceTracker<>(
-            bundleContext, JaxRSServiceRuntime.class, null);
+            bundleContext, JaxrsServiceRuntime.class, null);
 
         _runtimeTracker.open();
 
