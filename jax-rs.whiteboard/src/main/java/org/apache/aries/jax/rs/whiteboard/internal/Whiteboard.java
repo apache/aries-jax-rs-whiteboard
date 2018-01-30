@@ -257,17 +257,19 @@ public class Whiteboard {
                     ).then(
                         nothing()
                     )
-            ).flatMap(
-                this::deployApplication
-            ).map(
-                ServiceTuple::getCachingServiceReference
-            ).map(
-                Utils::getProperties
-            ).foreach(
-                p -> _runtime.setApplicationForPath(
-                    getApplicationBase(p::get), p),
-                p -> _runtime.unsetApplicationForPath(
-                    getApplicationBase(p::get))
+            ).flatMap(at ->
+            deployApplication(at).
+            foreach(
+                registrator ->
+                    _runtime.setApplicationForPath(
+                        getApplicationBase(
+                            at.getCachingServiceReference()::getProperty),
+                        at.getCachingServiceReference(), registrator),
+                registrator ->
+                    _runtime.unsetApplicationForPath(
+                        getApplicationBase(
+                            at.getCachingServiceReference()::getProperty))
+                )
             );
     }
 
@@ -300,7 +302,7 @@ public class Whiteboard {
             );
     }
 
-    private OSGi<ServiceTuple<Application>> deployApplication(
+    private OSGi<CXFJaxRsServiceRegistrator> deployApplication(
         ServiceTuple<Application> tuple) {
 
         return
@@ -318,21 +320,24 @@ public class Whiteboard {
 
                 return properties;
             }).flatMap(properties ->
-            deployRegistrator(bus, tuple, properties).then(
-            registerCXFServletService(bus, properties)).then(
-            just(tuple)
-        )));
+            deployRegistrator(bus, tuple, properties).flatMap(registrator ->
+            registerCXFServletService(bus, properties).then(
+            just(registrator)
+        ))));
     }
 
-    private OSGi<?> deployRegistrator(
-        Bus bus, ServiceTuple<Application> tuple, Map<String, Object> props) {
+    private OSGi<CXFJaxRsServiceRegistrator> deployRegistrator(
+        Bus bus, ServiceTuple<Application> tuple,
+        Map<String, Object> props) {
 
         return
-            just(() -> new CXFJaxRsServiceRegistrator(
-                bus, tuple.getService(), props)).
+            just(() ->
+                new CXFJaxRsServiceRegistrator(bus, tuple.getService(), props)).
                 flatMap(registrator ->
             onClose(registrator::close).then(
-            register(CXFJaxRsServiceRegistrator.class, registrator, props)));
+            register(CXFJaxRsServiceRegistrator.class, registrator, props).then(
+            just(registrator)
+        )));
     }
 
     private OSGi<CachingServiceReference<Object>>

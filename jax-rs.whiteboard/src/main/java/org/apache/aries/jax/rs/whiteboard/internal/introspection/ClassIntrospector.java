@@ -29,6 +29,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.core.MediaType;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -41,7 +42,7 @@ public class ClassIntrospector {
     private static final List<MediaType> _ALL_TYPES_LIST =
         Collections.singletonList(JAXRSUtils.ALL_TYPES);
 
-    public static ResourceMethodInfoDTO[] getResourceMethodInfos(
+    public static Collection<ResourceMethodInfoDTO> getResourceMethodInfos(
         Class<?> clazz, Bus bus) {
 
         ClassResourceInfo classResourceInfo =
@@ -52,7 +53,7 @@ public class ClassIntrospector {
             new HashSet<>(), "/", null, _ALL_TYPES_LIST, _ALL_TYPES_LIST,
             Collections.emptySet(), true, classResourceInfo);
 
-        return convert.toArray(ResourceMethodInfoDTO[]::new);
+        return convert.collect(Collectors.toList());
     }
 
     private static Stream<ResourceMethodInfoDTO> convert(

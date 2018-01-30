@@ -27,7 +27,6 @@ import static org.osgi.service.jaxrs.whiteboard.JaxrsWhiteboardConstants.JAX_RS_
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -50,6 +49,7 @@ import org.osgi.service.jaxrs.runtime.dto.FailedApplicationDTO;
 import org.osgi.service.jaxrs.runtime.dto.FailedExtensionDTO;
 import org.osgi.service.jaxrs.runtime.dto.FailedResourceDTO;
 import org.osgi.service.jaxrs.runtime.dto.ResourceDTO;
+import org.osgi.service.jaxrs.runtime.dto.ResourceMethodInfoDTO;
 import org.osgi.service.jaxrs.runtime.dto.RuntimeDTO;
 import org.osgi.service.jaxrs.whiteboard.JaxrsWhiteboardConstants;
 import org.slf4j.Logger;
@@ -338,24 +338,32 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
         return _shadowedApplications.remove(serviceReference);
     }
 
-    public Map<String, Object> setApplicationForPath(
-        String path, Map<String, Object> properties) {
+    public ApplicationRuntimeInformation setApplicationForPath(
+        String path,
+        CachingServiceReference<Application> serviceReference,
+        CXFJaxRsServiceRegistrator cxfJaxRsServiceRegistrator) {
+
+        ApplicationRuntimeInformation ari = new ApplicationRuntimeInformation(
+            serviceReference, cxfJaxRsServiceRegistrator);
 
         return _applications.compute(
             path,
             (__, prop) -> {
-                if (DEFAULT_NAME.equals(getApplicationName(properties::get))) {
-                    _defaultApplicationProperties = properties;
+                if (DEFAULT_NAME.equals(
+                    getApplicationName(
+                        ari._cachingServiceReference::getProperty))) {
+
+                    _defaultApplicationProperties = ari;
                 }
 
-                return properties;
+                return ari;
             });
     }
 
-    public Map<String, Object> unsetApplicationForPath(String path) {
+    public ApplicationRuntimeInformation unsetApplicationForPath(String path) {
         return _applications.remove(path);
     }
-    private ConcurrentHashMap<String, Map<String, Object>>
+    private ConcurrentHashMap<String, ApplicationRuntimeInformation>
         _applications = new ConcurrentHashMap<>();
     private ConcurrentHashMap<String, Collection<EndpointRuntimeInformation>>
         _applicationEndpoints = new ConcurrentHashMap<>();
@@ -389,7 +397,7 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
         new CopyOnWriteArrayList<>();
     private Collection<CachingServiceReference<?>> _invalidExtensions =
         new CopyOnWriteArrayList<>();
-    private volatile Map<String, Object> _defaultApplicationProperties;
+    private volatile ApplicationRuntimeInformation _defaultApplicationProperties;
 
     private static FailedApplicationDTO buildFailedApplicationDTO(
         int reason, CachingServiceReference<Application> serviceReference) {
@@ -467,7 +475,10 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
 
         resourceDTO.resourceMethods = ClassIntrospector.getResourceMethodInfos(
             endpointRuntimeInformation._class,
-            endpointRuntimeInformation._bus);
+            endpointRuntimeInformation._bus
+        ).toArray(
+            new ResourceMethodInfoDTO[0]
+        );
 
         return resourceDTO;
     }
@@ -490,7 +501,8 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
 
     private Stream<ApplicationDTO> applicationDTOStream() {
         return _applications.values().stream().
-            filter(p -> !(".default".equals(p.get(JAX_RS_NAME)))).
+            filter(p -> !(".default".equals(
+                p._cachingServiceReference.getProperty(JAX_RS_NAME)))).
             map(
                 this::buildApplicationDTO
             );
@@ -511,13 +523,16 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
     }
 
     private ApplicationDTO buildApplicationDTO(
-        Map<String, Object> properties) {
+        ApplicationRuntimeInformation ari) {
 
         ApplicationDTO applicationDTO = new ApplicationDTO(){};
 
-        applicationDTO.name = getApplicationName(properties::get);
-        applicationDTO.base = getApplicationBase(properties::get);
-        applicationDTO.serviceId = (Long)properties.get("service.id");
+        applicationDTO.name = getApplicationName(
+            ari._cachingServiceReference::getProperty);
+        applicationDTO.base = getApplicationBase(
+            ari._cachingServiceReference::getProperty);
+        applicationDTO.serviceId =
+            (Long)ari._cachingServiceReference.getProperty("service.id");
 
         applicationDTO.resourceDTOs = getApplicationEndpointsStream(
             applicationDTO.name).toArray(
@@ -528,6 +543,24 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
             applicationDTO.name).toArray(
                 ExtensionDTO[]::new
             );
+
+        CXFJaxRsServiceRegistrator cxfJaxRsServiceRegistrator =
+            ari._cxfJaxRsServiceRegistrator;
+
+        Bus bus = cxfJaxRsServiceRegistrator.getBus();
+        Iterable<Class<?>> resourceClasses =
+            cxfJaxRsServiceRegistrator.getStaticResourceClasses();
+
+        ArrayList<ResourceMethodInfoDTO> resourceMethodInfoDTOS =
+            new ArrayList<>();
+
+        for (Class<?> resourceClass : resourceClasses) {
+            resourceMethodInfoDTOS.addAll(
+                ClassIntrospector.getResourceMethodInfos(resourceClass, bus));
+        }
+
+        applicationDTO.resourceMethods = resourceMethodInfoDTOS.toArray(
+            new ResourceMethodInfoDTO[0]);
 
         return applicationDTO;
     }
@@ -698,6 +731,36 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
         CachingServiceReference _cachingServiceReference;
         Bus _bus;
         Class<?> _class;
+    }
+
+    private static class ApplicationRuntimeInformation {
+        public ApplicationRuntimeInformation(
+            CachingServiceReference cachingServiceReference,
+            CXFJaxRsServiceRegistrator cxfJaxRsServiceRegistrator) {
+
+            _cachingServiceReference = cachingServiceReference;
+            _cxfJaxRsServiceRegistrator = cxfJaxRsServiceRegistrator;
+        }
+
+        @Override
+        public int hashCode() {
+            return _cachingServiceReference.hashCode();
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            EndpointRuntimeInformation that = (EndpointRuntimeInformation) o;
+
+            return _cachingServiceReference.equals(
+                that._cachingServiceReference);
+        }
+
+        CachingServiceReference _cachingServiceReference;
+        CXFJaxRsServiceRegistrator _cxfJaxRsServiceRegistrator;
+
     }
 
 }

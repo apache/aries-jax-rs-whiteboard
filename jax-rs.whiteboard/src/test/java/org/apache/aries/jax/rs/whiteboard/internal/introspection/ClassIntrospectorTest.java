@@ -49,7 +49,9 @@ public class ClassIntrospectorTest {
         Bus bus = BusFactory.getDefaultBus(true);
 
         ResourceMethodInfoDTO[] resourceMethodInfoDTOS =
-            ClassIntrospector.getResourceMethodInfos(PlainResource.class, bus);
+            ClassIntrospector.getResourceMethodInfos(PlainResource.class, bus).toArray(
+                new ResourceMethodInfoDTO[0]
+            );
 
         assertEquals(1, resourceMethodInfoDTOS.length);
 
@@ -71,7 +73,9 @@ public class ClassIntrospectorTest {
 
         ResourceMethodInfoDTO[] resourceMethodInfoDTOS =
             ClassIntrospector.getResourceMethodInfos(
-                PlainResourceSeveralOperationsWithNameBinding.class, bus);
+                PlainResourceSeveralOperationsWithNameBinding.class, bus).toArray(
+                new ResourceMethodInfoDTO[0]
+            );
 
         assertEquals(2, resourceMethodInfoDTOS.length);
 
@@ -108,7 +112,9 @@ public class ClassIntrospectorTest {
 
         ResourceMethodInfoDTO[] resourceMethodInfoDTOS =
             ClassIntrospector.getResourceMethodInfos(
-                PlainResourceSeveralOperations.class, bus);
+                PlainResourceSeveralOperations.class, bus).toArray(
+                new ResourceMethodInfoDTO[0]
+            );
 
         assertEquals(2, resourceMethodInfoDTOS.length);
 
@@ -140,7 +146,9 @@ public class ClassIntrospectorTest {
 
         ResourceMethodInfoDTO[] resourceMethodInfoDTOS =
             ClassIntrospector.getResourceMethodInfos(
-                PlainResourceSeveralOperationsCommonPath.class, bus);
+                PlainResourceSeveralOperationsCommonPath.class, bus).toArray(
+                new ResourceMethodInfoDTO[0]
+            );
 
         assertEquals(2, resourceMethodInfoDTOS.length);
 
@@ -172,7 +180,9 @@ public class ClassIntrospectorTest {
 
         ResourceMethodInfoDTO[] resourceMethodInfoDTOS =
             ClassIntrospector.getResourceMethodInfos(
-                PlainResourceSeveralOperationsDifferentPath.class, bus);
+                PlainResourceSeveralOperationsDifferentPath.class, bus).toArray(
+                    new ResourceMethodInfoDTO[0]
+            );
 
         assertEquals(2, resourceMethodInfoDTOS.length);
 
@@ -204,7 +214,9 @@ public class ClassIntrospectorTest {
 
         ResourceMethodInfoDTO[] resourceMethodInfoDTOS =
             ClassIntrospector.getResourceMethodInfos(
-                ResourceWithSubResource.class, bus);
+                ResourceWithSubResource.class, bus).toArray(
+                new ResourceMethodInfoDTO[0]
+            );
 
         assertEquals(5, resourceMethodInfoDTOS.length);
 

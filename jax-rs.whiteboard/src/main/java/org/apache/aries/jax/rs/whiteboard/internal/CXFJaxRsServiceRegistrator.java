@@ -23,6 +23,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
@@ -40,6 +41,7 @@ import org.apache.aries.osgi.functional.CachingServiceReference;
 import org.apache.cxf.Bus;
 import org.apache.cxf.endpoint.Server;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
+import org.apache.cxf.jaxrs.JAXRSServiceFactoryBean;
 import org.apache.cxf.jaxrs.ext.ResourceComparator;
 import org.apache.cxf.jaxrs.impl.ConfigurableImpl;
 import org.apache.cxf.jaxrs.lifecycle.ResourceProvider;
@@ -159,6 +161,7 @@ public class CXFJaxRsServiceRegistrator {
     private Map<String, Object> _properties;
     private volatile boolean _closed = false;
     private Server _server;
+    private JAXRSServerFactoryBean _jaxRsServerFactoryBean;
 
     private static class ComparableResourceComparator
         implements ResourceComparator {
@@ -217,10 +220,10 @@ public class CXFJaxRsServiceRegistrator {
             return;
         }
 
-        JAXRSServerFactoryBean jaxRsServerFactoryBean = createEndpoint(
+        _jaxRsServerFactoryBean = createEndpoint(
             _application, JAXRSServerFactoryBean.class);
 
-        jaxRsServerFactoryBean.setBus(_bus);
+        _jaxRsServerFactoryBean.setBus(_bus);
 
         _bus.setExtension(
             context -> {
@@ -237,9 +240,9 @@ public class CXFJaxRsServiceRegistrator {
             },
             ServerConfigurableFactory.class);
 
-        jaxRsServerFactoryBean.setStart(false);
+        _jaxRsServerFactoryBean.setStart(false);
 
-        jaxRsServerFactoryBean.setProvider(
+        _jaxRsServerFactoryBean.setProvider(
             (Feature) featureContext -> {
                 for (ServiceTuple<?> provider : _providers) {
                     CachingServiceReference<?> cachingServiceReference =
@@ -290,17 +293,17 @@ public class CXFJaxRsServiceRegistrator {
             });
 
         for (ResourceProvider resourceProvider: _services) {
-            jaxRsServerFactoryBean.setResourceProvider(resourceProvider);
+            _jaxRsServerFactoryBean.setResourceProvider(resourceProvider);
         }
 
-        if (jaxRsServerFactoryBean.getResourceClasses().isEmpty()) {
+        if (_jaxRsServerFactoryBean.getResourceClasses().isEmpty()) {
             return;
         }
 
-        jaxRsServerFactoryBean.setResourceComparator(
+        _jaxRsServerFactoryBean.setResourceComparator(
             new ComparableResourceComparator());
 
-        _server = jaxRsServerFactoryBean.create();
+        _server = _jaxRsServerFactoryBean.create();
 
         ApplicationInfo applicationInfo = (ApplicationInfo)
             _server.getEndpoint().get(Application.class.getName());
@@ -310,6 +313,26 @@ public class CXFJaxRsServiceRegistrator {
         }});
 
         _server.start();
+    }
+
+    protected Iterable<Class<?>> getStaticResourceClasses() {
+        JAXRSServiceFactoryBean serviceFactory =
+            _jaxRsServerFactoryBean.getServiceFactory();
+
+        List<ClassResourceInfo> classResourceInfo =
+            serviceFactory.getClassResourceInfo();
+
+        ArrayList<Class<?>> classes = new ArrayList<>();
+
+        for (ClassResourceInfo resourceInfo : classResourceInfo) {
+            if (!ServiceReferenceResourceProvider.class.isAssignableFrom(
+                resourceInfo.getResourceProvider().getClass())) {
+
+                classes.add(resourceInfo.getResourceClass());
+            }
+        }
+
+        return classes;
     }
 
 }

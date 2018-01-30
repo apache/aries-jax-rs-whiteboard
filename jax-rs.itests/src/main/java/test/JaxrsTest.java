@@ -121,6 +121,29 @@ public class JaxrsTest extends TestHelper {
 
         assertEquals("Hello application",
             response.readEntity(String.class));
+
+        RuntimeDTO runtimeDTO = _runtime.getRuntimeDTO();
+
+        ApplicationDTO[] applicationDTOs = runtimeDTO.applicationDTOs;
+
+        assertEquals(1, applicationDTOs.length);
+
+        ApplicationDTO applicationDTO = applicationDTOs[0];
+        ResourceMethodInfoDTO[] resourceMethods =
+            applicationDTO.resourceMethods;
+
+        assertEquals(1, resourceMethods.length);
+
+        ResourceMethodInfoDTO resourceMethod = resourceMethods[0];
+        assertEquals(HttpMethod.GET, resourceMethod.method);
+        assertEquals("/", resourceMethod.path);
+        assertArrayEquals(
+            new String[]{MediaType.WILDCARD}, resourceMethod.consumingMimeType);
+        assertArrayEquals(
+            new String[]{MediaType.TEXT_PLAIN},
+            resourceMethod.producingMimeType);
+        assertArrayEquals(new String[0], resourceMethod.nameBindings);
+
     }
 
     @Test
@@ -193,6 +216,29 @@ public class JaxrsTest extends TestHelper {
         assertEquals(
             "Hello extended",
             webTarget.request().get().readEntity(String.class));
+
+        RuntimeDTO runtimeDTO = _runtime.getRuntimeDTO();
+
+        ApplicationDTO[] applicationDTOs = runtimeDTO.applicationDTOs;
+
+        assertEquals(1, applicationDTOs.length);
+
+        ApplicationDTO applicationDTO = applicationDTOs[0];
+
+        ResourceMethodInfoDTO[] resourceMethods =
+            applicationDTO.resourceMethods;
+
+        assertEquals(1, resourceMethods.length);
+
+        ResourceMethodInfoDTO resourceMethod = resourceMethods[0];
+        assertEquals(HttpMethod.GET, resourceMethod.method);
+        assertEquals("/", resourceMethod.path);
+        assertArrayEquals(
+            new String[]{MediaType.WILDCARD}, resourceMethod.consumingMimeType);
+        assertArrayEquals(
+            new String[]{MediaType.TEXT_PLAIN},
+            resourceMethod.producingMimeType);
+        assertArrayEquals(new String[0], resourceMethod.nameBindings);
     }
 
     @Test
@@ -653,12 +699,12 @@ public class JaxrsTest extends TestHelper {
 	
 	        ServiceRegistration<?> erroredRegistration = registerApplication(
 	            new TestApplication() {
-	
+
 	                @Override
 	                public Set<Object> getSingletons() {
 	                    throw new RuntimeException();
 	                }
-	
+
 	            }, "service.ranking", 10);
 	
 	        runtimeDTO = getRuntimeDTO();
