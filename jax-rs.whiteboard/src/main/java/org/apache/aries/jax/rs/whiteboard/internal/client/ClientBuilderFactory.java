@@ -15,23 +15,30 @@
  * limitations under the License.
  */
 
-package org.apache.aries.jax.rs.whiteboard.internal;
+package org.apache.aries.jax.rs.whiteboard.internal.client;
 
 import javax.ws.rs.client.ClientBuilder;
 
+import org.apache.cxf.jaxrs.client.spec.ClientBuilderImpl;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.PrototypeServiceFactory;
 import org.osgi.framework.ServiceRegistration;
 
-public class ClientBuilderFactory implements PrototypeServiceFactory<ClientBuilder> {
+public class ClientBuilderFactory
+    implements PrototypeServiceFactory<ClientBuilder> {
 
     @Override
-    public ClientBuilder getService(Bundle bundle, ServiceRegistration<ClientBuilder> registration) {
-        return new org.apache.cxf.jaxrs.client.spec.ClientBuilderImpl();
+    public ClientBuilder getService(
+        Bundle bundle, ServiceRegistration<ClientBuilder> registration) {
+
+        return new ClientBuilderImpl();
     }
 
     @Override
-    public void ungetService(Bundle bundle, ServiceRegistration<ClientBuilder> registration, ClientBuilder service) {
+    public void ungetService(
+        Bundle bundle, ServiceRegistration<ClientBuilder> registration,
+        ClientBuilder service) {
+
     }
 
 }

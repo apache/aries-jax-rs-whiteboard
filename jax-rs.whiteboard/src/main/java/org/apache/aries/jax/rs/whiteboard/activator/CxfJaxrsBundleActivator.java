@@ -25,7 +25,7 @@ import java.util.List;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.ext.RuntimeDelegate;
 
-import org.apache.aries.jax.rs.whiteboard.internal.ClientBuilderFactory;
+import org.apache.aries.jax.rs.whiteboard.internal.client.ClientBuilderFactory;
 import org.apache.aries.jax.rs.whiteboard.internal.Utils.PropertyHolder;
 import org.apache.aries.osgi.functional.OSGi;
 import org.apache.aries.osgi.functional.OSGiResult;
@@ -156,6 +156,10 @@ public class CxfJaxrsBundleActivator implements BundleActivator {
                         )
                 ))
             );
+    }
+
+    private static OSGi<?> registerClient() {
+        return register(ClientBuilder.class, new ClientBuilderFactory(), null);
     }
 
 }
