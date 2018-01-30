@@ -21,6 +21,7 @@ import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertTrue;
 import static org.osgi.service.jaxrs.whiteboard.JaxrsWhiteboardConstants.*;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -47,6 +48,7 @@ import org.osgi.framework.PrototypeServiceFactory;
 import org.osgi.framework.ServiceFactory;
 import org.osgi.framework.ServiceRegistration;
 
+import org.osgi.service.jaxrs.client.PromiseRxInvoker;
 import org.osgi.service.jaxrs.runtime.JaxrsServiceRuntime;
 import org.osgi.service.jaxrs.runtime.dto.ApplicationDTO;
 import org.osgi.service.jaxrs.runtime.dto.DTOConstants;
@@ -54,6 +56,7 @@ import org.osgi.service.jaxrs.runtime.dto.FailedApplicationDTO;
 import org.osgi.service.jaxrs.runtime.dto.ResourceDTO;
 import org.osgi.service.jaxrs.runtime.dto.ResourceMethodInfoDTO;
 import org.osgi.service.jaxrs.runtime.dto.RuntimeDTO;
+import org.osgi.util.promise.Promise;
 import org.osgi.util.tracker.ServiceTracker;
 import test.types.ConfigurationAwareResource;
 import test.types.TestAddon;
@@ -855,6 +858,44 @@ public class JaxrsTest extends TestHelper {
             });
 
         String result = future.get();
+
+        countDownLatch.await(1, TimeUnit.MINUTES);
+
+        assertTrue(post.get());
+
+        assertEquals("This should say HelloAsync", "HelloAsync", result);
+    }
+
+    @Test
+    public void testAsyncResourceClientWithPromises()
+        throws ExecutionException, InterruptedException,
+        InvocationTargetException {
+
+        WebTarget webTarget =
+            createDefaultTarget().path("whiteboard").path("async").
+                path("HelloAsync");
+
+        AtomicBoolean pre = new AtomicBoolean();
+        AtomicBoolean post = new AtomicBoolean();
+
+        CountDownLatch countDownLatch = new CountDownLatch(1);
+
+        registerAddon(
+            new TestAsyncResource(
+                () -> pre.set(true),
+                () -> {
+                    post.set(true);
+
+                    countDownLatch.countDown();
+                }));
+
+        Promise<String> promise =
+            webTarget.
+                request().
+                rx(PromiseRxInvoker.class).
+                get(String.class);
+
+        String result = promise.getValue();
 
         countDownLatch.await(1, TimeUnit.MINUTES);
 

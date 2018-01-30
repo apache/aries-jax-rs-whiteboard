@@ -17,30 +17,36 @@
 
 package org.apache.aries.jax.rs.whiteboard.internal.client;
 
-import javax.ws.rs.client.ClientBuilder;
+import org.osgi.service.jaxrs.client.PromiseRxInvoker;
+import org.osgi.util.promise.PromiseFactory;
 
-import org.apache.cxf.jaxrs.client.spec.ClientBuilderImpl;
-import org.osgi.framework.Bundle;
-import org.osgi.framework.PrototypeServiceFactory;
-import org.osgi.framework.ServiceRegistration;
+import javax.ws.rs.client.RxInvokerProvider;
+import javax.ws.rs.client.SyncInvoker;
+import java.util.concurrent.ExecutorService;
 
-public class ClientBuilderFactory
-    implements PrototypeServiceFactory<ClientBuilder> {
+public class PromiseRxInvokerProviderImpl
+    implements RxInvokerProvider<PromiseRxInvoker> {
 
     @Override
-    public ClientBuilder getService(
-        Bundle bundle, ServiceRegistration<ClientBuilder> registration) {
-
-        ClientBuilderImpl clientBuilder = new ClientBuilderImpl();
-
-        return clientBuilder.register(new PromiseRxInvokerProviderImpl());
+    public boolean isProviderFor(Class<?> clazz) {
+        return clazz == PromiseRxInvoker.class;
     }
 
     @Override
-    public void ungetService(
-        Bundle bundle, ServiceRegistration<ClientBuilder> registration,
-        ClientBuilder service) {
+    public PromiseRxInvoker getRxInvoker(
+        SyncInvoker syncInvoker, ExecutorService executorService) {
 
+        PromiseFactory promiseFactory;
+
+        if (executorService != null) {
+            promiseFactory = new PromiseFactory(executorService);
+        }
+        else {
+            promiseFactory = new PromiseFactory(
+                PromiseFactory.inlineExecutor());
+        }
+
+        return new PromiseRxInvokerImpl(syncInvoker, promiseFactory);
     }
 
 }
