@@ -341,7 +341,7 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
     public ApplicationRuntimeInformation setApplicationForPath(
         String path,
         CachingServiceReference<Application> serviceReference,
-        CXFJaxRsServiceRegistrator cxfJaxRsServiceRegistrator) {
+        CxfJaxrsServiceRegistrator cxfJaxRsServiceRegistrator) {
 
         ApplicationRuntimeInformation ari = new ApplicationRuntimeInformation(
             serviceReference, cxfJaxRsServiceRegistrator);
@@ -544,7 +544,7 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
                 ExtensionDTO[]::new
             );
 
-        CXFJaxRsServiceRegistrator cxfJaxRsServiceRegistrator =
+        CxfJaxrsServiceRegistrator cxfJaxRsServiceRegistrator =
             ari._cxfJaxRsServiceRegistrator;
 
         Bus bus = cxfJaxRsServiceRegistrator.getBus();
@@ -736,7 +736,7 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
     private static class ApplicationRuntimeInformation {
         public ApplicationRuntimeInformation(
             CachingServiceReference cachingServiceReference,
-            CXFJaxRsServiceRegistrator cxfJaxRsServiceRegistrator) {
+            CxfJaxrsServiceRegistrator cxfJaxRsServiceRegistrator) {
 
             _cachingServiceReference = cachingServiceReference;
             _cxfJaxRsServiceRegistrator = cxfJaxRsServiceRegistrator;
@@ -759,7 +759,7 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
         }
 
         CachingServiceReference _cachingServiceReference;
-        CXFJaxRsServiceRegistrator _cxfJaxRsServiceRegistrator;
+        CxfJaxrsServiceRegistrator _cxfJaxRsServiceRegistrator;
 
     }
 

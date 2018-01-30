@@ -52,10 +52,10 @@ import static org.apache.aries.osgi.functional.OSGi.serviceReferences;
 import static org.osgi.service.http.runtime.HttpServiceRuntimeConstants.HTTP_SERVICE_ENDPOINT;
 import static org.osgi.service.http.whiteboard.HttpWhiteboardConstants.HTTP_WHITEBOARD_TARGET;
 
-public class CXFJaxRsBundleActivator implements BundleActivator {
+public class CxfJaxrsBundleActivator implements BundleActivator {
 
     private static final Logger _log = LoggerFactory.getLogger(
-        CXFJaxRsBundleActivator.class);
+        CxfJaxrsBundleActivator.class);
 
     static {
         RuntimeDelegate.setInstance(new RuntimeDelegateImpl());

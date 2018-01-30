@@ -1,4 +1,4 @@
-Bundle-Activator: org.apache.aries.jax.rs.whiteboard.activator.CXFJaxRsBundleActivator
+Bundle-Activator: org.apache.aries.jax.rs.whiteboard.activator.CxfJaxrsBundleActivator
 Provide-Capability: \
     osgi.implementation; \
         osgi.implementation='aries.jax-rs'; \

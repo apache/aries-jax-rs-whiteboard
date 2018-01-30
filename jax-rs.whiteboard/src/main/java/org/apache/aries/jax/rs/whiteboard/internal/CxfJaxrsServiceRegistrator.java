@@ -54,9 +54,9 @@ import org.osgi.framework.ServiceReference;
 
 import static org.apache.aries.jax.rs.whiteboard.internal.Utils.canonicalize;
 
-public class CXFJaxRsServiceRegistrator {
+public class CxfJaxrsServiceRegistrator {
 
-    public CXFJaxRsServiceRegistrator(
+    public CxfJaxrsServiceRegistrator(
         Bus bus, Application application, Map<String, Object> properties) {
         _bus = bus;
         _application = application;

@@ -288,13 +288,13 @@ public class Whiteboard {
         return bus;
     }
 
-    private OSGi<CachingServiceReference<CXFJaxRsServiceRegistrator>>
+    private OSGi<CachingServiceReference<CxfJaxrsServiceRegistrator>>
         defaultApplication() {
 
         return
             highest(
                 serviceReferences(
-                    CXFJaxRsServiceRegistrator.class,
+                    CxfJaxrsServiceRegistrator.class,
                     String.format("(%s=%s)", JAX_RS_NAME, DEFAULT_NAME)
                 ).filter(
                     new TargetFilter<>(_runtimeReference)
@@ -302,7 +302,7 @@ public class Whiteboard {
             );
     }
 
-    private OSGi<CXFJaxRsServiceRegistrator> deployApplication(
+    private OSGi<CxfJaxrsServiceRegistrator> deployApplication(
         ServiceTuple<Application> tuple) {
 
         return
@@ -326,16 +326,16 @@ public class Whiteboard {
         ))));
     }
 
-    private OSGi<CXFJaxRsServiceRegistrator> deployRegistrator(
+    private OSGi<CxfJaxrsServiceRegistrator> deployRegistrator(
         Bus bus, ServiceTuple<Application> tuple,
         Map<String, Object> props) {
 
         return
             just(() ->
-                new CXFJaxRsServiceRegistrator(bus, tuple.getService(), props)).
+                new CxfJaxrsServiceRegistrator(bus, tuple.getService(), props)).
                 flatMap(registrator ->
             onClose(registrator::close).then(
-            register(CXFJaxRsServiceRegistrator.class, registrator, props).then(
+            register(CxfJaxrsServiceRegistrator.class, registrator, props).then(
             just(registrator)
         )));
     }
@@ -418,7 +418,7 @@ public class Whiteboard {
 
     private <T> OSGi<?> safeRegisterEndpoint(
         CachingServiceReference<T> serviceReference,
-        CachingServiceReference<CXFJaxRsServiceRegistrator>
+        CachingServiceReference<CxfJaxrsServiceRegistrator>
             registratorReference) {
 
         String applicationName = getApplicationName(
@@ -454,7 +454,7 @@ public class Whiteboard {
 
     private OSGi<?> safeRegisterExtension(
         CachingServiceReference<?> serviceReference,
-        CachingServiceReference<CXFJaxRsServiceRegistrator> registratorReference) {
+        CachingServiceReference<CxfJaxrsServiceRegistrator> registratorReference) {
 
         return
             just(() -> getApplicationName(registratorReference::getProperty)).
@@ -573,7 +573,7 @@ public class Whiteboard {
 
     private OSGi<?> waitForExtensionDependencies(
         CachingServiceReference<?> serviceReference,
-        CachingServiceReference<CXFJaxRsServiceRegistrator>
+        CachingServiceReference<CxfJaxrsServiceRegistrator>
             applicationRegistratorReference,
         Consumer<CachingServiceReference<?>> onAddingDependent,
         Consumer<CachingServiceReference<?>> onRemovingDependent) {
@@ -646,16 +646,16 @@ public class Whiteboard {
         return properties.get(JAX_RS_APPLICATION_BASE).toString();
     }
 
-    private static OSGi<CachingServiceReference<CXFJaxRsServiceRegistrator>>
+    private static OSGi<CachingServiceReference<CxfJaxrsServiceRegistrator>>
         allApplicationReferences() {
 
-        return serviceReferences(CXFJaxRsServiceRegistrator.class);
+        return serviceReferences(CxfJaxrsServiceRegistrator.class);
     }
 
-    private static OSGi<CachingServiceReference<CXFJaxRsServiceRegistrator>>
+    private static OSGi<CachingServiceReference<CxfJaxrsServiceRegistrator>>
         chooseApplication(
             CachingServiceReference<?> serviceReference,
-            Supplier<OSGi<CachingServiceReference<CXFJaxRsServiceRegistrator>>>
+            Supplier<OSGi<CachingServiceReference<CxfJaxrsServiceRegistrator>>>
                 theDefault,
             Consumer<CachingServiceReference<?>> onWaiting,
             Consumer<CachingServiceReference<?>> onResolved) {
@@ -672,7 +672,7 @@ public class Whiteboard {
                 () -> onWaiting.accept(serviceReference),
                 () -> onResolved.accept(serviceReference)).then(
             serviceReferences(
-                CXFJaxRsServiceRegistrator.class,
+                CxfJaxrsServiceRegistrator.class,
                 applicationSelectProperty.toString()).
             effects(__ -> onResolved.accept(serviceReference), __ -> {}));
     }

@@ -17,9 +17,7 @@
 
 package org.apache.aries.jax.rs.whiteboard;
 
-import java.nio.file.DirectoryStream.Filter;
-
-public class AriesJaxRSWhiteboardConstants {
+public class AriesJaxrsWhiteboardConstants {
 
     /**
      * A Service property specifying a target filter used to select
@@ -28,7 +26,7 @@ public class AriesJaxRSWhiteboardConstants {
      * If this service property is not specified, the service is ignored.
      * <p>
      * The value of this service property must be of type {@code String} and be
-     * a valid {@link Filter filter string}.
+     * a valid {@link org.osgi.framework.Filter filter string}.
      */
     public static final String JAX_RS_APPLICATION_SELECT = "org.apache.aries.jaxrs.application.select";
 
