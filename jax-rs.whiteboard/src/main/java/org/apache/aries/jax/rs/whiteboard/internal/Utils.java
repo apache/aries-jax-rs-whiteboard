@@ -215,10 +215,6 @@ public class Utils {
         serviceRegistration.setProperties(properties);
     }
 
-    public static OSGi<Void> ignoreResult(OSGi<?> program) {
-        return program.map(t -> null);
-    }
-
     public interface PropertyHolder {
         Object get(String propertyName);
     }

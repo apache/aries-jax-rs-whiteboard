@@ -39,7 +39,6 @@ import org.slf4j.LoggerFactory;
 
 import static java.lang.String.format;
 import static org.apache.aries.jax.rs.whiteboard.internal.Utils.canonicalize;
-import static org.apache.aries.jax.rs.whiteboard.internal.Utils.ignoreResult;
 import static org.apache.aries.jax.rs.whiteboard.internal.Whiteboard.createWhiteboard;
 import static org.apache.aries.osgi.functional.OSGi.all;
 import static org.apache.aries.osgi.functional.OSGi.configurations;
@@ -82,10 +81,8 @@ public class CxfJaxrsBundleActivator implements BundleActivator {
 
         _defaultOSGiResult =
             all(
-                ignoreResult(
-                    register(
-                        ClientBuilder.class, new ClientBuilderFactory(), null)),
-                ignoreResult(runWhiteboard(bundleContext, defaultConfiguration))
+                ignore(registerClient()),
+                ignore(runWhiteboard(bundleContext, defaultConfiguration))
             )
         .run(bundleContext);
 

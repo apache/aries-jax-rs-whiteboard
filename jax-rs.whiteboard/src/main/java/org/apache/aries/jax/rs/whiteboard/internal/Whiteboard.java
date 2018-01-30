@@ -71,12 +71,12 @@ import static org.apache.aries.jax.rs.whiteboard.internal.Utils.canonicalize;
 import static org.apache.aries.jax.rs.whiteboard.internal.Utils.generateApplicationName;
 import static org.apache.aries.jax.rs.whiteboard.internal.Utils.getProperties;
 import static org.apache.aries.jax.rs.whiteboard.internal.Utils.highestPer;
-import static org.apache.aries.jax.rs.whiteboard.internal.Utils.ignoreResult;
 import static org.apache.aries.jax.rs.whiteboard.internal.Utils.onlyGettables;
 import static org.apache.aries.jax.rs.whiteboard.internal.Utils.service;
 import static org.apache.aries.jax.rs.whiteboard.internal.Utils.updateProperty;
 import static org.apache.aries.osgi.functional.OSGi.all;
 import static org.apache.aries.osgi.functional.OSGi.effects;
+import static org.apache.aries.osgi.functional.OSGi.ignore;
 import static org.apache.aries.osgi.functional.OSGi.just;
 import static org.apache.aries.osgi.functional.OSGi.nothing;
 import static org.apache.aries.osgi.functional.OSGi.onClose;
@@ -149,10 +149,10 @@ public class Whiteboard {
         _counter = new ServiceRegistrationChangeCounter(_runtimeRegistration);
         _program =
             all(
-                ignoreResult(registerDefaultApplication()),
-                ignoreResult(applications()),
-                ignoreResult(applicationResources()),
-                ignoreResult(applicationExtensions()
+                ignore(registerDefaultApplication()),
+                ignore(applications()),
+                ignore(applicationResources()),
+                ignore(applicationExtensions()
             ));
     }
 
