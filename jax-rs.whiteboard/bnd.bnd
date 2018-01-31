@@ -5,7 +5,15 @@ Provide-Capability: \
         version:Version='${Bundle-Version}',\
     osgi.implementation; \
         osgi.implementation='osgi.jaxrs'; \
-        version:Version='1.0.0'
+        version:Version='1.0.0'; \
+        uses:="javax.ws.rs,javax.ws.rs.core,javax.ws.rs.ext,javax.ws.rs.client,javax.ws.rs.container,javax.ws.rs.sse,org.osgi.service.jaxrs.whiteboard", \
+    osgi.service; \
+        objectClass:List<String>="org.osgi.service.jaxrs.runtime.JaxrsServiceRuntime"; \
+        uses:="org.osgi.service.jaxrs.runtime,org.osgi.service.jaxrs.runtime.dto", \
+    osgi.service; \
+        objectClass:List<String>="javax.ws.rs.client.ClientBuilder"; \
+        uses:="javax.ws.rs.client,org.osgi.service.jaxrs.client"
+    
 Require-Capability: \
     osgi.implementation; \
         filter:='(&(osgi.implementation=osgi.http)(version>=1)(!(version>=2)))'
