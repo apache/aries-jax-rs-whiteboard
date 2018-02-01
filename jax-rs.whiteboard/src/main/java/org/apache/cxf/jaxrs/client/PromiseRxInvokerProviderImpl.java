@@ -15,14 +15,16 @@
  * limitations under the License.
  */
 
-package org.apache.aries.jax.rs.whiteboard.internal.client;
+package org.apache.cxf.jaxrs.client;
 
-import org.osgi.service.jaxrs.client.PromiseRxInvoker;
-import org.osgi.util.promise.PromiseFactory;
+import java.util.concurrent.ExecutorService;
 
 import javax.ws.rs.client.RxInvokerProvider;
 import javax.ws.rs.client.SyncInvoker;
-import java.util.concurrent.ExecutorService;
+
+import org.apache.cxf.jaxrs.client.SyncInvokerImpl;
+import org.osgi.service.jaxrs.client.PromiseRxInvoker;
+import org.osgi.util.promise.PromiseFactory;
 
 public class PromiseRxInvokerProviderImpl
     implements RxInvokerProvider<PromiseRxInvoker> {
@@ -46,7 +48,7 @@ public class PromiseRxInvokerProviderImpl
                 PromiseFactory.inlineExecutor());
         }
 
-        return new PromiseRxInvokerImpl(syncInvoker, promiseFactory);
+        return new PromiseRxInvokerImpl(((SyncInvokerImpl) syncInvoker).getWebClient(), promiseFactory);
     }
 
 }

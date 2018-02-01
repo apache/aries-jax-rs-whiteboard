@@ -15,24 +15,41 @@
  * limitations under the License.
  */
 
-package org.apache.aries.jax.rs.whiteboard.internal.client;
-
-import org.osgi.service.jaxrs.client.PromiseRxInvoker;
-import org.osgi.util.promise.Promise;
-import org.osgi.util.promise.PromiseFactory;
+package org.apache.cxf.jaxrs.client;
 
 import javax.ws.rs.HttpMethod;
 import javax.ws.rs.client.Entity;
-import javax.ws.rs.client.SyncInvoker;
+import javax.ws.rs.client.InvocationCallback;
 import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.Response;
 
+import org.osgi.service.jaxrs.client.PromiseRxInvoker;
+import org.osgi.util.promise.Deferred;
+import org.osgi.util.promise.Promise;
+import org.osgi.util.promise.PromiseFactory;
+
 class PromiseRxInvokerImpl implements PromiseRxInvoker {
 
-    public PromiseRxInvokerImpl(
-        SyncInvoker syncInvoker, PromiseFactory promiseFactory) {
+    private static final class DeferredHandler<R> implements InvocationCallback<R> {
+        private final Deferred<R> deferred;
 
-        _syncInvoker = syncInvoker;
+        private DeferredHandler(Deferred<R> deferred) {
+            this.deferred = deferred;
+        }
+
+        @Override
+        public void completed(R response) {
+            deferred.resolve(response);
+        }
+
+        @Override
+        public void failed(Throwable throwable) {
+            deferred.fail(throwable);
+        }
+    }
+    public PromiseRxInvokerImpl(
+        WebClient webClient, PromiseFactory promiseFactory) {
+        _webClient = webClient;
         _promiseFactory = promiseFactory;
     }
 
@@ -72,38 +89,57 @@ class PromiseRxInvokerImpl implements PromiseRxInvoker {
     }
 
     @Override
-    public <R> Promise<R> method(String s, Class<R> aClass) {
-        return _promiseFactory.submit(() -> _syncInvoker.method(s, aClass));
+    public <R> Promise<R> method(String s, Class<R> responseType) {
+        
+            Deferred<R> deferred = _promiseFactory.deferred();
+        
+            _webClient.doInvokeAsync(s, null, null, null, responseType, responseType, 
+                    new DeferredHandler<R>(deferred));
+        
+        return deferred.getPromise();
     }
 
     @Override
-    public <R> Promise<R> method(String s, Entity<?> entity, Class<R> aClass) {
-        return _promiseFactory.submit(
-            () -> _syncInvoker.method(s, entity, aClass));
+    public <R> Promise<R> method(String s, Entity<?> entity, Class<R> responseType) {
+        
+        Deferred<R> deferred = _promiseFactory.deferred();
+    
+        _webClient.doInvokeAsync(s, entity, null, null, responseType, responseType, 
+                new DeferredHandler<R>(deferred));
+    
+    return deferred.getPromise();
     }
 
     @Override
     public <R> Promise<R> method(
         String s, Entity<?> entity, GenericType<R> genericType) {
 
-        return _promiseFactory.submit(
-            () -> _syncInvoker.method(s, entity, genericType));
+            Deferred<R> deferred = _promiseFactory.deferred();
+        
+        _webClient.doInvokeAsync(s, entity, null, null, genericType.getRawType(), genericType.getType(), 
+                new DeferredHandler<R>(deferred));
+    
+        return deferred.getPromise();
     }
 
     @Override
     public Promise<Response> method(String s, Entity<?> entity) {
-        return _promiseFactory.submit(() -> _syncInvoker.method(s, entity));
+        return method(s, entity, Response.class);
     }
 
     @Override
     public <R> Promise<R> method(String s, GenericType<R> genericType) {
-        return _promiseFactory.submit(
-            () -> _syncInvoker.method(s, genericType));
+        Deferred<R> deferred = _promiseFactory.deferred();
+        
+        _webClient.doInvokeAsync(s, null, null, null, genericType.getRawType(), genericType.getType(), 
+                new DeferredHandler<R>(deferred));
+    
+        return deferred.getPromise();
     }
 
     @Override
     public Promise<Response> method(String s) {
-        return _promiseFactory.submit(() -> _syncInvoker.method(s));
+        return method(s, Response.class);
     }
 
     @Override
@@ -167,6 +203,5 @@ class PromiseRxInvokerImpl implements PromiseRxInvoker {
     }
 
     private final PromiseFactory _promiseFactory;
-    private final SyncInvoker _syncInvoker;
-
+    private final WebClient _webClient;
 }

@@ -19,6 +19,7 @@ package org.apache.aries.jax.rs.whiteboard.internal.client;
 
 import javax.ws.rs.client.ClientBuilder;
 
+import org.apache.cxf.jaxrs.client.PromiseRxInvokerProviderImpl;
 import org.apache.cxf.jaxrs.client.spec.ClientBuilderImpl;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.PrototypeServiceFactory;
