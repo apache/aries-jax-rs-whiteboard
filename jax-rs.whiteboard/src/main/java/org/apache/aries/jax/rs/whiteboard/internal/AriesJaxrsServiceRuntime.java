@@ -452,7 +452,7 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
             Arrays.stream(
                 canonicalize(serviceReference.getProperty("objectClass"))).
             filter(
-                SUPPORTED_EXTENSION_INTERFACES::contains
+                SUPPORTED_EXTENSION_INTERFACES::containsKey
             ).
             toArray(String[]::new);
     }

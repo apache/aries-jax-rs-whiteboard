@@ -17,6 +17,10 @@
 
 package org.apache.aries.jax.rs.whiteboard.internal;
 
+import static java.util.stream.Collectors.toMap;
+import static org.apache.aries.jax.rs.whiteboard.internal.Utils.canonicalize;
+import static org.apache.aries.jax.rs.whiteboard.internal.Whiteboard.SUPPORTED_EXTENSION_INTERFACES;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -26,8 +30,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeSet;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import javax.ws.rs.RuntimeType;
 import javax.ws.rs.core.Application;
@@ -51,8 +53,6 @@ import org.apache.cxf.jaxrs.model.OperationResourceInfo;
 import org.apache.cxf.jaxrs.provider.ServerConfigurableFactory;
 import org.apache.cxf.message.Message;
 import org.osgi.framework.ServiceReference;
-
-import static org.apache.aries.jax.rs.whiteboard.internal.Utils.canonicalize;
 
 public class CxfJaxrsServiceRegistrator {
 
@@ -253,38 +253,25 @@ public class CxfJaxrsServiceRegistrator {
 
                     int ranking = Utils.getRanking(cachingServiceReference);
 
-                    String[] interfaces = canonicalize(
-                        serviceReference.getProperty("objectClass"));
+                    Class<?>[] interfaces = Arrays.stream(canonicalize(
+                        serviceReference.getProperty("objectClass")))
+                            .filter(SUPPORTED_EXTENSION_INTERFACES::containsKey)
+                            .map(SUPPORTED_EXTENSION_INTERFACES::get)
+                            .toArray(Class[]::new);
 
                     if (ranking != 0) {
                         Map<Class<?>, Integer> classesWithPriorities=
-                            Arrays.stream(interfaces).flatMap(
-                                className -> {
-                                    try {
-                                        return Stream.of(
-                                            Class.forName(className));
-                                    }
-                                    catch (ClassNotFoundException e) {
-                                        return Stream.empty();
-                                    }
-                                }
-                            ).collect(
-                                Collectors.toMap(c -> c, __ -> ranking)
+                            Arrays.stream(interfaces).collect(
+                                toMap(c -> c, __ -> ranking)
                             );
 
                         featureContext.register(
                             provider.getService(), classesWithPriorities);
                     }
                     else {
-                        for (String className : interfaces) {
-                            try {
-                                featureContext.register(
+                        featureContext.register(
                                     provider.getService(),
-                                    Class.forName(className));
-                            }
-                            catch (ClassNotFoundException e) {
-                            }
-                        }
+                                    interfaces);
                     }
 
                 }

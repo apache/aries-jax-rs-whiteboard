@@ -51,11 +51,9 @@ import javax.ws.rs.ext.ReaderInterceptor;
 import javax.ws.rs.ext.WriterInterceptor;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Dictionary;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
@@ -64,8 +62,10 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 import static java.lang.String.format;
+import static java.util.stream.Collectors.toMap;
 import static org.apache.aries.jax.rs.whiteboard.internal.AriesJaxrsServiceRuntime.getApplicationName;
 import static org.apache.aries.jax.rs.whiteboard.internal.Utils.canonicalize;
 import static org.apache.aries.jax.rs.whiteboard.internal.Utils.generateApplicationName;
@@ -105,21 +105,20 @@ import static org.osgi.service.jaxrs.whiteboard.JaxrsWhiteboardConstants.JAX_RS_
  */
 public class Whiteboard {
 
-    static final Collection<String> SUPPORTED_EXTENSION_INTERFACES =
-        Collections.unmodifiableSet(
-            new HashSet<>(Arrays.asList(
-                ContainerRequestFilter.class.getName(),
-                ContainerResponseFilter.class.getName(),
-                ReaderInterceptor.class.getName(),
-                WriterInterceptor.class.getName(),
-                MessageBodyReader.class.getName(),
-                MessageBodyWriter.class.getName(),
-                ContextResolver.class.getName(),
-                ExceptionMapper.class.getName(),
-                ParamConverterProvider.class.getName(),
-                Feature.class.getName(),
-                DynamicFeature.class.getName()
-        )));
+    static final Map<String, Class<?>> SUPPORTED_EXTENSION_INTERFACES =
+        Collections.unmodifiableMap(
+            Stream.of(ContainerRequestFilter.class,
+                ContainerResponseFilter.class,
+                ReaderInterceptor.class,
+                WriterInterceptor.class,
+                MessageBodyReader.class,
+                MessageBodyWriter.class,
+                ContextResolver.class,
+                ExceptionMapper.class,
+                ParamConverterProvider.class,
+                Feature.class,
+                DynamicFeature.class)
+            .collect(toMap(Class::getName, Function.identity())));
     static final String DEFAULT_NAME = ".default";
     private static final Function<CachingServiceReference<Application>, String>
         APPLICATION_BASE = sr -> getApplicationBase(sr::getProperty);
@@ -790,7 +789,7 @@ public class Whiteboard {
             "objectClass"));
 
         return Arrays.stream(objectClasses).
-            anyMatch(SUPPORTED_EXTENSION_INTERFACES::contains);
+            anyMatch(SUPPORTED_EXTENSION_INTERFACES::containsKey);
     }
 
     private interface ChangeCounter {
