@@ -79,30 +79,37 @@ public class ClassIntrospectorTest {
 
         assertEquals(2, resourceMethodInfoDTOS.length);
 
+        List<ResourceMethodInfoDTOWrapper> wrappers = Arrays.stream(
+            resourceMethodInfoDTOS
+        ).map(
+            ResourceMethodInfoDTOWrapper::new
+        ).collect(
+            Collectors.toList()
+        );
+
         ResourceMethodInfoDTO resourceMethodInfoDTO =
-            resourceMethodInfoDTOS[0];
+            new ResourceMethodInfoDTO();
 
-        assertEquals(HttpMethod.GET, resourceMethodInfoDTO.method);
-        assertArrayEquals(
-            ALL_TYPES, resourceMethodInfoDTO.consumingMimeType);
-        assertArrayEquals(
-            ALL_TYPES, resourceMethodInfoDTO.producingMimeType);
-        assertEquals("/", resourceMethodInfoDTO.path);
-        assertArrayEquals(
-            new String[]{"test.types.Bound"},
-            resourceMethodInfoDTO.nameBindings);
+        resourceMethodInfoDTO.method = HttpMethod.GET;
+        resourceMethodInfoDTO.consumingMimeType = ALL_TYPES;
+        resourceMethodInfoDTO.producingMimeType = ALL_TYPES;
+        resourceMethodInfoDTO.path = "/";
+        resourceMethodInfoDTO.nameBindings = new String[]{"test.types.Bound"};
 
-        resourceMethodInfoDTO = resourceMethodInfoDTOS[1];
+        assertTrue(
+            wrappers.remove(
+                new ResourceMethodInfoDTOWrapper(resourceMethodInfoDTO)));
 
-        assertEquals(HttpMethod.POST, resourceMethodInfoDTO.method);
-        assertArrayEquals(
-            ALL_TYPES, resourceMethodInfoDTO.consumingMimeType);
-        assertArrayEquals(
-            ALL_TYPES, resourceMethodInfoDTO.producingMimeType);
-        assertEquals("/", resourceMethodInfoDTO.path);
-        assertArrayEquals(
-            new String[]{"test.types.Bound"},
-            resourceMethodInfoDTO.nameBindings);
+        resourceMethodInfoDTO = new ResourceMethodInfoDTO();
+        resourceMethodInfoDTO.method = HttpMethod.POST;
+        resourceMethodInfoDTO.consumingMimeType = ALL_TYPES;
+        resourceMethodInfoDTO.producingMimeType = ALL_TYPES;
+        resourceMethodInfoDTO.path = "/";
+        resourceMethodInfoDTO.nameBindings = new String[]{"test.types.Bound"};
+
+        assertTrue(
+            wrappers.remove(
+                new ResourceMethodInfoDTOWrapper(resourceMethodInfoDTO)));
     }
 
 
@@ -118,26 +125,38 @@ public class ClassIntrospectorTest {
 
         assertEquals(2, resourceMethodInfoDTOS.length);
 
+        List<ResourceMethodInfoDTOWrapper> wrappers = Arrays.stream(
+            resourceMethodInfoDTOS
+        ).map(
+            ResourceMethodInfoDTOWrapper::new
+        ).collect(
+            Collectors.toList()
+        );
+
         ResourceMethodInfoDTO resourceMethodInfoDTO =
-            resourceMethodInfoDTOS[0];
+            new ResourceMethodInfoDTO();
 
-        assertEquals(HttpMethod.GET, resourceMethodInfoDTO.method);
-        assertArrayEquals(
-            ALL_TYPES, resourceMethodInfoDTO.consumingMimeType);
-        assertArrayEquals(
-            ALL_TYPES, resourceMethodInfoDTO.producingMimeType);
-        assertEquals("/", resourceMethodInfoDTO.path);
-        assertArrayEquals(new String[]{}, resourceMethodInfoDTO.nameBindings);
+        resourceMethodInfoDTO.method = HttpMethod.GET;
+        resourceMethodInfoDTO.consumingMimeType = ALL_TYPES;
+        resourceMethodInfoDTO.producingMimeType = ALL_TYPES;
+        resourceMethodInfoDTO.path = "/";
+        resourceMethodInfoDTO.nameBindings = new String[]{};
 
-        resourceMethodInfoDTO = resourceMethodInfoDTOS[1];
+        assertTrue(
+            wrappers.remove(
+                new ResourceMethodInfoDTOWrapper(resourceMethodInfoDTO)));
 
-        assertEquals(HttpMethod.POST, resourceMethodInfoDTO.method);
-        assertArrayEquals(
-            ALL_TYPES, resourceMethodInfoDTO.consumingMimeType);
-        assertArrayEquals(
-            ALL_TYPES, resourceMethodInfoDTO.producingMimeType);
-        assertEquals("/", resourceMethodInfoDTO.path);
-        assertArrayEquals(new String[]{}, resourceMethodInfoDTO.nameBindings);
+        resourceMethodInfoDTO = new ResourceMethodInfoDTO();
+
+        resourceMethodInfoDTO.method = HttpMethod.POST;
+        resourceMethodInfoDTO.consumingMimeType = ALL_TYPES;
+        resourceMethodInfoDTO.producingMimeType = ALL_TYPES;
+        resourceMethodInfoDTO.path = "/";
+        resourceMethodInfoDTO.nameBindings = new String[]{};
+
+        assertTrue(
+            wrappers.remove(
+                new ResourceMethodInfoDTOWrapper(resourceMethodInfoDTO)));
     }
 
     @Test
@@ -152,26 +171,39 @@ public class ClassIntrospectorTest {
 
         assertEquals(2, resourceMethodInfoDTOS.length);
 
+        List<ResourceMethodInfoDTOWrapper> wrappers = Arrays.stream(
+            resourceMethodInfoDTOS
+        ).map(
+            ResourceMethodInfoDTOWrapper::new
+        ).collect(
+            Collectors.toList()
+        );
+
         ResourceMethodInfoDTO resourceMethodInfoDTO =
-            resourceMethodInfoDTOS[0];
+            new ResourceMethodInfoDTO();
 
-        assertEquals(HttpMethod.GET, resourceMethodInfoDTO.method);
-        assertArrayEquals(
-            ALL_TYPES, resourceMethodInfoDTO.consumingMimeType);
-        assertArrayEquals(
-            ALL_TYPES, resourceMethodInfoDTO.producingMimeType);
-        assertEquals("/common", resourceMethodInfoDTO.path);
-        assertArrayEquals(new String[]{}, resourceMethodInfoDTO.nameBindings);
+        resourceMethodInfoDTO.method = HttpMethod.GET;
+        resourceMethodInfoDTO.consumingMimeType = ALL_TYPES;
+        resourceMethodInfoDTO.producingMimeType = ALL_TYPES;
+        resourceMethodInfoDTO.path = "/common";
+        resourceMethodInfoDTO.nameBindings = new String[]{};
 
-        resourceMethodInfoDTO = resourceMethodInfoDTOS[1];
+        assertTrue(
+            wrappers.remove(
+                new ResourceMethodInfoDTOWrapper(resourceMethodInfoDTO)));
 
-        assertEquals(HttpMethod.POST, resourceMethodInfoDTO.method);
-        assertArrayEquals(
-            ALL_TYPES, resourceMethodInfoDTO.consumingMimeType);
-        assertArrayEquals(
-            ALL_TYPES, resourceMethodInfoDTO.producingMimeType);
-        assertEquals("/common", resourceMethodInfoDTO.path);
-        assertArrayEquals(new String[]{}, resourceMethodInfoDTO.nameBindings);
+        resourceMethodInfoDTO =
+            new ResourceMethodInfoDTO();
+
+        resourceMethodInfoDTO.method = HttpMethod.POST;
+        resourceMethodInfoDTO.consumingMimeType = ALL_TYPES;
+        resourceMethodInfoDTO.producingMimeType = ALL_TYPES;
+        resourceMethodInfoDTO.path = "/common";
+        resourceMethodInfoDTO.nameBindings = new String[]{};
+
+        assertTrue(
+            wrappers.remove(
+                new ResourceMethodInfoDTOWrapper(resourceMethodInfoDTO)));
     }
 
     @Test
@@ -186,26 +218,38 @@ public class ClassIntrospectorTest {
 
         assertEquals(2, resourceMethodInfoDTOS.length);
 
+        List<ResourceMethodInfoDTOWrapper> wrappers = Arrays.stream(
+            resourceMethodInfoDTOS
+        ).map(
+            ResourceMethodInfoDTOWrapper::new
+        ).collect(
+            Collectors.toList()
+        );
+
         ResourceMethodInfoDTO resourceMethodInfoDTO =
-            resourceMethodInfoDTOS[0];
+            new ResourceMethodInfoDTO();
 
-        assertEquals(HttpMethod.GET, resourceMethodInfoDTO.method);
-        assertArrayEquals(
-            ALL_TYPES, resourceMethodInfoDTO.consumingMimeType);
-        assertArrayEquals(
-            ALL_TYPES, resourceMethodInfoDTO.producingMimeType);
-        assertEquals("/common", resourceMethodInfoDTO.path);
-        assertArrayEquals(new String[]{}, resourceMethodInfoDTO.nameBindings);
+        resourceMethodInfoDTO.method = HttpMethod.GET;
+        resourceMethodInfoDTO.consumingMimeType = ALL_TYPES;
+        resourceMethodInfoDTO.producingMimeType = ALL_TYPES;
+        resourceMethodInfoDTO.path = "/common";
+        resourceMethodInfoDTO.nameBindings = new String[]{};
 
-        resourceMethodInfoDTO = resourceMethodInfoDTOS[1];
+        assertTrue(
+            wrappers.remove(
+                new ResourceMethodInfoDTOWrapper(resourceMethodInfoDTO)));
 
-        assertEquals(HttpMethod.POST, resourceMethodInfoDTO.method);
-        assertArrayEquals(
-            ALL_TYPES, resourceMethodInfoDTO.consumingMimeType);
-        assertArrayEquals(
-            ALL_TYPES, resourceMethodInfoDTO.producingMimeType);
-        assertEquals("/common/different", resourceMethodInfoDTO.path);
-        assertArrayEquals(new String[]{}, resourceMethodInfoDTO.nameBindings);
+        resourceMethodInfoDTO = new ResourceMethodInfoDTO();
+
+        resourceMethodInfoDTO.method = HttpMethod.POST;
+        resourceMethodInfoDTO.consumingMimeType = ALL_TYPES;
+        resourceMethodInfoDTO.producingMimeType = ALL_TYPES;
+        resourceMethodInfoDTO.path = "/common/different";
+        resourceMethodInfoDTO.nameBindings = new String[]{};
+
+        assertTrue(
+            wrappers.remove(
+                new ResourceMethodInfoDTOWrapper(resourceMethodInfoDTO)));
     }
 
     @Test
