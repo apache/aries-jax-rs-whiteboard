@@ -44,9 +44,6 @@ import java.util.stream.Stream;
 
 public class ClassIntrospector {
 
-    private static final List<MediaType> _ALL_TYPES_LIST =
-        Collections.singletonList(JAXRSUtils.ALL_TYPES);
-
     public static Collection<ResourceMethodInfoDTO> getResourceMethodInfos(
         Class<?> clazz, Bus bus) {
 
