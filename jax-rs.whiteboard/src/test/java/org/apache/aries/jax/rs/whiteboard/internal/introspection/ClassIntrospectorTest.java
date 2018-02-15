@@ -49,7 +49,9 @@ public class ClassIntrospectorTest {
         Bus bus = BusFactory.getDefaultBus(true);
 
         ResourceMethodInfoDTO[] resourceMethodInfoDTOS =
-            ClassIntrospector.getResourceMethodInfos(PlainResource.class, bus).toArray(
+            ClassIntrospector.getResourceMethodInfos(
+                PlainResource.class, bus
+            ).toArray(
                 new ResourceMethodInfoDTO[0]
             );
 
@@ -73,7 +75,8 @@ public class ClassIntrospectorTest {
 
         ResourceMethodInfoDTO[] resourceMethodInfoDTOS =
             ClassIntrospector.getResourceMethodInfos(
-                PlainResourceSeveralOperationsWithNameBinding.class, bus).toArray(
+                PlainResourceSeveralOperationsWithNameBinding.class, bus
+            ).toArray(
                 new ResourceMethodInfoDTO[0]
             );
 
@@ -119,7 +122,8 @@ public class ClassIntrospectorTest {
 
         ResourceMethodInfoDTO[] resourceMethodInfoDTOS =
             ClassIntrospector.getResourceMethodInfos(
-                PlainResourceSeveralOperations.class, bus).toArray(
+                PlainResourceSeveralOperations.class, bus
+            ).toArray(
                 new ResourceMethodInfoDTO[0]
             );
 
@@ -165,7 +169,8 @@ public class ClassIntrospectorTest {
 
         ResourceMethodInfoDTO[] resourceMethodInfoDTOS =
             ClassIntrospector.getResourceMethodInfos(
-                PlainResourceSeveralOperationsCommonPath.class, bus).toArray(
+                PlainResourceSeveralOperationsCommonPath.class, bus
+            ).toArray(
                 new ResourceMethodInfoDTO[0]
             );
 
@@ -212,7 +217,8 @@ public class ClassIntrospectorTest {
 
         ResourceMethodInfoDTO[] resourceMethodInfoDTOS =
             ClassIntrospector.getResourceMethodInfos(
-                PlainResourceSeveralOperationsDifferentPath.class, bus).toArray(
+                PlainResourceSeveralOperationsDifferentPath.class, bus
+            ).toArray(
                     new ResourceMethodInfoDTO[0]
             );
 
@@ -258,7 +264,8 @@ public class ClassIntrospectorTest {
 
         ResourceMethodInfoDTO[] resourceMethodInfoDTOS =
             ClassIntrospector.getResourceMethodInfos(
-                ResourceWithSubResource.class, bus).toArray(
+                ResourceWithSubResource.class, bus
+            ).toArray(
                 new ResourceMethodInfoDTO[0]
             );
 
@@ -282,7 +289,9 @@ public class ClassIntrospectorTest {
         resourceMethodInfoDTO.path = "/resource";
         resourceMethodInfoDTO.nameBindings = new String[]{};
 
-        assertTrue(wrappers.remove(new ResourceMethodInfoDTOWrapper(resourceMethodInfoDTO)));
+        assertTrue(
+            wrappers.remove(
+                new ResourceMethodInfoDTOWrapper(resourceMethodInfoDTO)));
 
         resourceMethodInfoDTO = new ResourceMethodInfoDTO();
 
@@ -294,7 +303,9 @@ public class ClassIntrospectorTest {
         resourceMethodInfoDTO.path = "/resource/subresource";
         resourceMethodInfoDTO.nameBindings = new String[]{};
 
-        assertTrue(wrappers.remove(new ResourceMethodInfoDTOWrapper(resourceMethodInfoDTO)));
+        assertTrue(
+            wrappers.remove(
+                new ResourceMethodInfoDTOWrapper(resourceMethodInfoDTO)));
 
         resourceMethodInfoDTO = new ResourceMethodInfoDTO();
 
@@ -309,7 +320,9 @@ public class ClassIntrospectorTest {
         resourceMethodInfoDTO.path = "/resource/subresource";
         resourceMethodInfoDTO.nameBindings = new String[]{};
 
-        assertTrue(wrappers.remove(new ResourceMethodInfoDTOWrapper(resourceMethodInfoDTO)));
+        assertTrue(
+            wrappers.remove(
+                new ResourceMethodInfoDTOWrapper(resourceMethodInfoDTO)));
 
         resourceMethodInfoDTO = new ResourceMethodInfoDTO();
 
@@ -321,7 +334,9 @@ public class ClassIntrospectorTest {
         resourceMethodInfoDTO.path = "/resource/subresource/{path}";
         resourceMethodInfoDTO.nameBindings = new String[]{};
 
-        assertTrue(wrappers.remove(new ResourceMethodInfoDTOWrapper(resourceMethodInfoDTO)));
+        assertTrue(
+            wrappers.remove(
+                new ResourceMethodInfoDTOWrapper(resourceMethodInfoDTO)));
 
         resourceMethodInfoDTO = new ResourceMethodInfoDTO();
 
@@ -335,7 +350,9 @@ public class ClassIntrospectorTest {
         resourceMethodInfoDTO.path = "/resource/subresource/{path}";
         resourceMethodInfoDTO.nameBindings = new String[]{};
 
-        assertTrue(wrappers.remove(new ResourceMethodInfoDTOWrapper(resourceMethodInfoDTO)));
+        assertTrue(
+            wrappers.remove(
+                new ResourceMethodInfoDTOWrapper(resourceMethodInfoDTO)));
 
         assertTrue(wrappers.isEmpty());
     }
