@@ -21,14 +21,19 @@ import org.apache.cxf.Bus;
 import org.apache.cxf.jaxrs.model.ClassResourceInfo;
 import org.apache.cxf.jaxrs.model.MethodDispatcher;
 import org.apache.cxf.jaxrs.model.OperationResourceInfo;
+import org.apache.cxf.jaxrs.utils.AnnotationUtils;
 import org.apache.cxf.jaxrs.utils.JAXRSUtils;
 import org.apache.cxf.jaxrs.utils.ResourceUtils;
 import org.osgi.service.jaxrs.runtime.dto.ResourceMethodInfoDTO;
 
+import javax.ws.rs.Consumes;
 import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
+import java.lang.reflect.Method;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -50,8 +55,8 @@ public class ClassIntrospector {
                 clazz, clazz, true, true, bus);
 
         Stream<ResourceMethodInfoDTO> convert = convert(
-            new HashSet<>(), "/", null, _ALL_TYPES_LIST, _ALL_TYPES_LIST,
-            Collections.emptySet(), true, classResourceInfo);
+            new HashSet<>(), "/", null, null, null, Collections.emptySet(),
+            true, classResourceInfo);
 
         return convert.collect(Collectors.toList());
     }
@@ -68,13 +73,17 @@ public class ClassIntrospector {
 
         String path = parentPath + getPathSafe(classResourceInfo);
 
-        List<MediaType> consumeMime = classResourceInfo.getConsumeMime();
-        if (consumeMime.equals(_ALL_TYPES_LIST)) {
+        List<MediaType> consumeMime = getConsumesInfo(
+            classResourceInfo.getResourceClass());
+
+        if (consumeMime == null) {
             consumeMime = defaultConsumeTypes;
         }
 
-        List<MediaType> produceMime = classResourceInfo.getProduceMime();
-        if (consumeMime.equals(_ALL_TYPES_LIST)) {
+        List<MediaType> produceMime = getProducesInfo(
+            classResourceInfo.getResourceClass());
+
+        if (produceMime == null) {
             produceMime = defaultProduceTypes;
         }
 
@@ -89,8 +98,8 @@ public class ClassIntrospector {
         Set<OperationResourceInfo> operationResourceInfos =
             methodDispatcher.getOperationResourceInfos();
 
-        ArrayList<MediaType> consumeParam = new ArrayList<>(consumeMime);
-        ArrayList<MediaType> produceParam = new ArrayList<>(produceMime);
+        List<MediaType> consumeParam = consumeMime == null ? null : new ArrayList<>(consumeMime);
+        List<MediaType> produceParam = produceMime == null ? null : new ArrayList<>(produceMime);
         HashSet<String> nameBindingsParam = new HashSet<>(nameBindings);
 
         Stream<ResourceMethodInfoDTO> stream =
@@ -116,12 +125,16 @@ public class ClassIntrospector {
         Set<String> defaultNameBindings, boolean recurse,
         OperationResourceInfo operationResourceInfo) {
 
-        List<MediaType> consumeTypes = operationResourceInfo.getConsumeTypes();
+        List<MediaType> consumeTypes = getConsumesInfo(
+            operationResourceInfo.getAnnotatedMethod());
+
         if (consumeTypes == null) {
             consumeTypes = defaultConsumeTypes;
         }
 
-        List<MediaType> produceTypes = operationResourceInfo.getProduceTypes();
+        List<MediaType> produceTypes = getProducesInfo(
+            operationResourceInfo.getAnnotatedMethod());
+
         if (produceTypes == null) {
             produceTypes = defaultProduceTypes;
         }
@@ -166,14 +179,16 @@ public class ClassIntrospector {
         ResourceMethodInfoDTO resourceMethodInfoDTO =
             new ResourceMethodInfoDTO();
 
-        resourceMethodInfoDTO.consumingMimeType = consumeTypes.stream().
+        resourceMethodInfoDTO.consumingMimeType = consumeTypes == null ? null :
+            consumeTypes.stream().
             map(
                 MediaType::toString
             ).toArray(
                 String[]::new
             );
 
-        resourceMethodInfoDTO.producingMimeType = produceTypes.stream().
+        resourceMethodInfoDTO.producingMimeType = produceTypes == null ? null :
+            produceTypes.stream().
             map(
                 MediaType::toString
             ).toArray(
@@ -194,6 +209,20 @@ public class ClassIntrospector {
         return Stream.of(resourceMethodInfoDTO);
     }
 
+    private static List<MediaType> getConsumesInfo(Method method) {
+        Consumes consumes = AnnotationUtils.getMethodAnnotation(
+            method, Consumes.class);
+
+        return consumes == null ? null : JAXRSUtils.getMediaTypes(consumes.value());
+    }
+
+    private static List<MediaType> getConsumesInfo(Class<?> clazz) {
+        Consumes consumes = AnnotationUtils.getClassAnnotation(
+            clazz, Consumes.class);
+
+        return consumes == null ? null : JAXRSUtils.getMediaTypes(consumes.value());
+    }
+
     private static String getPathSafe(ClassResourceInfo classResourceInfo) {
         Path path = classResourceInfo.getPath();
         if (path == null) {
@@ -201,6 +230,20 @@ public class ClassIntrospector {
         }
 
         return path.value();
+    }
+
+    private static List<MediaType> getProducesInfo(Method method) {
+        Produces produces = AnnotationUtils.getMethodAnnotation(
+            method, Produces.class);
+
+        return produces == null ? null : JAXRSUtils.getMediaTypes(produces.value());
+    }
+
+    private static List<MediaType> getProducesInfo(Class<?> clazz) {
+        Produces produces = AnnotationUtils.getClassAnnotation(
+            clazz, Produces.class);
+
+        return produces == null ? null : JAXRSUtils.getMediaTypes(produces.value());
     }
 
 }

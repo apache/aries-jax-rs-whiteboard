@@ -38,6 +38,7 @@ import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 public class ClassIntrospectorTest {
@@ -61,10 +62,8 @@ public class ClassIntrospectorTest {
             resourceMethodInfoDTOS[0];
 
         assertEquals(HttpMethod.GET, resourceMethodInfoDTO.method);
-        assertArrayEquals(
-            ALL_TYPES, resourceMethodInfoDTO.consumingMimeType);
-        assertArrayEquals(
-            ALL_TYPES, resourceMethodInfoDTO.producingMimeType);
+        assertNull(resourceMethodInfoDTO.consumingMimeType);
+        assertNull(resourceMethodInfoDTO.producingMimeType);
         assertEquals("/", resourceMethodInfoDTO.path);
         assertArrayEquals(new String[]{}, resourceMethodInfoDTO.nameBindings);
     }
@@ -94,8 +93,8 @@ public class ClassIntrospectorTest {
             new ResourceMethodInfoDTO();
 
         resourceMethodInfoDTO.method = HttpMethod.GET;
-        resourceMethodInfoDTO.consumingMimeType = ALL_TYPES;
-        resourceMethodInfoDTO.producingMimeType = ALL_TYPES;
+        resourceMethodInfoDTO.consumingMimeType = null;
+        resourceMethodInfoDTO.producingMimeType = null;
         resourceMethodInfoDTO.path = "/";
         resourceMethodInfoDTO.nameBindings = new String[]{"test.types.Bound"};
 
@@ -105,8 +104,8 @@ public class ClassIntrospectorTest {
 
         resourceMethodInfoDTO = new ResourceMethodInfoDTO();
         resourceMethodInfoDTO.method = HttpMethod.POST;
-        resourceMethodInfoDTO.consumingMimeType = ALL_TYPES;
-        resourceMethodInfoDTO.producingMimeType = ALL_TYPES;
+        resourceMethodInfoDTO.consumingMimeType = null;
+        resourceMethodInfoDTO.producingMimeType = null;
         resourceMethodInfoDTO.path = "/";
         resourceMethodInfoDTO.nameBindings = new String[]{"test.types.Bound"};
 
@@ -141,8 +140,8 @@ public class ClassIntrospectorTest {
             new ResourceMethodInfoDTO();
 
         resourceMethodInfoDTO.method = HttpMethod.GET;
-        resourceMethodInfoDTO.consumingMimeType = ALL_TYPES;
-        resourceMethodInfoDTO.producingMimeType = ALL_TYPES;
+        resourceMethodInfoDTO.consumingMimeType = null;
+        resourceMethodInfoDTO.producingMimeType = null;
         resourceMethodInfoDTO.path = "/";
         resourceMethodInfoDTO.nameBindings = new String[]{};
 
@@ -153,8 +152,8 @@ public class ClassIntrospectorTest {
         resourceMethodInfoDTO = new ResourceMethodInfoDTO();
 
         resourceMethodInfoDTO.method = HttpMethod.POST;
-        resourceMethodInfoDTO.consumingMimeType = ALL_TYPES;
-        resourceMethodInfoDTO.producingMimeType = ALL_TYPES;
+        resourceMethodInfoDTO.consumingMimeType = null;
+        resourceMethodInfoDTO.producingMimeType = null;
         resourceMethodInfoDTO.path = "/";
         resourceMethodInfoDTO.nameBindings = new String[]{};
 
@@ -188,8 +187,8 @@ public class ClassIntrospectorTest {
             new ResourceMethodInfoDTO();
 
         resourceMethodInfoDTO.method = HttpMethod.GET;
-        resourceMethodInfoDTO.consumingMimeType = ALL_TYPES;
-        resourceMethodInfoDTO.producingMimeType = ALL_TYPES;
+        resourceMethodInfoDTO.consumingMimeType = null;
+        resourceMethodInfoDTO.producingMimeType = null;
         resourceMethodInfoDTO.path = "/common";
         resourceMethodInfoDTO.nameBindings = new String[]{};
 
@@ -201,8 +200,8 @@ public class ClassIntrospectorTest {
             new ResourceMethodInfoDTO();
 
         resourceMethodInfoDTO.method = HttpMethod.POST;
-        resourceMethodInfoDTO.consumingMimeType = ALL_TYPES;
-        resourceMethodInfoDTO.producingMimeType = ALL_TYPES;
+        resourceMethodInfoDTO.consumingMimeType = null;
+        resourceMethodInfoDTO.producingMimeType = null;
         resourceMethodInfoDTO.path = "/common";
         resourceMethodInfoDTO.nameBindings = new String[]{};
 
@@ -236,8 +235,8 @@ public class ClassIntrospectorTest {
             new ResourceMethodInfoDTO();
 
         resourceMethodInfoDTO.method = HttpMethod.GET;
-        resourceMethodInfoDTO.consumingMimeType = ALL_TYPES;
-        resourceMethodInfoDTO.producingMimeType = ALL_TYPES;
+        resourceMethodInfoDTO.consumingMimeType = null;
+        resourceMethodInfoDTO.producingMimeType = null;
         resourceMethodInfoDTO.path = "/common";
         resourceMethodInfoDTO.nameBindings = new String[]{};
 
@@ -248,8 +247,8 @@ public class ClassIntrospectorTest {
         resourceMethodInfoDTO = new ResourceMethodInfoDTO();
 
         resourceMethodInfoDTO.method = HttpMethod.POST;
-        resourceMethodInfoDTO.consumingMimeType = ALL_TYPES;
-        resourceMethodInfoDTO.producingMimeType = ALL_TYPES;
+        resourceMethodInfoDTO.consumingMimeType = null;
+        resourceMethodInfoDTO.producingMimeType = null;
         resourceMethodInfoDTO.path = "/common/different";
         resourceMethodInfoDTO.nameBindings = new String[]{};
 
@@ -283,7 +282,7 @@ public class ClassIntrospectorTest {
             new ResourceMethodInfoDTO();
 
         resourceMethodInfoDTO.method = HttpMethod.GET;
-        resourceMethodInfoDTO.consumingMimeType = ALL_TYPES;
+        resourceMethodInfoDTO.consumingMimeType = null;
         resourceMethodInfoDTO.producingMimeType =
             new String[]{MediaType.APPLICATION_XML};
         resourceMethodInfoDTO.path = "/resource";

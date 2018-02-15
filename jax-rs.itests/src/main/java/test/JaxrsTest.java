@@ -140,8 +140,7 @@ public class JaxrsTest extends TestHelper {
         ResourceMethodInfoDTO resourceMethod = resourceMethods[0];
         assertEquals(HttpMethod.GET, resourceMethod.method);
         assertEquals("/", resourceMethod.path);
-        assertArrayEquals(
-            new String[]{MediaType.WILDCARD}, resourceMethod.consumingMimeType);
+        assertNull(resourceMethod.consumingMimeType);
         assertArrayEquals(
             new String[]{MediaType.TEXT_PLAIN},
             resourceMethod.producingMimeType);
@@ -236,8 +235,7 @@ public class JaxrsTest extends TestHelper {
         ResourceMethodInfoDTO resourceMethod = resourceMethods[0];
         assertEquals(HttpMethod.GET, resourceMethod.method);
         assertEquals("/", resourceMethod.path);
-        assertArrayEquals(
-            new String[]{MediaType.WILDCARD}, resourceMethod.consumingMimeType);
+        assertNull(resourceMethod.consumingMimeType);
         assertArrayEquals(
             new String[]{MediaType.TEXT_PLAIN},
             resourceMethod.producingMimeType);
@@ -266,10 +264,8 @@ public class JaxrsTest extends TestHelper {
         ResourceMethodInfoDTO resourceMethod = resourceDTO.resourceMethods[0];
         assertEquals(HttpMethod.GET, resourceMethod.method);
         assertEquals("/{name}", resourceMethod.path);
-        assertArrayEquals(
-            new String[]{MediaType.WILDCARD}, resourceMethod.consumingMimeType);
-        assertArrayEquals(
-            new String[]{MediaType.WILDCARD}, resourceMethod.producingMimeType);
+        assertNull(resourceMethod.consumingMimeType);
+        assertNull(resourceMethod.producingMimeType);
         assertArrayEquals(new String[]{}, resourceMethod.nameBindings);
     }
 

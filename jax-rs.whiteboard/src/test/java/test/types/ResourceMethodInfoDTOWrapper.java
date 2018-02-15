@@ -21,6 +21,7 @@ package test.types;
 import org.osgi.service.jaxrs.runtime.dto.ResourceMethodInfoDTO;
 
 import java.util.Arrays;
+import java.util.Objects;
 
 public class ResourceMethodInfoDTOWrapper
     extends ResourceMethodInfoDTO {
@@ -44,14 +45,11 @@ public class ResourceMethodInfoDTOWrapper
         ResourceMethodInfoDTO that = (ResourceMethodInfoDTO) o;
 
         return
-            path.equals(that.path) &&
-            method.equals(that.method) &&
-            Arrays.asList(consumingMimeType).equals(
-                Arrays.asList(that.consumingMimeType)) &&
-            Arrays.asList(producingMimeType).equals(
-                Arrays.asList(that.producingMimeType)) &&
-            Arrays.asList(nameBindings).equals(
-                Arrays.asList(that.nameBindings));
+            Objects.equals(path, that.path) &&
+            Objects.equals(method, that.method) &&
+            Arrays.equals(consumingMimeType, that.consumingMimeType) &&
+            Arrays.equals(producingMimeType, that.producingMimeType) &&
+            Arrays.equals(nameBindings, that.nameBindings);
     }
 
 }
