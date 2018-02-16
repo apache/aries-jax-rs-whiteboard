@@ -485,6 +485,28 @@ public class JaxrsTest extends TestHelper {
     }
 
     @Test
+    public void testApplicationShadowsDefault() {
+        assertEquals(0, getRuntimeDTO().applicationDTOs.length);
+        assertEquals(0, getRuntimeDTO().failedApplicationDTOs.length);
+
+        registerAddon(new TestAddon());
+
+        assertEquals(
+            "Hello test",
+            createDefaultTarget().path("/test").request().get(String.class));
+
+        registerApplication(
+            new TestApplication(), JAX_RS_APPLICATION_BASE, "/");
+
+        assertEquals(1, getRuntimeDTO().applicationDTOs.length);
+        assertEquals(1, getRuntimeDTO().failedApplicationDTOs.length);
+
+        assertEquals(
+            "Hello application",
+            createDefaultTarget().request().get(String.class));
+    }
+
+    @Test
     public void testApplicationReplaceDefault() {
         assertEquals(0, getRuntimeDTO().applicationDTOs.length);
         assertEquals(0, getRuntimeDTO().failedApplicationDTOs.length);

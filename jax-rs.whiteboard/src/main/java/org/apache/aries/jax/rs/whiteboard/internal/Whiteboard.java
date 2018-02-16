@@ -753,7 +753,7 @@ public class Whiteboard {
 
         String contextName;
 
-        if (JAX_RS_DEFAULT_APPLICATION.equals(applicationName)) {
+        if ("".equals(address)) {
             contextName = HTTP_WHITEBOARD_DEFAULT_CONTEXT_NAME;
         }
         else {
