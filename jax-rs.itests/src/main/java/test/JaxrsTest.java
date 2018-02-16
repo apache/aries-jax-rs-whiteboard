@@ -144,7 +144,7 @@ public class JaxrsTest extends TestHelper {
         assertArrayEquals(
             new String[]{MediaType.TEXT_PLAIN},
             resourceMethod.producingMimeType);
-        assertArrayEquals(new String[0], resourceMethod.nameBindings);
+        assertNull(resourceMethod.nameBindings);
 
     }
 
@@ -239,7 +239,7 @@ public class JaxrsTest extends TestHelper {
         assertArrayEquals(
             new String[]{MediaType.TEXT_PLAIN},
             resourceMethod.producingMimeType);
-        assertArrayEquals(new String[0], resourceMethod.nameBindings);
+        assertNull(resourceMethod.nameBindings);
     }
 
     @Test
@@ -266,7 +266,7 @@ public class JaxrsTest extends TestHelper {
         assertEquals("/{name}", resourceMethod.path);
         assertNull(resourceMethod.consumingMimeType);
         assertNull(resourceMethod.producingMimeType);
-        assertArrayEquals(new String[]{}, resourceMethod.nameBindings);
+        assertNull(resourceMethod.nameBindings);
     }
 
     @Test

@@ -52,7 +52,7 @@ public class ClassIntrospector {
                 clazz, clazz, true, true, bus);
 
         Stream<ResourceMethodInfoDTO> convert = convert(
-            new HashSet<>(), "/", null, null, null, Collections.emptySet(),
+            new HashSet<>(), "/", null, null, null, null,
             true, classResourceInfo);
 
         return convert.collect(Collectors.toList());
@@ -97,7 +97,7 @@ public class ClassIntrospector {
 
         List<MediaType> consumeParam = consumeMime == null ? null : new ArrayList<>(consumeMime);
         List<MediaType> produceParam = produceMime == null ? null : new ArrayList<>(produceMime);
-        HashSet<String> nameBindingsParam = new HashSet<>(nameBindings);
+        HashSet<String> nameBindingsParam = nameBindings == null ? null : new HashSet<>(nameBindings);
 
         Stream<ResourceMethodInfoDTO> stream =
             operationResourceInfos.stream().
@@ -192,8 +192,8 @@ public class ClassIntrospector {
                 String[]::new
             );
 
-        resourceMethodInfoDTO.nameBindings = nameBindings.toArray(
-            new String[0]);
+        resourceMethodInfoDTO.nameBindings = nameBindings == null ? null :
+            nameBindings.toArray(new String[0]);
 
         try {
             resourceMethodInfoDTO.path = Paths.get(path).normalize().toString();

@@ -43,8 +43,6 @@ import static org.junit.Assert.assertTrue;
 
 public class ClassIntrospectorTest {
 
-    private static final String[] ALL_TYPES = {MediaType.WILDCARD};
-
     @Test
     public void testPlainResource() {
         Bus bus = BusFactory.getDefaultBus(true);
@@ -65,7 +63,7 @@ public class ClassIntrospectorTest {
         assertNull(resourceMethodInfoDTO.consumingMimeType);
         assertNull(resourceMethodInfoDTO.producingMimeType);
         assertEquals("/", resourceMethodInfoDTO.path);
-        assertArrayEquals(new String[]{}, resourceMethodInfoDTO.nameBindings);
+        assertNull(resourceMethodInfoDTO.nameBindings);
     }
 
     @Test
@@ -143,7 +141,7 @@ public class ClassIntrospectorTest {
         resourceMethodInfoDTO.consumingMimeType = null;
         resourceMethodInfoDTO.producingMimeType = null;
         resourceMethodInfoDTO.path = "/";
-        resourceMethodInfoDTO.nameBindings = new String[]{};
+        resourceMethodInfoDTO.nameBindings = null;
 
         assertTrue(
             wrappers.remove(
@@ -155,7 +153,7 @@ public class ClassIntrospectorTest {
         resourceMethodInfoDTO.consumingMimeType = null;
         resourceMethodInfoDTO.producingMimeType = null;
         resourceMethodInfoDTO.path = "/";
-        resourceMethodInfoDTO.nameBindings = new String[]{};
+        resourceMethodInfoDTO.nameBindings = null;
 
         assertTrue(
             wrappers.remove(
@@ -190,7 +188,7 @@ public class ClassIntrospectorTest {
         resourceMethodInfoDTO.consumingMimeType = null;
         resourceMethodInfoDTO.producingMimeType = null;
         resourceMethodInfoDTO.path = "/common";
-        resourceMethodInfoDTO.nameBindings = new String[]{};
+        resourceMethodInfoDTO.nameBindings = null;
 
         assertTrue(
             wrappers.remove(
@@ -203,7 +201,7 @@ public class ClassIntrospectorTest {
         resourceMethodInfoDTO.consumingMimeType = null;
         resourceMethodInfoDTO.producingMimeType = null;
         resourceMethodInfoDTO.path = "/common";
-        resourceMethodInfoDTO.nameBindings = new String[]{};
+        resourceMethodInfoDTO.nameBindings = null;
 
         assertTrue(
             wrappers.remove(
@@ -238,7 +236,7 @@ public class ClassIntrospectorTest {
         resourceMethodInfoDTO.consumingMimeType = null;
         resourceMethodInfoDTO.producingMimeType = null;
         resourceMethodInfoDTO.path = "/common";
-        resourceMethodInfoDTO.nameBindings = new String[]{};
+        resourceMethodInfoDTO.nameBindings = null;
 
         assertTrue(
             wrappers.remove(
@@ -250,7 +248,7 @@ public class ClassIntrospectorTest {
         resourceMethodInfoDTO.consumingMimeType = null;
         resourceMethodInfoDTO.producingMimeType = null;
         resourceMethodInfoDTO.path = "/common/different";
-        resourceMethodInfoDTO.nameBindings = new String[]{};
+        resourceMethodInfoDTO.nameBindings = null;
 
         assertTrue(
             wrappers.remove(
@@ -286,7 +284,7 @@ public class ClassIntrospectorTest {
         resourceMethodInfoDTO.producingMimeType =
             new String[]{MediaType.APPLICATION_XML};
         resourceMethodInfoDTO.path = "/resource";
-        resourceMethodInfoDTO.nameBindings = new String[]{};
+        resourceMethodInfoDTO.nameBindings = null;
 
         assertTrue(
             wrappers.remove(
@@ -300,7 +298,7 @@ public class ClassIntrospectorTest {
         resourceMethodInfoDTO.producingMimeType =
             new String[]{MediaType.APPLICATION_JSON};
         resourceMethodInfoDTO.path = "/resource/subresource";
-        resourceMethodInfoDTO.nameBindings = new String[]{};
+        resourceMethodInfoDTO.nameBindings = null;
 
         assertTrue(
             wrappers.remove(
@@ -317,7 +315,7 @@ public class ClassIntrospectorTest {
                 MediaType.APPLICATION_JSON
             };
         resourceMethodInfoDTO.path = "/resource/subresource";
-        resourceMethodInfoDTO.nameBindings = new String[]{};
+        resourceMethodInfoDTO.nameBindings = null;
 
         assertTrue(
             wrappers.remove(
@@ -331,7 +329,7 @@ public class ClassIntrospectorTest {
         resourceMethodInfoDTO.producingMimeType =
             new String[]{MediaType.APPLICATION_JSON};
         resourceMethodInfoDTO.path = "/resource/subresource/{path}";
-        resourceMethodInfoDTO.nameBindings = new String[]{};
+        resourceMethodInfoDTO.nameBindings = null;
 
         assertTrue(
             wrappers.remove(
@@ -347,7 +345,7 @@ public class ClassIntrospectorTest {
             MediaType.APPLICATION_JSON
         };
         resourceMethodInfoDTO.path = "/resource/subresource/{path}";
-        resourceMethodInfoDTO.nameBindings = new String[]{};
+        resourceMethodInfoDTO.nameBindings = null;
 
         assertTrue(
             wrappers.remove(

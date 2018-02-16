@@ -493,6 +493,10 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
         Set<String> nameBindings = AnnotationUtils.getNameBindings(
             eri._class.getAnnotations());
 
+        if (nameBindings.isEmpty()) {
+            nameBindings = null;
+        }
+
         extensionDTO.consumes = consumes == null ? null :
             JAXRSUtils.getConsumeTypes(consumes).stream().
                 map(
@@ -600,6 +604,10 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
             new HashMap<>();
 
         for (ExtensionDTO extensionDTO : applicationDTO.extensionDTOs) {
+            if (extensionDTO.nameBindings == null) {
+                continue;
+            }
+
             for (String nameBinding : extensionDTO.nameBindings) {
                 Set<ExtensionDTO> extensionDTOS =
                     nameBoundExtensions.computeIfAbsent(
@@ -614,6 +622,10 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
         for (ResourceDTO resourceDTO : applicationDTO.resourceDTOs) {
             for (ResourceMethodInfoDTO resourceMethodInfo :
                 resourceDTO.resourceMethods) {
+
+                if (resourceMethodInfo.nameBindings == null) {
+                    continue;
+                }
 
                 for (String nameBinding : resourceMethodInfo.nameBindings) {
                     Set<ExtensionDTO> extensionDTOS = nameBoundExtensions.get(
