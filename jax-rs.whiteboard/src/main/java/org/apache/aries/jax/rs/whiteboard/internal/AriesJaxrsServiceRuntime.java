@@ -27,18 +27,27 @@ import static org.osgi.service.jaxrs.whiteboard.JaxrsWhiteboardConstants.JAX_RS_
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.BiFunction;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import javax.ws.rs.Consumes;
+import javax.ws.rs.Produces;
 import javax.ws.rs.core.Application;
+import javax.ws.rs.core.MediaType;
 
 import org.apache.aries.jax.rs.whiteboard.internal.Utils.PropertyHolder;
 import org.apache.aries.jax.rs.whiteboard.internal.introspection.ClassIntrospector;
 import org.apache.aries.osgi.functional.CachingServiceReference;
 import org.apache.cxf.Bus;
+import org.apache.cxf.jaxrs.utils.AnnotationUtils;
+import org.apache.cxf.jaxrs.utils.JAXRSUtils;
 import org.osgi.service.jaxrs.runtime.JaxrsServiceRuntime;
 import org.osgi.service.jaxrs.runtime.dto.ApplicationDTO;
 import org.osgi.service.jaxrs.runtime.dto.BaseDTO;
@@ -97,10 +106,14 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
 
     public void addApplicationExtension(
         String applicationName,
-        CachingServiceReference<?> extensionImmutableServiceReference) {
+        CachingServiceReference<?> extensionImmutableServiceReference,
+        Class<?> theClass) {
 
         _applicationExtensions.compute(
-            applicationName, merger(extensionImmutableServiceReference));
+            applicationName,
+            merger(
+                new ExtensionRuntimeInformation(
+                    extensionImmutableServiceReference, theClass)));
     }
 
     public void addClashingApplication(
@@ -261,21 +274,32 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
 
         _applicationEndpoints.compute(
             applicationName,
-            remover(new EndpointRuntimeInformation(
+            remover(
+                new EndpointRuntimeInformation(
                 cachingServiceReference, null, null)));
     }
 
     public void removeApplicationExtension(
-        String applicationName, CachingServiceReference<?> extensionImmutableServiceReference) {
+        String applicationName,
+        CachingServiceReference<?> extensionImmutableServiceReference) {
 
         _applicationExtensions.computeIfPresent(
-            applicationName, remover(extensionImmutableServiceReference));
+            applicationName,
+            remover(
+                new ExtensionRuntimeInformation(
+                extensionImmutableServiceReference, null)));
     }
 
     public void removeClashingApplication(
         CachingServiceReference<Application> serviceReference) {
 
         _clashingApplications.remove(serviceReference);
+    }
+
+    public void removeClashingResource(
+        CachingServiceReference<?> serviceReference) {
+
+        _clashingResources.remove(serviceReference);
     }
 
     public void removeDependentApplication(
@@ -363,22 +387,19 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
     public ApplicationRuntimeInformation unsetApplicationForPath(String path) {
         return _applications.remove(path);
     }
-    private ConcurrentHashMap<String, ApplicationRuntimeInformation>
-        _applications = new ConcurrentHashMap<>();
-    private ConcurrentHashMap<String, Collection<EndpointRuntimeInformation>>
-        _applicationEndpoints = new ConcurrentHashMap<>();
-    private ConcurrentHashMap<String, Collection<CachingServiceReference<?>>>
-        _applicationExtensions = new ConcurrentHashMap<>();
-    private Collection<CachingServiceReference<Application>>
-        _ungettableApplications = new CopyOnWriteArrayList<>();
-    private Collection<CachingServiceReference<Application>> _shadowedApplications =
-        new CopyOnWriteArrayList<>();
     private Set<CachingServiceReference<?>> _applicationDependentExtensions =
         ConcurrentHashMap.newKeySet();
     private Set<CachingServiceReference<?>> _applicationDependentResources =
         ConcurrentHashMap.newKeySet();
+    private ConcurrentHashMap<String, Collection<EndpointRuntimeInformation>>
+        _applicationEndpoints = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<String, Collection<ExtensionRuntimeInformation>>
+        _applicationExtensions = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<String, ApplicationRuntimeInformation>
+        _applications = new ConcurrentHashMap<>();
     private Collection<CachingServiceReference<Application>> _clashingApplications =
         new CopyOnWriteArrayList<>();
+    private volatile ApplicationRuntimeInformation _defaultApplicationProperties;
     private Set<CachingServiceReference<Application>> _dependentApplications =
         ConcurrentHashMap.newKeySet();
     private Set<CachingServiceReference<?>> _dependentExtensions =
@@ -391,13 +412,16 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
         new CopyOnWriteArrayList<>();
     private Collection<CachingServiceReference<?>> _erroredExtensions =
         new CopyOnWriteArrayList<>();
+    private Collection<CachingServiceReference<?>> _invalidExtensions =
+        new CopyOnWriteArrayList<>();
+    private Collection<CachingServiceReference<Application>> _shadowedApplications =
+        new CopyOnWriteArrayList<>();
+    private Collection<CachingServiceReference<Application>>
+        _ungettableApplications = new CopyOnWriteArrayList<>();
     private Collection<CachingServiceReference<?>> _ungettableEndpoints =
         new CopyOnWriteArrayList<>();
     private Collection<CachingServiceReference<?>> _ungettableExtensions =
         new CopyOnWriteArrayList<>();
-    private Collection<CachingServiceReference<?>> _invalidExtensions =
-        new CopyOnWriteArrayList<>();
-    private volatile ApplicationRuntimeInformation _defaultApplicationProperties;
 
     private static FailedApplicationDTO buildFailedApplicationDTO(
         int reason, CachingServiceReference<Application> serviceReference) {
@@ -458,10 +482,35 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
     }
 
     private static ExtensionDTO populateExtensionDTO(
-        ExtensionDTO extensionDTO,
-        CachingServiceReference<?> serviceReference) {
+        ExtensionDTO extensionDTO, ExtensionRuntimeInformation eri) {
 
-        populateBaseExtensionDTO(extensionDTO, serviceReference);
+        populateBaseExtensionDTO(extensionDTO, eri._cachingServiceReference);
+
+        Consumes consumes = AnnotationUtils.getClassAnnotation(
+            eri._class, Consumes.class);
+        Produces produces = AnnotationUtils.getClassAnnotation(
+            eri._class, Produces.class);
+        Set<String> nameBindings = AnnotationUtils.getNameBindings(
+            eri._class.getAnnotations());
+
+        extensionDTO.consumes = consumes == null ? null :
+            JAXRSUtils.getConsumeTypes(consumes).stream().
+                map(
+                    MediaType::toString
+                ).toArray(
+                    String[]::new
+                );
+
+        extensionDTO.produces = produces == null ? null :
+            JAXRSUtils.getProduceTypes(produces).stream().
+                map(
+                    MediaType::toString
+                ).toArray(
+                    String[]::new
+                );
+
+        extensionDTO.nameBindings = nameBindings == null ? null :
+            nameBindings.toArray(new String[0]);
 
         return extensionDTO;
     }
@@ -543,6 +592,51 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
             applicationDTO.name).toArray(
                 ExtensionDTO[]::new
             );
+
+        Map<String, Set<ExtensionDTO>> nameBoundExtensions =
+            new HashMap<>();
+
+        Map<ExtensionDTO, Set<ResourceDTO>> extensionResources =
+            new HashMap<>();
+
+        for (ExtensionDTO extensionDTO : applicationDTO.extensionDTOs) {
+            for (String nameBinding : extensionDTO.nameBindings) {
+                Set<ExtensionDTO> extensionDTOS =
+                    nameBoundExtensions.computeIfAbsent(
+                        nameBinding,
+                        __ -> new HashSet<>()
+                );
+
+                extensionDTOS.add(extensionDTO);
+            }
+        }
+
+        for (ResourceDTO resourceDTO : applicationDTO.resourceDTOs) {
+            for (ResourceMethodInfoDTO resourceMethodInfo :
+                resourceDTO.resourceMethods) {
+
+                for (String nameBinding : resourceMethodInfo.nameBindings) {
+                    Set<ExtensionDTO> extensionDTOS = nameBoundExtensions.get(
+                        nameBinding);
+
+                    if (extensionDTOS != null) {
+                        for (ExtensionDTO extensionDTO : extensionDTOS) {
+                            Set<ResourceDTO> resourceDTOS =
+                                extensionResources.computeIfAbsent(
+                                    extensionDTO, __ -> new HashSet<>());
+
+                            resourceDTOS.add(resourceDTO);
+                        }
+                    }
+                }
+            }
+        }
+
+        extensionResources.forEach(
+            (extensionDTO, resourceDTOS) ->
+                extensionDTO.filteredByName = resourceDTOS.toArray(
+                    new ResourceDTO[0])
+        );
 
         CxfJaxrsServiceRegistrator cxfJaxRsServiceRegistrator =
             ari._cxfJaxRsServiceRegistrator;
@@ -654,12 +748,12 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
     }
 
     private Stream<ExtensionDTO> getApplicationExtensionsStream(String name) {
-        Collection<CachingServiceReference<?>> applicationExtensions =
+        Collection<ExtensionRuntimeInformation> extensionRuntimeInformations =
             _applicationExtensions.get(name);
 
-        Stream<CachingServiceReference<?>> applicationExtensionStream =
-            applicationExtensions != null ?
-                applicationExtensions.stream() :
+        Stream<ExtensionRuntimeInformation> applicationExtensionStream =
+            extensionRuntimeInformations != null ?
+                extensionRuntimeInformations.stream() :
                 Stream.empty();
 
         return
@@ -717,8 +811,7 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
         public int hashCode() {
             return _cachingServiceReference.hashCode();
         }
-
-        @Override
+        CachingServiceReference _cachingServiceReference;        @Override
         public boolean equals(Object o) {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
@@ -728,9 +821,36 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
             return _cachingServiceReference.equals(
                 that._cachingServiceReference);
         }
-        CachingServiceReference _cachingServiceReference;
         Bus _bus;
         Class<?> _class;
+
+    }
+
+    private static class ExtensionRuntimeInformation {
+        public ExtensionRuntimeInformation(
+            CachingServiceReference<?> cachingServiceReference,
+            Class<?> aClass) {
+
+            _cachingServiceReference = cachingServiceReference;
+            _class = aClass;
+        }
+        CachingServiceReference _cachingServiceReference;        @Override
+        public int hashCode() {
+            return _cachingServiceReference.hashCode();
+        }
+        Class<?> _class;        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            ExtensionRuntimeInformation that = (ExtensionRuntimeInformation) o;
+
+            return _cachingServiceReference.equals(
+                that._cachingServiceReference);
+        }
+
+
+
     }
 
     private static class ApplicationRuntimeInformation {
@@ -741,25 +861,24 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
             _cachingServiceReference = cachingServiceReference;
             _cxfJaxRsServiceRegistrator = cxfJaxRsServiceRegistrator;
         }
-
-        @Override
+        CachingServiceReference _cachingServiceReference;        @Override
         public int hashCode() {
             return _cachingServiceReference.hashCode();
         }
-
-        @Override
+        CxfJaxrsServiceRegistrator _cxfJaxRsServiceRegistrator;        @Override
         public boolean equals(Object o) {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
 
-            EndpointRuntimeInformation that = (EndpointRuntimeInformation) o;
+            ApplicationRuntimeInformation that =
+                (ApplicationRuntimeInformation) o;
 
             return _cachingServiceReference.equals(
                 that._cachingServiceReference);
         }
 
-        CachingServiceReference _cachingServiceReference;
-        CxfJaxrsServiceRegistrator _cxfJaxRsServiceRegistrator;
+
+
 
     }
 

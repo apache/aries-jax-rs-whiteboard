@@ -486,8 +486,9 @@ public class Whiteboard {
                 registrator::addProvider,
                 registrator::removeProvider
             ).effects(
-                __ -> _runtime.addApplicationExtension(
-                    applicationName, serviceReference),
+                t -> _runtime.addApplicationExtension(
+                    applicationName, serviceReference,
+                    t.getService().getClass()),
                 __ -> _runtime.removeApplicationExtension(
                     applicationName, serviceReference)
             ).then(
