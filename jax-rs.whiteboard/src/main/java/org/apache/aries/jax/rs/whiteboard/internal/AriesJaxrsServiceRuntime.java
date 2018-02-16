@@ -311,7 +311,7 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
     public void removeDependentExtension(
         CachingServiceReference<?> cachingServiceReference) {
 
-        _dependentExtensions.add(cachingServiceReference);
+        _dependentExtensions.remove(cachingServiceReference);
     }
 
     public void removeDependentService(CachingServiceReference<?> serviceReference) {
