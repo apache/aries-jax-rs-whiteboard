@@ -29,6 +29,7 @@ import org.apache.cxf.transport.servlet.CXFNonSpringServlet;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.Constants;
 import org.osgi.framework.Filter;
+import org.osgi.framework.FrameworkUtil;
 import org.osgi.framework.InvalidSyntaxException;
 import org.osgi.framework.ServiceReference;
 import org.osgi.framework.ServiceRegistration;
@@ -94,7 +95,6 @@ import static org.osgi.service.http.whiteboard.HttpWhiteboardConstants.HTTP_WHIT
 import static org.osgi.service.jaxrs.runtime.JaxrsServiceRuntimeConstants.JAX_RS_SERVICE_ENDPOINT;
 import static org.osgi.service.jaxrs.whiteboard.JaxrsWhiteboardConstants.JAX_RS_APPLICATION_BASE;
 import static org.osgi.service.jaxrs.whiteboard.JaxrsWhiteboardConstants.JAX_RS_APPLICATION_SELECT;
-import static org.osgi.service.jaxrs.whiteboard.JaxrsWhiteboardConstants.JAX_RS_DEFAULT_APPLICATION;
 import static org.osgi.service.jaxrs.whiteboard.JaxrsWhiteboardConstants.JAX_RS_EXTENSION;
 import static org.osgi.service.jaxrs.whiteboard.JaxrsWhiteboardConstants.JAX_RS_EXTENSION_SELECT;
 import static org.osgi.service.jaxrs.whiteboard.JaxrsWhiteboardConstants.JAX_RS_NAME;
@@ -122,8 +122,6 @@ public class Whiteboard {
     static final String DEFAULT_NAME = ".default";
     private static final Function<CachingServiceReference<Application>, String>
         APPLICATION_BASE = sr -> getApplicationBase(sr::getProperty);
-    private static final Function<CachingServiceReference<Application>, String>
-        APPLICATION_NAME = sr -> getApplicationName(sr::getProperty);
 
     private final AriesJaxrsServiceRuntime _runtime;
     private final Map<String, ?> _configurationMap;
@@ -149,10 +147,8 @@ public class Whiteboard {
         _program =
             all(
                 ignore(registerDefaultApplication()),
-                ignore(applications()),
-                ignore(applicationResources()),
-                ignore(applicationExtensions()
-            ));
+                ignore(getAllServices())
+            );
     }
 
     public static Whiteboard createWhiteboard(
@@ -180,11 +176,12 @@ public class Whiteboard {
         }
     }
 
-    private OSGi<?> applicationExtensions() {
+    private OSGi<?> applicationExtensions(
+        OSGi<CachingServiceReference<Object>> extensions) {
+
         return
             onlySupportedInterfaces(
-                    countChanges(
-                        getApplicationExtensionsForWhiteboard(), _counter),
+                    extensions,
                     _runtime::addInvalidExtension,
                     _runtime::removeInvalidExtension).
                 flatMap(resourceReference ->
@@ -202,10 +199,11 @@ public class Whiteboard {
         )));
     }
 
-    private OSGi<?> applicationResources() {
+    private OSGi<?> applicationResources(
+        OSGi<CachingServiceReference<Object>> resources) {
+
         return
-            countChanges(getResourcesForWhiteboard(), _counter).
-                flatMap(resourceReference ->
+            resources.flatMap(resourceReference ->
             chooseApplication(
                 resourceReference, this::defaultApplication,
                 _runtime::addApplicationDependentResource,
@@ -220,22 +218,72 @@ public class Whiteboard {
             )));
     }
 
-    private OSGi<?> applications() {
+    @SuppressWarnings("unchecked")
+    private OSGi<?> getAllServices() {
+        return
+            highestPer(
+                sr -> getApplicationName(sr::getProperty),
+                all(
+                    countChanges(getResourcesForWhiteboard(), _counter),
+                    countChanges(getApplicationExtensionsForWhiteboard(), _counter),
+                    countChanges(getApplicationsForWhiteboard(), _counter)
+                ),
+                this::registerShadowedService,
+                this::unregisterShadowedService
+            ).distribute(
+                p -> ignore(applications(p.filter(this::isApplication))),
+                p -> ignore(applicationResources(p.filter(this::isResource))),
+                p -> ignore(applicationExtensions(p.filter(this::isExtension)))
+            );
+    }
+
+    private boolean isApplication(CachingServiceReference<?> sr) {
+        return _applicationsFilter.match(sr.getServiceReference());
+    }
+
+    private boolean isExtension(CachingServiceReference<?> sr) {
+        return _extensionsFilter.match(sr.getServiceReference());
+    }
+
+    private boolean isResource(CachingServiceReference<?> sr) {
+        return _resourcesFilter.match(sr.getServiceReference());
+    }
+
+    private void registerShadowedService(CachingServiceReference<?> sr) {
+        if (isApplication(sr)) {
+            _runtime.addClashingApplication(sr);
+        }
+        if (isExtension(sr)) {
+            _runtime.addClashingExtension(sr);
+        }
+        if (isResource(sr)) {
+            _runtime.addClashingResource(sr);
+        }
+    }
+
+    private void unregisterShadowedService(CachingServiceReference<?> sr) {
+        if (isApplication(sr)) {
+            _runtime.removeClashingApplication(sr);
+        }
+        if (isExtension(sr)) {
+            _runtime.removeClashingExtension(sr);
+        }
+        if (isApplication(sr)) {
+            _runtime.removeClashingResource(sr);
+        }
+    }
+
+    private OSGi<?> applications(
+        OSGi<CachingServiceReference<Object>> applications) {
+
         OSGi<CachingServiceReference<Application>> applicationsForWhiteboard =
-            countChanges(getApplicationsForWhiteboard(), _counter).flatMap(
+            applications.flatMap(
                 this::waitForApplicationDependencies
             );
 
-        OSGi<CachingServiceReference<Application>> highestRankedPerName =
-            highestPer(
-                APPLICATION_NAME, applicationsForWhiteboard,
-                _runtime::addClashingApplication,
-                _runtime::removeClashingApplication
-        );
-
         OSGi<CachingServiceReference<Application>> highestRankedPerPath =
             highestPer(
-                APPLICATION_BASE, highestRankedPerName,
+                APPLICATION_BASE, applicationsForWhiteboard,
                 _runtime::addShadowedApplication,
                 _runtime::removeShadowedApplication
         );
@@ -342,20 +390,20 @@ public class Whiteboard {
     private OSGi<CachingServiceReference<Object>>
         getApplicationExtensionsForWhiteboard() {
 
-        return serviceReferences(getApplicationExtensionsFilter()).
+        return serviceReferences(_applicationExtensionsFilter.toString()).
             filter(new TargetFilter<>(_runtimeReference));
     }
 
-    private OSGi<CachingServiceReference<Application>>
+    private OSGi<CachingServiceReference<Object>>
         getApplicationsForWhiteboard() {
 
         return
-            serviceReferences(Application.class, getApplicationFilter()).
-            filter(new TargetFilter<>(_runtimeReference));
+            serviceReferences(_applicationsFilter.toString()).
+                filter(new TargetFilter<>(_runtimeReference));
     }
 
     private OSGi<CachingServiceReference<Object>> getResourcesForWhiteboard() {
-        return serviceReferences(getResourcesFilter()).
+        return serviceReferences(_resourcesFilter.toString()).
             filter(
                 new TargetFilter<>(_runtimeReference));
     }
@@ -502,10 +550,13 @@ public class Whiteboard {
 
     private OSGi<CachingServiceReference<Application>>
         waitForApplicationDependencies(
-            CachingServiceReference<Application> applicationReference) {
+            CachingServiceReference<?> objectReference) {
 
         String[] extensionDependencies = canonicalize(
-            applicationReference.getProperty(JAX_RS_EXTENSION_SELECT));
+            objectReference.getProperty(JAX_RS_EXTENSION_SELECT));
+
+        CachingServiceReference<Application> applicationReference =
+            (CachingServiceReference<Application>) objectReference;
 
         OSGi<CachingServiceReference<Application>> program = just(
             applicationReference);
@@ -692,25 +743,6 @@ public class Whiteboard {
         return cxfNonSpringServlet;
     }
 
-    private static String getApplicationExtensionsFilter() {
-        return format(
-            "(&(!(objectClass=%s))(%s=%s)%s)",
-            ApplicationExtensionRegistration.class.getName(),
-            JAX_RS_EXTENSION, true, getExtensionsFilter());
-    }
-
-    private static String getApplicationFilter() {
-        return format("(%s=*)", JAX_RS_APPLICATION_BASE);
-    }
-
-    private static String getExtensionsFilter() {
-        return format("(%s=true)", JAX_RS_EXTENSION);
-    }
-
-    private static String getResourcesFilter() {
-        return format("(%s=true)", JAX_RS_RESOURCE);
-    }
-
     private static OSGi<CachingServiceReference<Object>> onlySupportedInterfaces(
         OSGi<CachingServiceReference<Object>> program,
         Consumer<CachingServiceReference<?>> onInvalidAdded,
@@ -819,6 +851,37 @@ public class Whiteboard {
             synchronized (_serviceRegistration) {
                 updateProperty(_serviceRegistration, changecount, l);
             }
+        }
+    }
+
+    private static final Filter _extensionsFilter;
+
+    private static final Filter _resourcesFilter;
+
+    private static Filter _applicationsFilter;
+
+    private static Filter _applicationExtensionsFilter;
+
+    static {
+        try {
+            _applicationsFilter = FrameworkUtil.createFilter(
+                format(
+                    "(&(objectClass=%s)(%s=*))", Application.class.getName(),
+                    JAX_RS_APPLICATION_BASE));
+            String extensionFilterString = format(
+                "(%s=true)", JAX_RS_EXTENSION);
+            _extensionsFilter = FrameworkUtil.createFilter(
+                extensionFilterString);
+            _applicationExtensionsFilter = FrameworkUtil.createFilter(
+                format(
+                    "(&(!(objectClass=%s))(%s=%s)%s)",
+                    ApplicationExtensionRegistration.class.getName(),
+                    JAX_RS_EXTENSION, true, extensionFilterString));
+            _resourcesFilter = FrameworkUtil.createFilter(
+                format("(%s=true)", JAX_RS_RESOURCE));
+        }
+        catch (InvalidSyntaxException e) {
+            throw new RuntimeException(e);
         }
     }
 
