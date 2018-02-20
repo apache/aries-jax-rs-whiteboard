@@ -710,7 +710,7 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
         return failedExtensionDTO;
     }
 
-    private FailedResourceDTO buildFailedResourceDTO(
+    private static FailedResourceDTO buildFailedResourceDTO(
         int reason, CachingServiceReference<?> serviceReference) {
 
         FailedResourceDTO failedResourceDTO = new FailedResourceDTO();
@@ -849,6 +849,7 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
     }
 
     private static class EndpointRuntimeInformation {
+
         public EndpointRuntimeInformation(
             CachingServiceReference cachingServiceReference, Bus bus,
             Class<?> aClass) {
@@ -862,7 +863,8 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
         public int hashCode() {
             return _cachingServiceReference.hashCode();
         }
-        CachingServiceReference _cachingServiceReference;                Bus _bus;@Override
+
+        @Override
         public boolean equals(Object o) {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
@@ -872,12 +874,15 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
             return _cachingServiceReference.equals(
                 that._cachingServiceReference);
         }
-        Class<?> _class;
 
+        Bus _bus;
+        CachingServiceReference _cachingServiceReference;
+        Class<?> _class;
 
     }
 
     private static class ExtensionRuntimeInformation {
+
         public ExtensionRuntimeInformation(
             CachingServiceReference<?> cachingServiceReference,
             Class<?> aClass) {
@@ -885,11 +890,13 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
             _cachingServiceReference = cachingServiceReference;
             _class = aClass;
         }
-        CachingServiceReference _cachingServiceReference;        Class<?> _class;@Override
+
+        @Override
         public int hashCode() {
             return _cachingServiceReference.hashCode();
         }
-                @Override
+
+        @Override
         public boolean equals(Object o) {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
@@ -900,11 +907,13 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
                 that._cachingServiceReference);
         }
 
-
+        CachingServiceReference _cachingServiceReference;
+        Class<?> _class;
 
     }
 
     private static class ApplicationRuntimeInformation {
+
         public ApplicationRuntimeInformation(
             CachingServiceReference cachingServiceReference,
             CxfJaxrsServiceRegistrator cxfJaxRsServiceRegistrator) {
@@ -912,11 +921,16 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
             _cachingServiceReference = cachingServiceReference;
             _cxfJaxRsServiceRegistrator = cxfJaxRsServiceRegistrator;
         }
-        CachingServiceReference _cachingServiceReference;        CxfJaxrsServiceRegistrator _cxfJaxRsServiceRegistrator;@Override
+
+        CachingServiceReference _cachingServiceReference;
+        CxfJaxrsServiceRegistrator _cxfJaxRsServiceRegistrator;
+
+        @Override
         public int hashCode() {
             return _cachingServiceReference.hashCode();
         }
-                @Override
+
+        @Override
         public boolean equals(Object o) {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
@@ -927,9 +941,6 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
             return _cachingServiceReference.equals(
                 that._cachingServiceReference);
         }
-
-
-
 
     }
 

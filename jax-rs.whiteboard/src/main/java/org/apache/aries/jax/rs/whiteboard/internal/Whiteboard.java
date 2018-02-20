@@ -220,18 +220,21 @@ public class Whiteboard {
 
     @SuppressWarnings("unchecked")
     private OSGi<?> getAllServices() {
+        OSGi<CachingServiceReference<Object>> applicationsForWhiteboard =
+            (OSGi)getApplicationsForWhiteboard();
         return
             highestPer(
                 sr -> getApplicationName(sr::getProperty),
                 all(
                     countChanges(getResourcesForWhiteboard(), _counter),
-                    countChanges(getApplicationExtensionsForWhiteboard(), _counter),
-                    countChanges(getApplicationsForWhiteboard(), _counter)
+                    countChanges(
+                        getApplicationExtensionsForWhiteboard(), _counter),
+                    countChanges(applicationsForWhiteboard, _counter)
                 ),
                 this::registerShadowedService,
                 this::unregisterShadowedService
             ).distribute(
-                p -> ignore(applications(p.filter(this::isApplication))),
+                p -> ignore(applications((OSGi)p.filter(this::isApplication))),
                 p -> ignore(applicationResources(p.filter(this::isResource))),
                 p -> ignore(applicationExtensions(p.filter(this::isExtension)))
             );
@@ -274,12 +277,12 @@ public class Whiteboard {
     }
 
     private OSGi<?> applications(
-        OSGi<CachingServiceReference<Object>> applications) {
+        OSGi<CachingServiceReference<Application>> applications) {
 
         OSGi<CachingServiceReference<Application>> applicationsForWhiteboard =
-            applications.flatMap(
-                this::waitForApplicationDependencies
-            );
+            waitForApplicationDependencies(
+                    applications,
+                );
 
         OSGi<CachingServiceReference<Application>> highestRankedPerPath =
             highestPer(
@@ -394,11 +397,11 @@ public class Whiteboard {
             filter(new TargetFilter<>(_runtimeReference));
     }
 
-    private OSGi<CachingServiceReference<Object>>
+    private OSGi<CachingServiceReference<Application>>
         getApplicationsForWhiteboard() {
 
         return
-            serviceReferences(_applicationsFilter.toString()).
+            serviceReferences(Application.class, _applicationsFilter.toString()).
                 filter(new TargetFilter<>(_runtimeReference));
     }
 
@@ -550,76 +553,75 @@ public class Whiteboard {
 
     private OSGi<CachingServiceReference<Application>>
         waitForApplicationDependencies(
-            CachingServiceReference<?> objectReference) {
+            OSGi<CachingServiceReference<Application>> references) {
 
-        String[] extensionDependencies = canonicalize(
-            objectReference.getProperty(JAX_RS_EXTENSION_SELECT));
+        return references.flatMap(reference -> {
+            String[] extensionDependencies = canonicalize(
+                reference.getProperty(JAX_RS_EXTENSION_SELECT));
 
-        CachingServiceReference<Application> applicationReference =
-            (CachingServiceReference<Application>) objectReference;
+            OSGi<CachingServiceReference<Application>> program = just(
+                reference);
 
-        OSGi<CachingServiceReference<Application>> program = just(
-            applicationReference);
+            if (extensionDependencies.length > 0) {
+                program = effects(
+                    () -> _runtime.addDependentApplication(reference),
+                    () -> _runtime.removeDependentApplication(reference)
+                ).then(program);
+            }
+            else {
+                return program;
+            }
 
-        if (extensionDependencies.length > 0) {
-            program = effects(
-                () -> _runtime.addDependentApplication(applicationReference),
-                () -> _runtime.removeDependentApplication(applicationReference)
-            ).then(program);
-        }
-        else {
-            return program;
-        }
+            for (String extensionDependency : extensionDependencies) {
+                extensionDependency = String.format(
+                    "(&(!(objectClass=%s))%s)",
+                    ApplicationExtensionRegistration.class.getName(),
+                    extensionDependency);
 
-        for (String extensionDependency : extensionDependencies) {
-            extensionDependency = String.format(
-                "(&(!(objectClass=%s))%s)",
-                ApplicationExtensionRegistration.class.getName(),
-                extensionDependency);
+                program =
+                    once(serviceReferences(extensionDependency)).
+                        flatMap(
+                            sr -> {
+                                Object applicationSelectProperty =
+                                    sr.getProperty(JAX_RS_APPLICATION_SELECT);
 
-            program =
-                once(serviceReferences(extensionDependency)).
-                    flatMap(
-                        sr -> {
-                            Object applicationSelectProperty =
-                                sr.getProperty(JAX_RS_APPLICATION_SELECT);
+                                if (applicationSelectProperty == null) {
+                                    return just(reference);
+                                }
 
-                            if (applicationSelectProperty == null) {
-                                return just(applicationReference);
-                            }
+                                Filter filter;
 
-                            Filter filter;
+                                try {
+                                    filter = _bundleContext.createFilter(
+                                        applicationSelectProperty.toString());
+                                }
+                                catch (InvalidSyntaxException e) {
+                                    return nothing();
+                                }
 
-                            try {
-                                filter = _bundleContext.createFilter(
-                                    applicationSelectProperty.toString());
-                            }
-                            catch (InvalidSyntaxException e) {
+                                if (filter.match(
+                                    reference.getServiceReference())) {
+
+                                    return just(reference);
+                                }
+
                                 return nothing();
                             }
+                        ).effects(
+                        __ -> {},
+                        __ -> _runtime.addDependentApplication(
+                            reference)
+                    ).
+                        then(program);
+            }
 
-                            if (filter.match(
-                                applicationReference.getServiceReference())) {
+            program = program.effects(
+                __ -> _runtime.removeDependentApplication(reference),
+                __ -> {}
+            );
 
-                                return just(applicationReference);
-                            }
-
-                            return nothing();
-                        }
-                    ).effects(
-                    __ -> {},
-                    __ -> _runtime.addDependentApplication(
-                        applicationReference)
-                ).
-                    then(program);
-        }
-
-        program = program.effects(
-            __ -> _runtime.removeDependentApplication(applicationReference),
-            __ -> {}
-        );
-
-        return program;
+            return program;
+        });
     }
 
     private OSGi<?> waitForExtensionDependencies(
