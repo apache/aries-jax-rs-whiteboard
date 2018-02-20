@@ -95,6 +95,7 @@ import static org.osgi.service.http.whiteboard.HttpWhiteboardConstants.HTTP_WHIT
 import static org.osgi.service.jaxrs.runtime.JaxrsServiceRuntimeConstants.JAX_RS_SERVICE_ENDPOINT;
 import static org.osgi.service.jaxrs.whiteboard.JaxrsWhiteboardConstants.JAX_RS_APPLICATION_BASE;
 import static org.osgi.service.jaxrs.whiteboard.JaxrsWhiteboardConstants.JAX_RS_APPLICATION_SELECT;
+import static org.osgi.service.jaxrs.whiteboard.JaxrsWhiteboardConstants.JAX_RS_DEFAULT_APPLICATION;
 import static org.osgi.service.jaxrs.whiteboard.JaxrsWhiteboardConstants.JAX_RS_EXTENSION;
 import static org.osgi.service.jaxrs.whiteboard.JaxrsWhiteboardConstants.JAX_RS_EXTENSION_SELECT;
 import static org.osgi.service.jaxrs.whiteboard.JaxrsWhiteboardConstants.JAX_RS_NAME;
@@ -180,22 +181,25 @@ public class Whiteboard {
         OSGi<CachingServiceReference<Object>> extensions) {
 
         return
-            onlySupportedInterfaces(
-                    extensions,
+            onlyValid(
+                onlySupportedInterfaces(
+                        extensions,
+                        _runtime::addInvalidExtension,
+                        _runtime::removeInvalidExtension),
                     _runtime::addInvalidExtension,
                     _runtime::removeInvalidExtension).
-                flatMap(resourceReference ->
+                flatMap(extensionReference ->
             chooseApplication(
-                    resourceReference, Whiteboard::allApplicationReferences,
+                    extensionReference, Whiteboard::allApplicationReferences,
                     _runtime::addApplicationDependentExtension,
                     _runtime::removeApplicationDependentExtension).
                 flatMap(registratorReference ->
             waitForExtensionDependencies(
-                    resourceReference, registratorReference,
+                    extensionReference, registratorReference,
                     _runtime::addDependentExtension,
                     _runtime::removeDependentExtension).
                 then(
-            safeRegisterExtension(resourceReference, registratorReference)
+            safeRegisterExtension(extensionReference, registratorReference)
         )));
     }
 
@@ -203,16 +207,19 @@ public class Whiteboard {
         OSGi<CachingServiceReference<Object>> resources) {
 
         return
-            resources.flatMap(resourceReference ->
+            onlyValid(
+                    resources, _runtime::addInvalidResource,
+                    _runtime::removeInvalidResource).
+                flatMap(resourceReference ->
             chooseApplication(
-                resourceReference, this::defaultApplication,
-                _runtime::addApplicationDependentResource,
-                _runtime::removeApplicationDependentResource).
+                    resourceReference, this::defaultApplication,
+                    _runtime::addApplicationDependentResource,
+                    _runtime::removeApplicationDependentResource).
                 flatMap(registratorReference ->
             waitForExtensionDependencies(
-                resourceReference, registratorReference,
-                _runtime::addDependentService,
-                _runtime::removeDependentService).
+                    resourceReference, registratorReference,
+                    _runtime::addDependentService,
+                    _runtime::removeDependentService).
             then(
                 safeRegisterEndpoint(resourceReference, registratorReference)
             )));
@@ -276,12 +283,70 @@ public class Whiteboard {
         }
     }
 
+    private static <T> OSGi<CachingServiceReference<T>> onlyValid(
+        OSGi<CachingServiceReference<T>> serviceReferences,
+        Consumer<CachingServiceReference<T>> onAddingInvalid,
+        Consumer<CachingServiceReference<T>> onRemovingInvalid) {
+
+        return serviceReferences.flatMap(serviceReference -> {
+
+            OSGi<CachingServiceReference<T>> error = effects(
+                () -> onAddingInvalid.accept(serviceReference),
+                () -> onRemovingInvalid.accept(serviceReference)
+            ).then(
+                nothing()
+            );
+
+            Object propertyObject = serviceReference.getProperty(JAX_RS_NAME);
+
+            if (propertyObject != null &&
+                !propertyObject.toString().equals(JAX_RS_DEFAULT_APPLICATION) &&
+                propertyObject.toString().startsWith(".")) {
+
+                return error;
+            }
+
+            if (!testFilters(
+                serviceReference.getProperty(JAX_RS_APPLICATION_SELECT))) {
+
+                return error;
+            }
+
+            if (!testFilters(
+                serviceReference.getProperty(JAX_RS_EXTENSION_SELECT))) {
+
+                return error;
+            }
+
+            return just(serviceReference);
+        });
+    }
+
+    private static <T> boolean testFilters(Object propertyObject) {
+        if (propertyObject != null) {
+            try {
+                String[] properties = canonicalize(propertyObject);
+
+                for (String property : properties) {
+                    FrameworkUtil.createFilter(property);
+                }
+            }
+            catch (InvalidSyntaxException e) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     private OSGi<?> applications(
         OSGi<CachingServiceReference<Application>> applications) {
 
         OSGi<CachingServiceReference<Application>> applicationsForWhiteboard =
             waitForApplicationDependencies(
+                onlyValid(
                     applications,
+                    _runtime::addInvalidApplication,
+                    _runtime::removeInvalidApplication)
                 );
 
         OSGi<CachingServiceReference<Application>> highestRankedPerPath =

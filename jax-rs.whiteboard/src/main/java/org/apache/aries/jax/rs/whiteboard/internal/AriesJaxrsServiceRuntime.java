@@ -166,10 +166,22 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
         _erroredExtensions.add(cachingServiceReference);
     }
 
+    public void addInvalidApplication(
+        CachingServiceReference<?> serviceReference) {
+
+        _invalidApplications.add(serviceReference);
+    }
+
     public void addInvalidExtension(
         CachingServiceReference<?> serviceReference) {
 
         _invalidExtensions.add(serviceReference);
+    }
+
+    public void addInvalidResource(
+        CachingServiceReference<?> serviceReference) {
+
+        _invalidResources.add(serviceReference);
     }
 
     public boolean addNotGettableApplication(
@@ -228,29 +240,34 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
                 ApplicationDTO[]::new
             );
 
-        runtimeDTO.failedApplicationDTOs = Stream.concat(
-            shadowedApplicationsDTOStream(),
+        runtimeDTO.failedApplicationDTOs =
             Stream.concat(
-                unreferenciableApplicationsDTOStream(),
+                invalidApplicationsDTOStream(),
                 Stream.concat(
-                    clashingApplicationsDTOStream(),
+                    shadowedApplicationsDTOStream(),
                     Stream.concat(
-                        dependentApplicationsDTOStream(),
-                        erroredApplicationsDTOStream())))
+                        unreferenciableApplicationsDTOStream(),
+                        Stream.concat(
+                            clashingApplicationsDTOStream(),
+                            Stream.concat(
+                                dependentApplicationsDTOStream(),
+                                erroredApplicationsDTOStream()))))
             ).toArray(
                 FailedApplicationDTO[]::new
             );
 
         runtimeDTO.failedResourceDTOs =
             Stream.concat(
-                clashingResourcesDTOStream(),
+                invalidResourcesDTOStream(),
                 Stream.concat(
-                    unreferenciableEndpointsDTOStream(),
+                    clashingResourcesDTOStream(),
                     Stream.concat(
-                        dependentServiceStreamDTO(),
+                        unreferenciableEndpointsDTOStream(),
                         Stream.concat(
-                            applicationDependentResourcesDTOStream(),
-                            erroredEndpointsStreamDTO())))
+                            dependentServiceStreamDTO(),
+                            Stream.concat(
+                                applicationDependentResourcesDTOStream(),
+                                erroredEndpointsStreamDTO()))))
             ).toArray(
                 FailedResourceDTO[]::new
             );
@@ -357,8 +374,22 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
         _erroredExtensions.remove(cachingServiceReference);
     }
 
-    public void removeInvalidExtension(CachingServiceReference<?> serviceReference) {
+    public void removeInvalidApplication(
+        CachingServiceReference<?> serviceReference) {
+
+        _invalidApplications.remove(serviceReference);
+    }
+
+    public void removeInvalidExtension(
+        CachingServiceReference<?> serviceReference) {
+
         _invalidExtensions.remove(serviceReference);
+    }
+
+    public void removeInvalidResource(
+        CachingServiceReference<?> serviceReference) {
+
+        _invalidResources.remove(serviceReference);
     }
 
     public boolean removeNotGettableApplication(
@@ -439,7 +470,11 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
         new CopyOnWriteArrayList<>();
     private Collection<CachingServiceReference<?>> _erroredExtensions =
         new CopyOnWriteArrayList<>();
+    private Collection<CachingServiceReference<?>> _invalidApplications =
+        new CopyOnWriteArrayList<>();
     private Collection<CachingServiceReference<?>> _invalidExtensions =
+        new CopyOnWriteArrayList<>();
+    private Collection<CachingServiceReference<?>> _invalidResources =
         new CopyOnWriteArrayList<>();
     private Collection<CachingServiceReference<Application>> _shadowedApplications =
         new CopyOnWriteArrayList<>();
@@ -817,6 +852,20 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
         return _invalidExtensions.stream().map(
             sr -> buildFailedExtensionDTO(
                 DTOConstants.FAILURE_REASON_NOT_AN_EXTENSION_TYPE, sr)
+        );
+    }
+
+    private Stream<FailedApplicationDTO> invalidApplicationsDTOStream() {
+        return _invalidApplications.stream().
+            map(sr -> buildFailedApplicationDTO(
+                DTOConstants.FAILURE_REASON_VALIDATION_FAILED, sr)
+        );
+    }
+
+    private Stream<FailedResourceDTO> invalidResourcesDTOStream() {
+        return _invalidResources.stream().
+            map(sr -> buildFailedResourceDTO(
+                DTOConstants.FAILURE_REASON_VALIDATION_FAILED, sr)
         );
     }
 
