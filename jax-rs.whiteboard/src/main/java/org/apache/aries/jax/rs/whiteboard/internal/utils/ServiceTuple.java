@@ -1,0 +1,70 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.aries.jax.rs.whiteboard.internal.utils;
+
+import org.apache.aries.osgi.functional.CachingServiceReference;
+import org.osgi.framework.ServiceObjects;
+
+public class ServiceTuple<T> implements Comparable<ServiceTuple<T>> {
+
+    private final CachingServiceReference<T> _serviceReference;
+    private ServiceObjects<T> _serviceObjects;
+    private final T _service;
+
+    ServiceTuple(
+        CachingServiceReference<T> cachingServiceReference,
+        ServiceObjects<T> serviceObjects, T service) {
+
+        _serviceReference = cachingServiceReference;
+        _serviceObjects = serviceObjects;
+        _service = service;
+    }
+
+    @Override
+    public int compareTo(ServiceTuple<T> o) {
+        return _serviceReference.compareTo(o._serviceReference);
+    }
+
+    public T getService() {
+        return _service;
+    }
+
+    public ServiceObjects<T> getServiceObjects() {
+        return _serviceObjects;
+    }
+
+    @Override
+    public int hashCode() {
+        return _serviceReference.hashCode();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        ServiceTuple<?> that = (ServiceTuple<?>) o;
+
+        return _serviceReference.equals(that._serviceReference);
+    }
+
+    public CachingServiceReference<T> getCachingServiceReference() {
+        return _serviceReference;
+    }
+
+}

@@ -17,8 +17,8 @@
 
 package org.apache.aries.jax.rs.whiteboard.internal;
 
-import static org.apache.aries.jax.rs.whiteboard.internal.Utils.canonicalize;
-import static org.apache.aries.jax.rs.whiteboard.internal.Utils.generateApplicationName;
+import static org.apache.aries.jax.rs.whiteboard.internal.utils.Utils.canonicalize;
+import static org.apache.aries.jax.rs.whiteboard.internal.utils.Utils.generateApplicationName;
 import static org.apache.aries.jax.rs.whiteboard.internal.Whiteboard.DEFAULT_NAME;
 import static org.apache.aries.jax.rs.whiteboard.internal.Whiteboard.SUPPORTED_EXTENSION_INTERFACES;
 import static org.apache.aries.jax.rs.whiteboard.internal.Whiteboard.getApplicationBase;
@@ -34,7 +34,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.BiFunction;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import javax.ws.rs.Consumes;
@@ -42,7 +41,8 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Application;
 import javax.ws.rs.core.MediaType;
 
-import org.apache.aries.jax.rs.whiteboard.internal.Utils.PropertyHolder;
+import org.apache.aries.jax.rs.whiteboard.internal.cxf.CxfJaxrsServiceRegistrator;
+import org.apache.aries.jax.rs.whiteboard.internal.utils.PropertyHolder;
 import org.apache.aries.jax.rs.whiteboard.internal.introspection.ClassIntrospector;
 import org.apache.aries.osgi.functional.CachingServiceReference;
 import org.apache.cxf.Bus;

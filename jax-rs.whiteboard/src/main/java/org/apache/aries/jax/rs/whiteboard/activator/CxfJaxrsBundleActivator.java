@@ -26,7 +26,7 @@ import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.ext.RuntimeDelegate;
 
 import org.apache.aries.jax.rs.whiteboard.internal.client.ClientBuilderFactory;
-import org.apache.aries.jax.rs.whiteboard.internal.Utils.PropertyHolder;
+import org.apache.aries.jax.rs.whiteboard.internal.utils.PropertyHolder;
 import org.apache.aries.osgi.functional.OSGi;
 import org.apache.aries.osgi.functional.OSGiResult;
 import org.apache.cxf.jaxrs.impl.RuntimeDelegateImpl;
@@ -38,7 +38,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static java.lang.String.format;
-import static org.apache.aries.jax.rs.whiteboard.internal.Utils.canonicalize;
+import static org.apache.aries.jax.rs.whiteboard.internal.utils.Utils.canonicalize;
 import static org.apache.aries.jax.rs.whiteboard.internal.Whiteboard.createWhiteboard;
 import static org.apache.aries.osgi.functional.OSGi.all;
 import static org.apache.aries.osgi.functional.OSGi.configurations;

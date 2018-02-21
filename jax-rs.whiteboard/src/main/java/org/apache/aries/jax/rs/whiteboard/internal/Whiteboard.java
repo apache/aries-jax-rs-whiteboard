@@ -17,9 +17,11 @@
 
 package org.apache.aries.jax.rs.whiteboard.internal;
 
-import org.apache.aries.jax.rs.whiteboard.internal.Utils.ApplicationExtensionRegistration;
-import org.apache.aries.jax.rs.whiteboard.internal.Utils.PropertyHolder;
-import org.apache.aries.jax.rs.whiteboard.internal.Utils.ServiceTuple;
+import org.apache.aries.jax.rs.whiteboard.internal.cxf.CxfJaxrsServiceRegistrator;
+import org.apache.aries.jax.rs.whiteboard.internal.utils.Utils;
+import org.apache.aries.jax.rs.whiteboard.internal.utils.ApplicationExtensionRegistration;
+import org.apache.aries.jax.rs.whiteboard.internal.utils.PropertyHolder;
+import org.apache.aries.jax.rs.whiteboard.internal.utils.ServiceTuple;
 import org.apache.aries.osgi.functional.CachingServiceReference;
 import org.apache.aries.osgi.functional.OSGi;
 import org.apache.aries.osgi.functional.OSGiResult;
@@ -68,13 +70,13 @@ import java.util.stream.Stream;
 import static java.lang.String.format;
 import static java.util.stream.Collectors.toMap;
 import static org.apache.aries.jax.rs.whiteboard.internal.AriesJaxrsServiceRuntime.getApplicationName;
-import static org.apache.aries.jax.rs.whiteboard.internal.Utils.canonicalize;
-import static org.apache.aries.jax.rs.whiteboard.internal.Utils.generateApplicationName;
-import static org.apache.aries.jax.rs.whiteboard.internal.Utils.getProperties;
-import static org.apache.aries.jax.rs.whiteboard.internal.Utils.highestPer;
-import static org.apache.aries.jax.rs.whiteboard.internal.Utils.onlyGettables;
-import static org.apache.aries.jax.rs.whiteboard.internal.Utils.service;
-import static org.apache.aries.jax.rs.whiteboard.internal.Utils.updateProperty;
+import static org.apache.aries.jax.rs.whiteboard.internal.utils.Utils.canonicalize;
+import static org.apache.aries.jax.rs.whiteboard.internal.utils.Utils.generateApplicationName;
+import static org.apache.aries.jax.rs.whiteboard.internal.utils.Utils.getProperties;
+import static org.apache.aries.jax.rs.whiteboard.internal.utils.Utils.highestPer;
+import static org.apache.aries.jax.rs.whiteboard.internal.utils.Utils.onlyGettables;
+import static org.apache.aries.jax.rs.whiteboard.internal.utils.Utils.service;
+import static org.apache.aries.jax.rs.whiteboard.internal.utils.Utils.updateProperty;
 import static org.apache.aries.osgi.functional.OSGi.all;
 import static org.apache.aries.osgi.functional.OSGi.effects;
 import static org.apache.aries.osgi.functional.OSGi.ignore;
@@ -106,7 +108,7 @@ import static org.osgi.service.jaxrs.whiteboard.JaxrsWhiteboardConstants.JAX_RS_
  */
 public class Whiteboard {
 
-    static final Map<String, Class<?>> SUPPORTED_EXTENSION_INTERFACES =
+    public static final Map<String, Class<?>> SUPPORTED_EXTENSION_INTERFACES =
         Collections.unmodifiableMap(
             Stream.of(ContainerRequestFilter.class,
                 ContainerResponseFilter.class,
