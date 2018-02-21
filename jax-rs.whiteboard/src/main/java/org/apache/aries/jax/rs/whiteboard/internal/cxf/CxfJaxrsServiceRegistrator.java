@@ -237,8 +237,7 @@ public class CxfJaxrsServiceRegistrator {
                 Arrays.stream(interfaces).collect(
                     toMap(
                         c -> c,
-                        __ -> AnnotationUtils.getBindingPriority(
-                            realClass))
+                        __ -> AnnotationUtils.getBindingPriority(realClass))
                 );
 
             _jaxRsServerFactoryBean.setProvider(
