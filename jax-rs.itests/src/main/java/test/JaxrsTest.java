@@ -822,6 +822,55 @@ public class JaxrsTest extends TestHelper {
     }
 
     @Test
+    public void testApplicationWithGenericExtensionAndApplicationSelect()
+        throws InterruptedException {
+
+        assertEquals(0, getRuntimeDTO().applicationDTOs.length);
+
+        registerApplication(
+            new TestApplication(),
+            JAX_RS_EXTENSION_SELECT,
+            String.format("(%s=%s)", JAX_RS_NAME, "Filter"));
+
+        registerApplication(
+            new TestApplication(),
+            JAX_RS_APPLICATION_BASE, "/test-application-2");
+
+        assertEquals(1, getRuntimeDTO().applicationDTOs.length);
+
+        WebTarget webTarget = createDefaultTarget().path("/test-application");
+
+        Response response = webTarget.request().get();
+
+        assertEquals(404, response.getStatus());
+
+        ServiceRegistration<?> filterRegistration = registerExtension(
+            "Filter", JAX_RS_APPLICATION_SELECT,
+            "(" + JAX_RS_EXTENSION_SELECT + "=" +
+                String.format("\\(%s\\=%s\\)", JAX_RS_NAME, "Filter") + ")");
+
+        assertEquals(2, getRuntimeDTO().applicationDTOs.length);
+
+        response = webTarget.request().get();
+
+        assertTrue(Boolean.parseBoolean(response.getHeaderString("Filtered")));
+        assertEquals("Hello application", response.readEntity(String.class));
+
+        response = createDefaultTarget().path("/test-application-2").request().get();
+
+        assertNull(response.getHeaderString("Filtered"));
+        assertEquals("Hello application", response.readEntity(String.class));
+
+        filterRegistration.unregister();
+
+        assertEquals(1, getRuntimeDTO().applicationDTOs.length);
+
+        response = webTarget.request().get();
+
+        assertEquals(404, response.getStatus());
+    }
+
+    @Test
     public void testApplicationWithoutStartingSlash()
         throws InterruptedException {
 
