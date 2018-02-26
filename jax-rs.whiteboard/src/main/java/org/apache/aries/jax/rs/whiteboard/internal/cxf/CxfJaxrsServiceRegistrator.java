@@ -34,6 +34,7 @@ import java.util.Set;
 import java.util.TreeSet;
 
 import javax.ws.rs.RuntimeType;
+import javax.ws.rs.container.DynamicFeature;
 import javax.ws.rs.core.Application;
 import javax.ws.rs.core.Feature;
 import javax.ws.rs.core.FeatureContext;
@@ -219,7 +220,7 @@ public class CxfJaxrsServiceRegistrator {
 
             Object service = provider.getService();
 
-            if (service instanceof Feature) {
+            if (service instanceof Feature || service instanceof DynamicFeature) {
                 _jaxRsServerFactoryBean.setProvider(service);
 
                 continue;
