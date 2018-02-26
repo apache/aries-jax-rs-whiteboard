@@ -25,6 +25,7 @@ import org.apache.aries.jax.rs.whiteboard.internal.utils.ServiceTuple;
 import org.apache.aries.osgi.functional.CachingServiceReference;
 import org.apache.aries.osgi.functional.OSGi;
 import org.apache.aries.osgi.functional.OSGiResult;
+import org.apache.commons.collections.Factory;
 import org.apache.cxf.Bus;
 import org.apache.cxf.bus.extension.ExtensionManagerBus;
 import org.apache.cxf.transport.servlet.CXFNonSpringServlet;
@@ -422,37 +423,39 @@ public class Whiteboard {
     private OSGi<CxfJaxrsServiceRegistrator> deployApplication(
         ServiceTuple<Application> tuple) {
 
+        Supplier<Map<String, ?>> properties = () -> {
+            CachingServiceReference<Application> serviceReference =
+                tuple.getCachingServiceReference();
+
+            Map<String, Object> props = getProperties(
+                serviceReference);
+
+            props.computeIfAbsent(
+                JAX_RS_NAME, (__) -> generateApplicationName(
+                    serviceReference::getProperty));
+
+            return props;
+        };
+
         return
-            just(this::createBus).flatMap(bus ->
-            just(() -> {
-                CachingServiceReference<Application> serviceReference =
-                    tuple.getCachingServiceReference();
-
-                Map<String, Object> properties = getProperties(
-                    serviceReference);
-
-                properties.computeIfAbsent(
-                    JAX_RS_NAME, (__) -> generateApplicationName(
-                        serviceReference::getProperty));
-
-                return properties;
-            }).flatMap(properties ->
-            deployRegistrator(bus, tuple, properties).flatMap(registrator ->
-            registerCXFServletService(bus, properties).then(
+            deployRegistrator(tuple, properties).flatMap(registrator ->
+            registerCXFServletService(registrator.getBus(), properties).then(
             just(registrator)
-        ))));
+        ));
     }
 
     private OSGi<CxfJaxrsServiceRegistrator> deployRegistrator(
-        Bus bus, ServiceTuple<Application> tuple,
-        Map<String, Object> props) {
+        ServiceTuple<Application> tuple, Supplier<Map<String, ?>> props) {
 
         return
             just(() ->
-                new CxfJaxrsServiceRegistrator(bus, tuple.getService(), props)).
+                    new CxfJaxrsServiceRegistrator(
+                        createBus(), tuple.getService(), props.get())).
                 flatMap(registrator ->
             onClose(registrator::close).then(
-            register(CxfJaxrsServiceRegistrator.class, registrator, props).then(
+            register(
+                    CxfJaxrsServiceRegistrator.class, () -> registrator, props).
+                then(
             just(registrator)
         )));
     }
@@ -468,32 +471,22 @@ public class Whiteboard {
         getApplicationsForWhiteboard() {
 
         return
-            serviceReferences(Application.class, _applicationsFilter.toString()).
+            serviceReferences(
+                    Application.class, _applicationsFilter.toString()).
                 filter(new TargetFilter<>(_runtimeReference));
     }
 
     private OSGi<CachingServiceReference<Object>> getResourcesForWhiteboard() {
         return serviceReferences(_resourcesFilter.toString()).
-            filter(
-                new TargetFilter<>(_runtimeReference));
+            filter(new TargetFilter<>(_runtimeReference));
     }
 
     private OSGi<ServiceRegistration<Application>>
         registerDefaultApplication() {
 
-        return
-            just(() -> {
-                Map<String, Object> properties = new HashMap<>(
-                    _configurationMap);
-                properties.put(JAX_RS_NAME, DEFAULT_NAME);
-                properties.put(JAX_RS_APPLICATION_BASE, "/");
-                properties.put("service.ranking", Integer.MIN_VALUE);
-
-                return properties;
-        }).flatMap(properties ->
-        register(
+        return register(
             Application.class,
-            new DefaultApplication() {
+            () -> new DefaultApplication() {
 
                 @Override
                 public Set<Object> getSingletons() {
@@ -512,7 +505,15 @@ public class Whiteboard {
                 }
 
             },
-            properties));
+            () -> {
+                Map<String, Object> properties = new HashMap<>(
+                    _configurationMap);
+                properties.put(JAX_RS_NAME, DEFAULT_NAME);
+                properties.put(JAX_RS_APPLICATION_BASE, "/");
+                properties.put("service.ranking", Integer.MIN_VALUE);
+
+                return properties;
+            });
     }
 
     private ServiceRegistration<?> registerJaxRSServiceRuntime(
@@ -576,17 +577,6 @@ public class Whiteboard {
         return
             just(() -> getApplicationName(registratorReference::getProperty)).
                 flatMap(applicationName ->
-            just(() ->{
-                Map<String, Object> properties = getProperties(
-                    serviceReference);
-
-                properties.put(JAX_RS_NAME, applicationName);
-                properties.put(
-                    "original.objectClass",
-                    serviceReference.getProperty("objectClass"));
-
-                return properties;
-            }).flatMap(properties ->
             service(registratorReference).flatMap(registrator ->
             onlyGettables(
                 just(serviceReference),
@@ -612,7 +602,18 @@ public class Whiteboard {
             ).then(
             register(
                 ApplicationExtensionRegistration.class,
-                new ApplicationExtensionRegistration(){}, properties)
+                () -> new ApplicationExtensionRegistration(){},
+                () -> {
+                    Map<String, Object> properties = getProperties(
+                        serviceReference);
+
+                    properties.put(JAX_RS_NAME, applicationName);
+                    properties.put(
+                        "original.objectClass",
+                        serviceReference.getProperty("objectClass"));
+
+                    return properties;
+                }
             ))));
     }
 
@@ -831,57 +832,76 @@ public class Whiteboard {
     }
 
     private static OSGi<ServiceRegistration<Servlet>> registerCXFServletService(
-        Bus bus, Map<String, ?> configuration) {
+        Bus bus, Supplier<Map<String, ?>> configuration) {
 
-        Map<String, Object> properties = new HashMap<>(configuration);
+        Supplier<Map<String, ?>> propertiesSup = () -> {
+            HashMap<String, Object> properties = new HashMap<>(
+                configuration.get());
 
-        properties.putIfAbsent(
-            HTTP_WHITEBOARD_TARGET, "(osgi.http.endpoint=*)");
+            properties.putIfAbsent(
+                HTTP_WHITEBOARD_TARGET, "(osgi.http.endpoint=*)");
 
-        String address = getApplicationBase(configuration::get);
+            return properties;
+        };
 
-        if (!address.startsWith("/")) {
-            address = "/" + address;
-        }
+        Supplier<Map<String, ?>> contextPropertiesSup = () -> {
+            Map<String, ?> properties = propertiesSup.get();
 
-        if (address.endsWith("/")) {
-            address = address.substring(0, address.length() - 1);
-        }
+            String address = getApplicationBase(properties::get);
 
-        String applicationName = getApplicationName(configuration::get);
+            if (!address.startsWith("/")) {
+                address = "/" + address;
+            }
 
-        HashMap<String, Object> contextProperties = new HashMap<>();
+            if (address.endsWith("/")) {
+                address = address.substring(0, address.length() - 1);
+            }
 
-        String contextName;
+            String applicationName = getApplicationName(properties::get);
 
-        if ("".equals(address)) {
-            contextName = HTTP_WHITEBOARD_DEFAULT_CONTEXT_NAME;
-        }
-        else {
-            contextName = "context.for" + applicationName;
-        }
+            HashMap<String, Object> contextProperties = new HashMap<>();
 
-        contextProperties.put(HTTP_WHITEBOARD_CONTEXT_NAME, contextName);
-        contextProperties.put(HTTP_WHITEBOARD_CONTEXT_PATH, address);
+            String contextName;
 
-        HashMap<String, Object> servletProperties = new HashMap<>(properties);
+            if ("".equals(address)) {
+                contextName = HTTP_WHITEBOARD_DEFAULT_CONTEXT_NAME;
+            } else {
+                contextName = "context.for" + applicationName;
+            }
 
-        servletProperties.put(
-            HTTP_WHITEBOARD_CONTEXT_SELECT,
-            format("(%s=%s)", HTTP_WHITEBOARD_CONTEXT_NAME,
-                contextProperties.get(HTTP_WHITEBOARD_CONTEXT_NAME)));
+            contextProperties.put(HTTP_WHITEBOARD_CONTEXT_NAME, contextName);
+            contextProperties.put(HTTP_WHITEBOARD_CONTEXT_PATH, address);
 
-        servletProperties.put(
-            HTTP_WHITEBOARD_SERVLET_PATTERN, "/*");
-        servletProperties.put(
-            HTTP_WHITEBOARD_SERVLET_ASYNC_SUPPORTED, true);
+            return contextProperties;
+        };
+
+        Supplier<Map<String, ?>> servletPropertiesSup = () -> {
+            HashMap<String, Object> servletProperties = new HashMap<>(
+                propertiesSup.get());
+
+            Map<String, ?> contextProperties = contextPropertiesSup.get();
+
+            servletProperties.put(
+                HTTP_WHITEBOARD_CONTEXT_SELECT,
+                format("(%s=%s)", HTTP_WHITEBOARD_CONTEXT_NAME,
+                    contextProperties.get(HTTP_WHITEBOARD_CONTEXT_NAME)));
+
+            servletProperties.put(
+                HTTP_WHITEBOARD_SERVLET_PATTERN, "/*");
+            servletProperties.put(
+                HTTP_WHITEBOARD_SERVLET_ASYNC_SUPPORTED, true);
+
+            return servletProperties;
+        };
 
         return
             register(
-                ServletContextHelper.class,
-                new ServletContextHelper() {}, contextProperties).
-            then(
-            register(Servlet.class, createCXFServlet(bus), servletProperties));
+                    ServletContextHelper.class,
+                    () -> new ServletContextHelper() {}, contextPropertiesSup).
+                then(
+            register(
+                    Servlet.class, () -> createCXFServlet(bus),
+                    servletPropertiesSup));
     }
 
     private static boolean signalsValidInterface(

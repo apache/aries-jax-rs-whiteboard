@@ -21,6 +21,7 @@ import java.util.Arrays;
 import java.util.Dictionary;
 import java.util.Hashtable;
 import java.util.List;
+import java.util.Map;
 
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.ext.RuntimeDelegate;
@@ -156,7 +157,9 @@ public class CxfJaxrsBundleActivator implements BundleActivator {
     }
 
     private static OSGi<?> registerClient() {
-        return register(ClientBuilder.class, new ClientBuilderFactory(), null);
+        return register(
+            ClientBuilder.class, new ClientBuilderFactory(),
+            (Map<String, Object>) null);
     }
 
 }

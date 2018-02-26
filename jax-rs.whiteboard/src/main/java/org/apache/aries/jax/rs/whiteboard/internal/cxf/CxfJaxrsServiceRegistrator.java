@@ -59,7 +59,7 @@ import org.osgi.framework.ServiceReference;
 public class CxfJaxrsServiceRegistrator {
 
     public CxfJaxrsServiceRegistrator(
-        Bus bus, Application application, Map<String, Object> properties) {
+        Bus bus, Application application, Map<String, ?> properties) {
         _bus = bus;
         _application = application;
         _properties = Collections.unmodifiableMap(new HashMap<>(properties));
