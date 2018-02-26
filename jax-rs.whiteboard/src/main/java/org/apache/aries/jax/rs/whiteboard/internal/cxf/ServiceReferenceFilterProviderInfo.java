@@ -17,9 +17,9 @@
 
 package org.apache.aries.jax.rs.whiteboard.internal.cxf;
 
+import org.apache.aries.osgi.functional.CachingServiceReference;
 import org.apache.cxf.Bus;
 import org.apache.cxf.jaxrs.model.FilterProviderInfo;
-import org.osgi.framework.ServiceReference;
 
 import java.util.Map;
 import java.util.Set;
@@ -28,7 +28,7 @@ public class ServiceReferenceFilterProviderInfo<T>
     extends FilterProviderInfo<T> {
 
     public ServiceReferenceFilterProviderInfo(
-        ServiceReference<?> serviceReference,
+        CachingServiceReference<?> serviceReference,
         Class<?> resourceClass, Class<?> serviceClass, T provider, Bus bus,
         Set<String> nameBindings, boolean dynamic, Map<Class<?>, Integer>
             supportedContracts) {
@@ -39,9 +39,9 @@ public class ServiceReferenceFilterProviderInfo<T>
         _serviceReference = serviceReference;
     }
 
-    public ServiceReference<?> getServiceReference() {
+    public CachingServiceReference<?> getServiceReference() {
         return _serviceReference;
     }
 
-    private ServiceReference<?> _serviceReference;
+    private CachingServiceReference<?> _serviceReference;
 }

@@ -215,9 +215,6 @@ public class CxfJaxrsServiceRegistrator {
             CachingServiceReference<?> cachingServiceReference =
                 provider.getCachingServiceReference();
 
-            ServiceReference<?> serviceReference =
-                cachingServiceReference.getServiceReference();
-
             Object service = provider.getService();
 
             if (service instanceof Feature || service instanceof DynamicFeature) {
@@ -229,7 +226,7 @@ public class CxfJaxrsServiceRegistrator {
             Class<?> realClass = ClassHelper.getRealClass(getBus(), service);
 
             Class<?>[] interfaces = Arrays.stream(canonicalize(
-                serviceReference.getProperty("objectClass")))
+                cachingServiceReference.getProperty("objectClass")))
                 .filter(SUPPORTED_EXTENSION_INTERFACES::containsKey)
                 .map(SUPPORTED_EXTENSION_INTERFACES::get)
                 .toArray(Class[]::new);
@@ -243,8 +240,8 @@ public class CxfJaxrsServiceRegistrator {
 
             _jaxRsServerFactoryBean.setProvider(
                 new ServiceReferenceFilterProviderInfo<>(
-                    serviceReference, realClass, realClass, service, getBus(),
-                    getFilterNameBindings(getBus(), service), false,
+                    cachingServiceReference, realClass, realClass, service,
+                    getBus(), getFilterNameBindings(getBus(), service), false,
                     classesWithPriorities));
         }
 

@@ -17,6 +17,7 @@
 
 package org.apache.aries.jax.rs.whiteboard.internal.cxf;
 
+import org.apache.aries.osgi.functional.CachingServiceReference;
 import org.apache.cxf.jaxrs.model.ProviderInfo;
 import org.apache.cxf.jaxrs.provider.ProviderFactory;
 import org.apache.cxf.jaxrs.provider.ProviderFactory.ProviderInfoClassComparator;
@@ -37,10 +38,10 @@ public class ServiceReferenceProviderInfoComparator implements
     public int compare(ProviderInfo<?> pi1, ProviderInfo<?> pi2) {
         if (pi1 instanceof ServiceReferenceFilterProviderInfo<?>) {
             if (pi2 instanceof ServiceReferenceFilterProviderInfo<?>) {
-                ServiceReference serviceReference1 =
+                CachingServiceReference serviceReference1 =
                     ((ServiceReferenceFilterProviderInfo) pi1).
                         getServiceReference();
-                ServiceReference serviceReference2 =
+                CachingServiceReference serviceReference2 =
                     ((ServiceReferenceFilterProviderInfo) pi2).
                         getServiceReference();
 
