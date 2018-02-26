@@ -45,7 +45,7 @@ public class ServiceReferenceProviderInfoComparator implements
                     ((ServiceReferenceFilterProviderInfo) pi2).
                         getServiceReference();
 
-                return serviceReference1.compareTo(serviceReference2);
+                return serviceReference2.compareTo(serviceReference1);
             }
             else {
                 return -1;
