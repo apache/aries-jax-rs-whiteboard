@@ -19,6 +19,9 @@ package test;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertTrue;
+import static org.osgi.service.http.whiteboard.HttpWhiteboardConstants.HTTP_WHITEBOARD_CONTEXT_NAME;
+import static org.osgi.service.http.whiteboard.HttpWhiteboardConstants.HTTP_WHITEBOARD_CONTEXT_PATH;
+import static org.osgi.service.http.whiteboard.HttpWhiteboardConstants.HTTP_WHITEBOARD_CONTEXT_SELECT;
 import static org.osgi.service.jaxrs.whiteboard.JaxrsWhiteboardConstants.*;
 
 import java.lang.reflect.InvocationTargetException;
@@ -49,6 +52,7 @@ import org.osgi.framework.PrototypeServiceFactory;
 import org.osgi.framework.ServiceFactory;
 import org.osgi.framework.ServiceRegistration;
 
+import org.osgi.service.http.context.ServletContextHelper;
 import org.osgi.service.jaxrs.client.PromiseRxInvoker;
 import org.osgi.service.jaxrs.client.SseEventSourceFactory;
 import org.osgi.service.jaxrs.runtime.JaxrsServiceRuntime;
@@ -248,33 +252,6 @@ public class JaxrsTest extends TestHelper {
     }
 
     @Test
-    public void testApplicationEndpointExtensionRuntimeDTO() {
-        registerApplication(new TestApplication());
-
-        registerAddon(
-            new TestAddon(), JAX_RS_APPLICATION_SELECT,
-            "(" + JAX_RS_APPLICATION_BASE + "=/test-application)");
-
-        RuntimeDTO runtimeDTO = _runtime.getRuntimeDTO();
-
-        assertEquals(1, runtimeDTO.applicationDTOs.length);
-
-        ApplicationDTO applicationDTO = runtimeDTO.applicationDTOs[0];
-        assertEquals(applicationDTO.base, "/test-application");
-        assertEquals(1, applicationDTO.resourceDTOs.length);
-
-        ResourceDTO resourceDTO = applicationDTO.resourceDTOs[0];
-        assertEquals(1, resourceDTO.resourceMethods.length);
-
-        ResourceMethodInfoDTO resourceMethod = resourceDTO.resourceMethods[0];
-        assertEquals(HttpMethod.GET, resourceMethod.method);
-        assertEquals("/{name}", resourceMethod.path);
-        assertNull(resourceMethod.consumingMimeType);
-        assertNull(resourceMethod.producingMimeType);
-        assertNull(resourceMethod.nameBindings);
-    }
-
-    @Test
     public void testApplicationEndpointExtensionReadd()
         throws InterruptedException {
 
@@ -308,6 +285,33 @@ public class JaxrsTest extends TestHelper {
         testCase.run();
 
         testCase.run();
+    }
+
+    @Test
+    public void testApplicationEndpointExtensionRuntimeDTO() {
+        registerApplication(new TestApplication());
+
+        registerAddon(
+            new TestAddon(), JAX_RS_APPLICATION_SELECT,
+            "(" + JAX_RS_APPLICATION_BASE + "=/test-application)");
+
+        RuntimeDTO runtimeDTO = _runtime.getRuntimeDTO();
+
+        assertEquals(1, runtimeDTO.applicationDTOs.length);
+
+        ApplicationDTO applicationDTO = runtimeDTO.applicationDTOs[0];
+        assertEquals(applicationDTO.base, "/test-application");
+        assertEquals(1, applicationDTO.resourceDTOs.length);
+
+        ResourceDTO resourceDTO = applicationDTO.resourceDTOs[0];
+        assertEquals(1, resourceDTO.resourceMethods.length);
+
+        ResourceMethodInfoDTO resourceMethod = resourceDTO.resourceMethods[0];
+        assertEquals(HttpMethod.GET, resourceMethod.method);
+        assertEquals("/{name}", resourceMethod.path);
+        assertNull(resourceMethod.consumingMimeType);
+        assertNull(resourceMethod.producingMimeType);
+        assertNull(resourceMethod.nameBindings);
     }
 
     @Test
@@ -490,28 +494,6 @@ public class JaxrsTest extends TestHelper {
     }
 
     @Test
-    public void testApplicationShadowsDefault() {
-        assertEquals(0, getRuntimeDTO().applicationDTOs.length);
-        assertEquals(0, getRuntimeDTO().failedApplicationDTOs.length);
-
-        registerAddon(new TestAddon());
-
-        assertEquals(
-            "Hello test",
-            createDefaultTarget().path("/test").request().get(String.class));
-
-        registerApplication(
-            new TestApplication(), JAX_RS_APPLICATION_BASE, "/");
-
-        assertEquals(1, getRuntimeDTO().applicationDTOs.length);
-        assertEquals(1, getRuntimeDTO().failedApplicationDTOs.length);
-
-        assertEquals(
-            "Hello application",
-            createDefaultTarget().request().get(String.class));
-    }
-
-    @Test
     public void testApplicationReplaceDefault() {
         assertEquals(0, getRuntimeDTO().applicationDTOs.length);
         assertEquals(0, getRuntimeDTO().failedApplicationDTOs.length);
@@ -630,6 +612,28 @@ public class JaxrsTest extends TestHelper {
         assertEquals(
             "Hello test",
             createDefaultTarget().path("/test").request().get(String.class));
+    }
+
+    @Test
+    public void testApplicationShadowsDefault() {
+        assertEquals(0, getRuntimeDTO().applicationDTOs.length);
+        assertEquals(0, getRuntimeDTO().failedApplicationDTOs.length);
+
+        registerAddon(new TestAddon());
+
+        assertEquals(
+            "Hello test",
+            createDefaultTarget().path("/test").request().get(String.class));
+
+        registerApplication(
+            new TestApplication(), JAX_RS_APPLICATION_BASE, "/");
+
+        assertEquals(1, getRuntimeDTO().applicationDTOs.length);
+        assertEquals(1, getRuntimeDTO().failedApplicationDTOs.length);
+
+        assertEquals(
+            "Hello application",
+            createDefaultTarget().request().get(String.class));
     }
 
     @Test
@@ -873,6 +877,192 @@ public class JaxrsTest extends TestHelper {
         response = webTarget.request().get();
 
         assertEquals(404, response.getStatus());
+    }
+
+    @Test
+    /**
+     * Propietary extension... not in the spec
+     * breaks application isolation
+     */
+    public void testApplicationWithProvidedServletContext() {
+        ServiceRegistration<Application> applicationRegistration =
+            registerApplication(
+                new TestApplication(), HTTP_WHITEBOARD_CONTEXT_SELECT,
+                "(" + HTTP_WHITEBOARD_CONTEXT_PATH + "=/context)");
+
+        WebTarget webTarget = createDefaultTarget().path(
+            "/test-application"
+        );
+
+        Response response = webTarget.request().get();
+
+        assertEquals(404, response.getStatus());
+
+        RuntimeDTO runtimeDTO = getRuntimeDTO();
+
+        FailedApplicationDTO[] failedApplicationDTOs =
+            runtimeDTO.failedApplicationDTOs;
+
+        assertEquals(1, failedApplicationDTOs.length);
+        assertEquals(
+            applicationRegistration.getReference().getProperty("service.id"),
+            failedApplicationDTOs[0].serviceId);
+        assertEquals(
+            DTOConstants.FAILURE_REASON_REQUIRED_EXTENSIONS_UNAVAILABLE,
+            failedApplicationDTOs[0].failureReason);
+
+        ServiceRegistration<ServletContextHelper> context =
+            bundleContext.registerService(
+                ServletContextHelper.class, new ServletContextHelper() {},
+                new Hashtable<String, Object>() {{
+                    put(HTTP_WHITEBOARD_CONTEXT_PATH, "/context");
+                    put(HTTP_WHITEBOARD_CONTEXT_NAME, "contextName");
+                }});
+
+        runtimeDTO = getRuntimeDTO();
+
+        failedApplicationDTOs = runtimeDTO.failedApplicationDTOs;
+
+        assertEquals(0, failedApplicationDTOs.length);
+
+        try {
+            webTarget = createDefaultTarget().
+                path(
+                    "/context"
+                ).path(
+                    "/test-application"
+            );
+
+            String responseString = webTarget.request().get(String.class);
+
+            assertEquals("Hello application", responseString);
+        }
+        finally {
+            context.unregister();
+        }
+
+    }
+
+    @Test
+    /**
+     * Propietary extension... not in the spec
+     * breaks application isolation
+     */
+    public void testApplicationWithProvidedServletContextClashes() {
+        ServiceRegistration<Application> applicationRegistration =
+            registerApplication(
+                new TestApplication(), JAX_RS_APPLICATION_BASE,
+                "/context/test-application", "service.ranking", 10);
+
+        ServiceRegistration<ServletContextHelper> context =
+            bundleContext.registerService(
+                ServletContextHelper.class, new ServletContextHelper() {},
+                new Hashtable<String, Object>() {{
+                    put(HTTP_WHITEBOARD_CONTEXT_PATH, "/context");
+                    put(HTTP_WHITEBOARD_CONTEXT_NAME, "contextName");
+                }});
+        try {
+            ServiceRegistration<Application> applicationRegistration2 =
+                registerApplication(
+                    new TestApplication(), HTTP_WHITEBOARD_CONTEXT_SELECT,
+                    "(" + HTTP_WHITEBOARD_CONTEXT_PATH + "=/context)");
+
+            WebTarget webTarget = createDefaultTarget().
+                path(
+                    "/context"
+                ).
+                path(
+                    "test-application"
+                );
+
+            Response response = webTarget.request().get();
+
+            assertEquals(
+                "Hello application", response.readEntity(String.class));
+
+            RuntimeDTO runtimeDTO = getRuntimeDTO();
+
+            FailedApplicationDTO[] failedApplicationDTOs =
+                runtimeDTO.failedApplicationDTOs;
+
+            assertEquals(1, failedApplicationDTOs.length);
+            assertEquals(
+                applicationRegistration2.getReference().getProperty(
+                    "service.id"),
+                failedApplicationDTOs[0].serviceId);
+            assertEquals(
+                DTOConstants.FAILURE_REASON_SHADOWED_BY_OTHER_SERVICE,
+                failedApplicationDTOs[0].failureReason);
+
+            Hashtable<String, Object> properties = new Hashtable<>();
+
+            properties.put(
+                HTTP_WHITEBOARD_CONTEXT_SELECT,
+                "(" + HTTP_WHITEBOARD_CONTEXT_PATH + "=/context)");
+            properties.put(JAX_RS_APPLICATION_BASE, "/test-application");
+            properties.put("service.ranking", 20);
+
+            applicationRegistration2.setProperties(properties);
+
+            runtimeDTO = getRuntimeDTO();
+
+            failedApplicationDTOs = runtimeDTO.failedApplicationDTOs;
+
+            assertEquals(1, failedApplicationDTOs.length);
+            assertEquals(
+                applicationRegistration.getReference().getProperty(
+                    "service.id"),
+                failedApplicationDTOs[0].serviceId);
+            assertEquals(
+                DTOConstants.FAILURE_REASON_SHADOWED_BY_OTHER_SERVICE,
+                failedApplicationDTOs[0].failureReason);
+
+            webTarget = createDefaultTarget().
+                path(
+                    "/context"
+                ).path(
+                "/test-application"
+            );
+
+            String responseString = webTarget.request().get(String.class);
+
+            assertEquals("Hello application", responseString);
+
+            context.unregister();
+
+            runtimeDTO = getRuntimeDTO();
+
+            failedApplicationDTOs = runtimeDTO.failedApplicationDTOs;
+
+            assertEquals(1, failedApplicationDTOs.length);
+            assertEquals(
+                applicationRegistration2.getReference().getProperty(
+                    "service.id"),
+                failedApplicationDTOs[0].serviceId);
+            assertEquals(
+                DTOConstants.FAILURE_REASON_REQUIRED_EXTENSIONS_UNAVAILABLE,
+                failedApplicationDTOs[0].failureReason);
+
+            webTarget = createDefaultTarget().
+                path(
+                    "/context"
+                ).path(
+                    "/test-application"
+                );
+
+            responseString = webTarget.request().get(String.class);
+
+            assertEquals("Hello application", responseString);
+        }
+        finally {
+            try {
+                context.unregister();
+            }
+            catch (Exception e) {
+
+            }
+        }
+
     }
 
     @Test

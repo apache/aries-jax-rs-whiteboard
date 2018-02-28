@@ -343,6 +343,52 @@ public class Whiteboard {
         return true;
     }
 
+    private OSGi<ApplicationReferenceWithContext> waitForApplicationContext(
+        OSGi<CachingServiceReference<Application>> application,
+        Consumer<CachingServiceReference<Application>> onWaitingForContext,
+        Consumer<CachingServiceReference<Application>> onResolvedContext) {
+
+        return application.flatMap(serviceReference -> {
+            Object propertyObject = serviceReference.getProperty(
+                HTTP_WHITEBOARD_CONTEXT_SELECT);
+
+            if (propertyObject == null) {
+                return just(
+                    new ApplicationReferenceWithContext(
+                        null, serviceReference));
+            }
+
+            String contextSelect = propertyObject.toString();
+
+            try {
+                FrameworkUtil.createFilter(contextSelect);
+            }
+            catch (InvalidSyntaxException e) {
+                return effects(
+                    () -> _runtime.addInvalidApplication(serviceReference),
+                    () -> _runtime.removeInvalidApplication(serviceReference)
+                ).then(
+                    nothing()
+                );
+            }
+
+            return
+                effects(
+                    () -> onWaitingForContext.accept(serviceReference),
+                    () -> onResolvedContext.accept(serviceReference)
+                ).then(
+            highest(
+                serviceReferences(ServletContextHelper.class, contextSelect)
+            ).flatMap(
+                sr -> just(
+                    new ApplicationReferenceWithContext(sr, serviceReference))
+            ).effects(
+                __ -> onResolvedContext.accept(serviceReference),
+                __ -> onWaitingForContext.accept(serviceReference)
+            ));
+        });
+    }
+
     private OSGi<?> applications(
         OSGi<CachingServiceReference<Application>> applications) {
 
@@ -354,20 +400,27 @@ public class Whiteboard {
                     _runtime::removeInvalidApplication)
                 );
 
-        OSGi<CachingServiceReference<Application>> highestRankedPerPath =
+        OSGi<ApplicationReferenceWithContext> applicationsWithContext =
+            waitForApplicationContext(
+                applicationsForWhiteboard, _runtime::addDependentApplication,
+                _runtime::removeDependentApplication);
+
+        OSGi<ApplicationReferenceWithContext> highestRankedPerPath =
             highestPer(
-                APPLICATION_BASE, applicationsForWhiteboard,
-                _runtime::addShadowedApplication,
-                _runtime::removeShadowedApplication
+                ApplicationReferenceWithContext::getActualBasePath,
+                applicationsWithContext,
+                t -> _runtime.addShadowedApplication(
+                    t.getApplicationReference()),
+                t -> _runtime.removeShadowedApplication(
+                    t.getApplicationReference())
         );
 
-        OSGi<ServiceTuple<Application>> highestGettables = onlyGettables(
-            highestRankedPerPath,
-            _runtime::addNotGettableApplication,
-            _runtime::removeNotGettableApplication);
-
-        return
-            highestGettables.recoverWith(
+        return highestRankedPerPath.flatMap(application ->
+            onlyGettables(
+                just(application.getApplicationReference()),
+                _runtime::addNotGettableApplication,
+                _runtime::removeNotGettableApplication).
+            recoverWith(
                 (t, e) ->
                     just(t).map(
                         ServiceTuple::getCachingServiceReference
@@ -377,20 +430,20 @@ public class Whiteboard {
                     ).then(
                         nothing()
                     )
-            ).flatMap(at ->
-            deployApplication(at).
-            foreach(
+                ).
+                flatMap(at ->
+            deployApplication(at, application.getContextReference()).foreach(
                 registrator ->
                     _runtime.setApplicationForPath(
                         getApplicationBase(
                             at.getCachingServiceReference()::getProperty),
-                        at.getCachingServiceReference(), registrator),
+                            at.getCachingServiceReference(), registrator),
                 registrator ->
                     _runtime.unsetApplicationForPath(
                         getApplicationBase(
                             at.getCachingServiceReference()::getProperty))
                 )
-            );
+        ));
     }
 
     private ExtensionManagerBus createBus() {
@@ -423,7 +476,8 @@ public class Whiteboard {
     }
 
     private OSGi<CxfJaxrsServiceRegistrator> deployApplication(
-        ServiceTuple<Application> tuple) {
+        ServiceTuple<Application> tuple,
+        CachingServiceReference<ServletContextHelper> contextReference) {
 
         Supplier<Map<String, ?>> properties = () -> {
             CachingServiceReference<Application> serviceReference =
@@ -449,7 +503,8 @@ public class Whiteboard {
 
         return
             deployRegistrator(tuple, properties).flatMap(registrator ->
-            registerCXFServletService(registrator.getBus(), properties).then(
+            registerCXFServletService(
+                registrator.getBus(), properties, contextReference).then(
             just(registrator)
         ));
     }
@@ -751,7 +806,7 @@ public class Whiteboard {
                     extensionFilter.match(_runtimeReference) ||
                     extensionFilter.match(
                         applicationRegistratorReference.getServiceReference())) {
-                    
+
                     continue;
                 }
 
@@ -857,11 +912,13 @@ public class Whiteboard {
     }
 
     private static OSGi<ServiceRegistration<Servlet>> registerCXFServletService(
-        Bus bus, Supplier<Map<String, ?>> configuration) {
+        Bus bus, Supplier<Map<String, ?>> configurationSup,
+        CachingServiceReference<ServletContextHelper> contextReference) {
+
+        Map<String, ?> configuration = configurationSup.get();
 
         Supplier<Map<String, ?>> propertiesSup = () -> {
-            HashMap<String, Object> properties = new HashMap<>(
-                configuration.get());
+            HashMap<String, Object> properties = new HashMap<>(configuration);
 
             properties.putIfAbsent(
                 HTTP_WHITEBOARD_TARGET, "(osgi.http.endpoint=*)");
@@ -869,36 +926,59 @@ public class Whiteboard {
             return properties;
         };
 
-        Supplier<Map<String, ?>> contextPropertiesSup = () -> {
-            Map<String, ?> properties = propertiesSup.get();
+        String address = getApplicationBase(configuration::get);
 
-            String address = getApplicationBase(properties::get);
+        if (!address.startsWith("/")) {
+            address = "/" + address;
+        }
 
-            if (!address.startsWith("/")) {
-                address = "/" + address;
-            }
+        if (address.endsWith("/")) {
+            address = address.substring(0, address.length() - 1);
+        }
 
-            if (address.endsWith("/")) {
-                address = address.substring(0, address.length() - 1);
-            }
+        String finalAddress = address;
 
-            String applicationName = getApplicationName(properties::get);
+        String applicationName = getApplicationName(configuration::get);
 
-            HashMap<String, Object> contextProperties = new HashMap<>();
+        Supplier<Map<String, ?>> contextPropertiesSup;
 
-            String contextName;
+        OSGi<?> program = just(0);
 
-            if ("".equals(address)) {
-                contextName = HTTP_WHITEBOARD_DEFAULT_CONTEXT_NAME;
-            } else {
-                contextName = "context.for" + applicationName;
-            }
+        if (contextReference == null) {
+            contextPropertiesSup = () -> {
+                HashMap<String, Object> contextProperties = new HashMap<>();
 
-            contextProperties.put(HTTP_WHITEBOARD_CONTEXT_NAME, contextName);
-            contextProperties.put(HTTP_WHITEBOARD_CONTEXT_PATH, address);
+                String contextName;
 
-            return contextProperties;
-        };
+                if ("".equals(finalAddress)) {
+                    contextName = HTTP_WHITEBOARD_DEFAULT_CONTEXT_NAME;
+                } else {
+                    contextName = "context.for" + applicationName;
+                }
+
+                contextProperties.put(
+                    HTTP_WHITEBOARD_CONTEXT_NAME, contextName);
+                contextProperties.put(
+                    HTTP_WHITEBOARD_CONTEXT_PATH, finalAddress);
+
+                return contextProperties;
+            };
+
+            program = register(
+                ServletContextHelper.class,
+                () -> new ServletContextHelper() {}, contextPropertiesSup);
+        }
+        else {
+            contextPropertiesSup = () -> {
+                HashMap<String, Object> properties = new HashMap<>();
+
+                properties.put(
+                    HTTP_WHITEBOARD_CONTEXT_NAME,
+                    contextReference.getProperty(HTTP_WHITEBOARD_CONTEXT_NAME));
+
+                return properties;
+            };
+        }
 
         Supplier<Map<String, ?>> servletPropertiesSup = () -> {
             HashMap<String, Object> servletProperties = new HashMap<>(
@@ -911,22 +991,24 @@ public class Whiteboard {
                 format("(%s=%s)", HTTP_WHITEBOARD_CONTEXT_NAME,
                     contextProperties.get(HTTP_WHITEBOARD_CONTEXT_NAME)));
 
-            servletProperties.put(
-                HTTP_WHITEBOARD_SERVLET_PATTERN, "/*");
+            if (contextReference == null) {
+                servletProperties.put(HTTP_WHITEBOARD_SERVLET_PATTERN, "/*");
+            }
+            else {
+                servletProperties.put(
+                    HTTP_WHITEBOARD_SERVLET_PATTERN,
+                    finalAddress + "/*");
+            }
             servletProperties.put(
                 HTTP_WHITEBOARD_SERVLET_ASYNC_SUPPORTED, true);
 
             return servletProperties;
         };
 
-        return
+        return program.then(
             register(
-                    ServletContextHelper.class,
-                    () -> new ServletContextHelper() {}, contextPropertiesSup).
-                then(
-            register(
-                    Servlet.class, () -> createCXFServlet(bus),
-                    servletPropertiesSup));
+                Servlet.class, () -> createCXFServlet(bus),
+                servletPropertiesSup));
     }
 
     private static boolean signalsValidInterface(
@@ -997,6 +1079,55 @@ public class Whiteboard {
         catch (InvalidSyntaxException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private static class ApplicationReferenceWithContext
+        implements Comparable<ApplicationReferenceWithContext> {
+
+        @Override
+        public int compareTo(ApplicationReferenceWithContext o) {
+            return _applicationReference.compareTo(o._applicationReference);
+        }
+
+        private CachingServiceReference<ServletContextHelper> _contextReference;
+        private CachingServiceReference<Application> _applicationReference;
+
+        public ApplicationReferenceWithContext(
+            CachingServiceReference<ServletContextHelper> contextReference,
+            CachingServiceReference<Application> applicationReference) {
+
+            _contextReference = contextReference;
+            _applicationReference = applicationReference;
+        }
+
+        public String getActualBasePath() {
+            String applicationBase = getApplicationBase(
+                _applicationReference::getProperty);
+
+            if (_contextReference == null) {
+                return applicationBase;
+            }
+
+            Object property = _contextReference.getProperty(
+                HTTP_WHITEBOARD_CONTEXT_PATH);
+
+            if (property == null) {
+                return applicationBase;
+            }
+
+            String contextPath = property.toString();
+
+            return contextPath + applicationBase;
+        }
+
+        public CachingServiceReference<ServletContextHelper> getContextReference() {
+            return _contextReference;
+        }
+
+        public CachingServiceReference<Application> getApplicationReference() {
+            return _applicationReference;
+        }
+
     }
 
 }
