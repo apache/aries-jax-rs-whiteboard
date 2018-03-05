@@ -29,6 +29,7 @@ import org.apache.commons.collections.Factory;
 import org.apache.cxf.Bus;
 import org.apache.cxf.bus.extension.ExtensionManagerBus;
 import org.apache.cxf.transport.servlet.CXFNonSpringServlet;
+import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.Constants;
 import org.osgi.framework.Filter;
@@ -79,6 +80,7 @@ import static org.apache.aries.jax.rs.whiteboard.internal.utils.Utils.onlyGettab
 import static org.apache.aries.jax.rs.whiteboard.internal.utils.Utils.service;
 import static org.apache.aries.jax.rs.whiteboard.internal.utils.Utils.updateProperty;
 import static org.apache.aries.osgi.functional.OSGi.all;
+import static org.apache.aries.osgi.functional.OSGi.changeContext;
 import static org.apache.aries.osgi.functional.OSGi.effects;
 import static org.apache.aries.osgi.functional.OSGi.ignore;
 import static org.apache.aries.osgi.functional.OSGi.just;
@@ -193,7 +195,7 @@ public class Whiteboard {
                     _runtime::removeInvalidExtension).
                 flatMap(extensionReference ->
             chooseApplication(
-                    extensionReference, Whiteboard::allApplicationReferences,
+                    extensionReference, allApplicationReferences(),
                     _runtime::addApplicationDependentExtension,
                     _runtime::removeApplicationDependentExtension).
                 flatMap(registratorReference ->
@@ -215,7 +217,7 @@ public class Whiteboard {
                     _runtime::removeInvalidResource).
                 flatMap(resourceReference ->
             chooseApplication(
-                    resourceReference, this::defaultApplication,
+                    resourceReference, defaultApplication(),
                     _runtime::addApplicationDependentResource,
                     _runtime::removeApplicationDependentResource).
                 flatMap(registratorReference ->
@@ -434,6 +436,14 @@ public class Whiteboard {
                 JAX_RS_NAME, (__) -> generateApplicationName(
                     serviceReference::getProperty));
 
+            props.put(
+                "original.service.id",
+                serviceReference.getProperty("service.id"));
+
+            props.put(
+                "original.service.bundleid",
+                serviceReference.getProperty("service.bundleid"));
+
             return props;
         };
 
@@ -542,12 +552,19 @@ public class Whiteboard {
         String applicationName = getApplicationName(
             registratorReference::getProperty);
 
+        Bundle originalBundle = _bundleContext.getBundle(
+            (long)registratorReference.getProperty(
+                "original.service.bundleid"));
+
         return
             service(registratorReference).flatMap(registrator ->
-            onlyGettables(
-                just(serviceReference),
-                _runtime::addNotGettableEndpoint,
-                _runtime::removeNotGettableEndpoint
+            changeContext(
+                originalBundle.getBundleContext(),
+                onlyGettables(
+                    just(serviceReference),
+                    _runtime::addNotGettableEndpoint,
+                    _runtime::removeNotGettableEndpoint
+                )
             ).recoverWith((t, e) ->
                 just(serviceReference).
                 effects(
@@ -574,15 +591,22 @@ public class Whiteboard {
         CachingServiceReference<?> serviceReference,
         CachingServiceReference<CxfJaxrsServiceRegistrator> registratorReference) {
 
+        Bundle originalBundle = _bundleContext.getBundle(
+            (long)registratorReference.getProperty(
+                "original.service.bundleid"));
+
         return
             just(() -> getApplicationName(registratorReference::getProperty)).
                 flatMap(applicationName ->
             service(registratorReference).flatMap(registrator ->
-            onlyGettables(
-                just(serviceReference),
-                _runtime::addNotGettableExtension,
-                _runtime::removeNotGettableExtension
-            ).recoverWith(
+            changeContext(
+                originalBundle.getBundleContext(),
+                    onlyGettables(
+                        just(serviceReference),
+                        _runtime::addNotGettableExtension,
+                        _runtime::removeNotGettableExtension
+                    )
+                ).recoverWith(
                 (t, e) ->
                     just(t.getCachingServiceReference()).
                     effects(
@@ -776,7 +800,7 @@ public class Whiteboard {
     private static OSGi<CachingServiceReference<CxfJaxrsServiceRegistrator>>
         chooseApplication(
             CachingServiceReference<?> serviceReference,
-            Supplier<OSGi<CachingServiceReference<CxfJaxrsServiceRegistrator>>>
+            OSGi<CachingServiceReference<CxfJaxrsServiceRegistrator>>
                 theDefault,
             Consumer<CachingServiceReference<?>> onWaiting,
             Consumer<CachingServiceReference<?>> onResolved) {
@@ -785,7 +809,7 @@ public class Whiteboard {
             JAX_RS_APPLICATION_SELECT);
 
         if (applicationSelectProperty == null) {
-            return theDefault.get();
+            return theDefault;
         }
 
         return
