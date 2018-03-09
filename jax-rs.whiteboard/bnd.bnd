@@ -37,6 +37,7 @@ Import-Package:\
     !org.apache.xerces.*,\
     !org.apache.xml.resolver.*,\
     !org.apache.xmlbeans.*,\
+    !org.atmosphere.*,\
     !org.codehaus.stax2.*,\
     !org.dom4j.*,\
     !org.junit.*,\
@@ -64,6 +65,7 @@ Import-Package:\
     lib/cxf-rt-frontend-jaxrs.jar=cxf-rt-frontend-jaxrs-*.jar;lib:=true,\
     lib/cxf-rt-rs-client.jar=cxf-rt-rs-client-*.jar;lib:=true,\
     lib/cxf-rt-rs-extension-providers.jar=cxf-rt-rs-extension-providers-*.jar;lib:=true,\
+    lib/cxf-rt-rs-sse.jar=cxf-rt-rs-sse-*.jar;lib:=true,\
     lib/cxf-rt-transports-http.jar=cxf-rt-transports-http-*.jar;lib:=true,\
     lib/cxf-tools-common.jar=cxf-tools-common-*.jar;lib:=true,\
     lib/jettison.jar=jettison-*.jar;lib:=true,\

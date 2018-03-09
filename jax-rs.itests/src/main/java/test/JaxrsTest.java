@@ -22,6 +22,7 @@ import static org.junit.Assert.assertTrue;
 import static org.osgi.service.jaxrs.whiteboard.JaxrsWhiteboardConstants.*;
 
 import java.lang.reflect.InvocationTargetException;
+import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -49,6 +50,7 @@ import org.osgi.framework.ServiceFactory;
 import org.osgi.framework.ServiceRegistration;
 
 import org.osgi.service.jaxrs.client.PromiseRxInvoker;
+import org.osgi.service.jaxrs.client.SseEventSourceFactory;
 import org.osgi.service.jaxrs.runtime.JaxrsServiceRuntime;
 import org.osgi.service.jaxrs.runtime.dto.ApplicationDTO;
 import org.osgi.service.jaxrs.runtime.dto.DTOConstants;
@@ -70,9 +72,11 @@ import test.types.TestAsyncResource;
 import test.types.TestFilter;
 import test.types.TestFilterAndExceptionMapper;
 import test.types.TestHelper;
+import test.types.TestSSEApplication;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.HttpMethod;
+import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.InvocationCallback;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.container.ContainerResponseFilter;
@@ -81,6 +85,7 @@ import javax.ws.rs.core.Feature;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.ExceptionMapper;
+import javax.ws.rs.sse.SseEventSource;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
@@ -1703,6 +1708,54 @@ public class JaxrsTest extends TestHelper {
 
         assertEquals(0, runtimeDTO.failedExtensionDTOs.length);
     }
+
+    @Test
+    public void testSSEApplication() throws 
+        InterruptedException, MalformedURLException {
+        
+        registerApplication(
+            new TestSSEApplication(), JAX_RS_APPLICATION_BASE, "/sse");
+
+        SseEventSourceFactory sseFactory = createSseFactory();
+
+        SseEventSource source1 = sseFactory.newSource(
+            createDefaultTarget().path("/sse").path("/subscribe"));
+
+        SseEventSource source2 = sseFactory.newSource(
+                createDefaultTarget().path("/sse").path("/subscribe"));
+
+        ArrayList<String> source1Events = new ArrayList<>();
+        ArrayList<String> source2Events = new ArrayList<>();
+
+        source1.register(event -> source1Events.add(event.readData(String.class)));
+        source2.register(event -> source2Events.add(event.readData(String.class)));
+
+        source1.open();
+        source2.open();
+
+        WebTarget broadcast = createDefaultTarget().path("/sse").path(
+            "/broadcast");
+
+        broadcast.request().post(
+            Entity.entity("message", MediaType.TEXT_PLAIN_TYPE));
+
+        source2.close();
+
+        assertEquals(Arrays.asList("welcome", "message"), source1Events);
+        assertEquals(Arrays.asList("welcome", "message"), source2Events);
+
+        broadcast.request().post(
+            Entity.entity("another message", MediaType.TEXT_PLAIN_TYPE));
+
+        assertEquals(
+            Arrays.asList("welcome", "message", "another message"),
+            source1Events);
+        assertEquals(Arrays.asList("welcome", "message"), source2Events);
+
+        source1.close();
+    }
+
+
     private static Function<RuntimeDTO, FailedApplicationDTO[]>
         FAILED_APPLICATIONS = r -> r.failedApplicationDTOs;
     private Collection<ServiceRegistration<?>> _registrations =
@@ -1982,4 +2035,5 @@ public class JaxrsTest extends TestHelper {
 
         return serviceRegistration;
     }
+
 }

@@ -24,7 +24,9 @@ import java.util.List;
 import java.util.Map;
 
 import javax.ws.rs.client.ClientBuilder;
+import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.ext.RuntimeDelegate;
+import javax.ws.rs.sse.SseEventSource;
 
 import org.apache.aries.jax.rs.whiteboard.internal.client.ClientBuilderFactory;
 import org.apache.aries.jax.rs.whiteboard.internal.utils.PropertyHolder;
@@ -35,6 +37,7 @@ import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.Constants;
 import org.osgi.service.http.runtime.HttpServiceRuntime;
+import org.osgi.service.jaxrs.client.SseEventSourceFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -83,6 +86,7 @@ public class CxfJaxrsBundleActivator implements BundleActivator {
         _defaultOSGiResult =
             all(
                 ignore(registerClient()),
+                ignore(registerSseEventSourceFactory()),
                 ignore(runWhiteboard(bundleContext, defaultConfiguration))
             )
         .run(bundleContext);
@@ -106,9 +110,9 @@ public class CxfJaxrsBundleActivator implements BundleActivator {
             _log.debug("Stopped whiteboard factory");
         }
     }
+
     private OSGiResult _defaultOSGiResult;
     private OSGiResult _whiteboardsResult;
-
     private static String endpointFilter(PropertyHolder configuration ) {
 
         Object whiteBoardTargetProperty = configuration.get(
@@ -160,6 +164,48 @@ public class CxfJaxrsBundleActivator implements BundleActivator {
         return register(
             ClientBuilder.class, new ClientBuilderFactory(),
             (Map<String, Object>) null);
+    }
+
+    private static OSGi<?> registerSseEventSourceFactory() {
+        ClassLoader classLoader = CxfJaxrsBundleActivator.class.getClassLoader();
+
+        return register(
+            SseEventSourceFactory.class, new SseEventSourceFactory() {
+                @Override
+                public SseEventSource.Builder newBuilder(WebTarget target) {
+                    Thread thread = Thread.currentThread();
+
+                    ClassLoader contextClassLoader =
+                        thread.getContextClassLoader();
+
+                    thread.setContextClassLoader(classLoader);
+
+                    try {
+                        return SseEventSource.target(target);
+                    }
+                    finally {
+                        thread.setContextClassLoader(contextClassLoader);
+                    }
+                }
+
+                @Override
+                public SseEventSource newSource(WebTarget target) {
+                    Thread thread = Thread.currentThread();
+
+                    ClassLoader contextClassLoader =
+                        thread.getContextClassLoader();
+
+                    thread.setContextClassLoader(classLoader);
+
+                    try {
+                        return SseEventSource.target(target).build();
+                    }
+                    finally {
+                        thread.setContextClassLoader(contextClassLoader);
+                    }
+                }
+            },
+            new Hashtable<>());
     }
 
 }

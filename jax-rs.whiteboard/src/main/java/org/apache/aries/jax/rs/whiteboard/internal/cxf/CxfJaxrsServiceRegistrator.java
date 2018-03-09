@@ -40,6 +40,8 @@ import javax.ws.rs.core.Feature;
 import javax.ws.rs.core.FeatureContext;
 import javax.ws.rs.ext.RuntimeDelegate;
 
+import org.apache.aries.jax.rs.whiteboard.internal.cxf.sse.SseContextProvider;
+import org.apache.aries.jax.rs.whiteboard.internal.cxf.sse.SseEventSinkContextProvider;
 import org.apache.aries.jax.rs.whiteboard.internal.utils.ServiceReferenceResourceProvider;
 import org.apache.aries.jax.rs.whiteboard.internal.utils.ServiceTuple;
 import org.apache.aries.osgi.functional.CachingServiceReference;
@@ -254,6 +256,9 @@ public class CxfJaxrsServiceRegistrator {
                     getBus(), getFilterNameBindings(getBus(), service), false,
                     classesWithPriorities));
         }
+
+        _jaxRsServerFactoryBean.setProvider(new SseEventSinkContextProvider());
+        _jaxRsServerFactoryBean.setProvider(new SseContextProvider());
 
         for (ResourceProvider resourceProvider: _services) {
             _jaxRsServerFactoryBean.setResourceProvider(resourceProvider);

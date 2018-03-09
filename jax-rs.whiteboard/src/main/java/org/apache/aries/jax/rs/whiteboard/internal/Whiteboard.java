@@ -25,7 +25,6 @@ import org.apache.aries.jax.rs.whiteboard.internal.utils.ServiceTuple;
 import org.apache.aries.osgi.functional.CachingServiceReference;
 import org.apache.aries.osgi.functional.OSGi;
 import org.apache.aries.osgi.functional.OSGiResult;
-import org.apache.commons.collections.Factory;
 import org.apache.cxf.Bus;
 import org.apache.cxf.bus.extension.ExtensionManagerBus;
 import org.apache.cxf.transport.servlet.CXFNonSpringServlet;
