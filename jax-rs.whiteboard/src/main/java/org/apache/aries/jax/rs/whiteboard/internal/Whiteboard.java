@@ -460,7 +460,7 @@ public class Whiteboard {
         return
             just(() ->
                     new CxfJaxrsServiceRegistrator(
-                        createBus(), tuple.getService(), props.get())).
+                        createBus(), tuple, props.get())).
                 flatMap(registrator ->
             onClose(registrator::close).then(
             register(

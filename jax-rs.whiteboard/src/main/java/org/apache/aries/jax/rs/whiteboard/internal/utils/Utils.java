@@ -150,12 +150,9 @@ public class Utils {
                 }
 
                 return
-                    onClose(
-                        () -> serviceObjects.ungetService(service)
-                    ).then(
-                        just(new ServiceTuple<>(
-                            serviceReference, serviceObjects, service))
-                    );
+                    just(new ServiceTuple<>(
+                            serviceReference, serviceObjects, service)).
+                    effects(__ -> {}, ServiceTuple::dispose);
             }));
     }
 

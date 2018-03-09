@@ -24,7 +24,7 @@ public class ServiceTuple<T> implements Comparable<ServiceTuple<T>> {
 
     private final CachingServiceReference<T> _serviceReference;
     private ServiceObjects<T> _serviceObjects;
-    private final T _service;
+    private volatile T _service;
 
     ServiceTuple(
         CachingServiceReference<T> cachingServiceReference,
@@ -38,6 +38,16 @@ public class ServiceTuple<T> implements Comparable<ServiceTuple<T>> {
     @Override
     public int compareTo(ServiceTuple<T> o) {
         return _serviceReference.compareTo(o._serviceReference);
+    }
+
+    public void dispose() {
+        _serviceObjects.ungetService(_service);
+    }
+
+    public void refresh() {
+        dispose();
+
+        _service = _serviceObjects.getService();
     }
 
     public T getService() {

@@ -55,14 +55,16 @@ import org.apache.cxf.jaxrs.model.ClassResourceInfo;
 import org.apache.cxf.jaxrs.provider.ProviderFactory.ProviderInfoClassComparator;
 import org.apache.cxf.jaxrs.provider.ServerConfigurableFactory;
 import org.apache.cxf.jaxrs.utils.AnnotationUtils;
-import org.osgi.framework.ServiceReference;
+import org.osgi.framework.ServiceObjects;
 
 public class CxfJaxrsServiceRegistrator {
 
     public CxfJaxrsServiceRegistrator(
-        Bus bus, Application application, Map<String, ?> properties) {
+        Bus bus, ServiceTuple<Application> applicationTuple,
+        Map<String, ?> properties) {
+
         _bus = bus;
-        _application = application;
+        _applicationTuple = applicationTuple;
         _properties = Collections.unmodifiableMap(new HashMap<>(properties));
 
         Comparator<ServiceTuple<?>> comparing = Comparator.comparing(
@@ -180,17 +182,25 @@ public class CxfJaxrsServiceRegistrator {
     protected synchronized void rewire() {
         if (_server != null) {
             _server.destroy();
+
+            _applicationTuple.refresh();
+
+            for (ServiceTuple<?> provider : _providers) {
+                provider.refresh();
+            }
         }
 
+        Application application = _applicationTuple.getService();
+
         if (_services.isEmpty() &&
-            _application.getSingletons().isEmpty() &&
-            _application.getClasses().isEmpty()) {
+            application.getSingletons().isEmpty() &&
+            application.getClasses().isEmpty()) {
 
             return;
         }
 
         _jaxRsServerFactoryBean = createEndpoint(
-            _application, JAXRSServerFactoryBean.class);
+            application, JAXRSServerFactoryBean.class);
 
         _jaxRsServerFactoryBean.setBus(_bus);
 
@@ -276,7 +286,7 @@ public class CxfJaxrsServiceRegistrator {
         _server.start();
     }
 
-    private final Application _application;
+    private final ServiceTuple<Application> _applicationTuple;
     private final Bus _bus;
     private final Collection<ServiceTuple<?>> _providers;
     private final Collection<ResourceProvider> _services = new ArrayList<>();
