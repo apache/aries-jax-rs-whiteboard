@@ -631,7 +631,8 @@ public class Whiteboard {
                     Map<String, Object> properties = getProperties(
                         serviceReference);
 
-                    properties.put(JAX_RS_NAME, applicationName);
+                    properties.put(
+                        "original.application.name", applicationName);
                     properties.put(
                         "original.objectClass",
                         serviceReference.getProperty("objectClass"));
@@ -757,8 +758,8 @@ public class Whiteboard {
                 program =
                     once(serviceReferences(ApplicationExtensionRegistration.class).
                         filter(
-                            sr -> getApplicationName(sr::getProperty).equals(
-                                applicationName)
+                            sr -> sr.getProperty("original.application.name").
+                                    equals(applicationName)
                         ).map(
                             CachingServiceReference::getServiceReference
                         ).filter(
