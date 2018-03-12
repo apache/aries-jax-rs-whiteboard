@@ -122,7 +122,8 @@ public class Whiteboard {
                 ExceptionMapper.class,
                 ParamConverterProvider.class,
                 Feature.class,
-                DynamicFeature.class)
+                DynamicFeature.class,
+                org.apache.cxf.feature.Feature.class)
             .collect(toMap(Class::getName, Function.identity())));
     static final String DEFAULT_NAME = ".default";
     private static final Function<CachingServiceReference<Application>, String>

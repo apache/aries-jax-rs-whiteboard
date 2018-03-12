@@ -224,6 +224,8 @@ public class CxfJaxrsServiceRegistrator {
 
         _jaxRsServerFactoryBean.setStart(false);
 
+        List<org.apache.cxf.feature.Feature> features = new ArrayList<>();
+
         for (ServiceTuple<?> provider : _providers) {
             CachingServiceReference<?> cachingServiceReference =
                 provider.getCachingServiceReference();
@@ -232,6 +234,11 @@ public class CxfJaxrsServiceRegistrator {
 
             if (service instanceof Feature || service instanceof DynamicFeature) {
                 _jaxRsServerFactoryBean.setProvider(service);
+
+                continue;
+            }
+            else if (service instanceof org.apache.cxf.feature.Feature) {
+                features.add((org.apache.cxf.feature.Feature)service);
 
                 continue;
             }
@@ -260,6 +267,10 @@ public class CxfJaxrsServiceRegistrator {
 
         _jaxRsServerFactoryBean.setProvider(new SseEventSinkContextProvider());
         _jaxRsServerFactoryBean.setProvider(new SseContextProvider());
+
+        if (!features.isEmpty()) {
+            _jaxRsServerFactoryBean.setFeatures(features);
+        }
 
         for (ResourceProvider resourceProvider: _services) {
             _jaxRsServerFactoryBean.setResourceProvider(resourceProvider);
