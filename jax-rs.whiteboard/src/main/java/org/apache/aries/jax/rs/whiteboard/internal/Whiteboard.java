@@ -88,6 +88,7 @@ import static org.apache.aries.osgi.functional.OSGi.onClose;
 import static org.apache.aries.osgi.functional.OSGi.once;
 import static org.apache.aries.osgi.functional.OSGi.register;
 import static org.apache.aries.osgi.functional.OSGi.serviceReferences;
+import static org.apache.aries.osgi.functional.Utils.accumulateInMap;
 import static org.apache.aries.osgi.functional.Utils.highest;
 import static org.osgi.service.http.whiteboard.HttpWhiteboardConstants.HTTP_WHITEBOARD_CONTEXT_NAME;
 import static org.osgi.service.http.whiteboard.HttpWhiteboardConstants.HTTP_WHITEBOARD_CONTEXT_PATH;
@@ -446,15 +447,42 @@ public class Whiteboard {
         ));
     }
 
-    private ExtensionManagerBus createBus() {
+    private ExtensionManagerBus createBus(
+        Map<String, ServiceTuple<Object>> extensions) {
+
         BundleWiring wiring = _bundleContext.getBundle().adapt(
             BundleWiring.class);
 
         @SuppressWarnings("unchecked")
         Map<String, Object> properties = new HashMap<>(_configurationMap);
 
+        HashMap<Class<?>, Object> cxfExtensions = new HashMap<>();
+
+        if (extensions.isEmpty()) {
+            cxfExtensions = null;
+        }
+        else {
+            for (Map.Entry<String, ServiceTuple<Object>> entry :
+                extensions.entrySet()) {
+
+                String className = entry.getKey();
+
+                ServiceTuple<Object> serviceTuple = entry.getValue();
+
+                ClassLoader classLoader = getClassLoader(serviceTuple);
+
+                try {
+                    Class<?> clazz = classLoader.loadClass(className);
+
+                    cxfExtensions.put(clazz, serviceTuple.getService());
+                }
+                catch (Exception e) {
+                }
+            }
+        }
+
         ExtensionManagerBus bus = new ExtensionManagerBus(
-            null, properties, wiring.getClassLoader());
+            cxfExtensions, properties, wiring.getClassLoader());
 
         bus.initialize();
 
@@ -502,20 +530,74 @@ public class Whiteboard {
         };
 
         return
-            deployRegistrator(tuple, properties).flatMap(registrator ->
+            getCxfExtensions(tuple.getCachingServiceReference()).
+                flatMap(extensions ->
+            deployRegistrator(extensions, tuple, properties).
+                flatMap(registrator ->
             registerCXFServletService(
                 registrator.getBus(), properties, contextReference).then(
             just(registrator)
-        ));
+        )));
+    }
+
+    public OSGi<Map<String, ServiceTuple<Object>>> getCxfExtensions(
+        CachingServiceReference<Application> applicationReference) {
+
+        OSGi<ServiceTuple<Object>> cxfExtensionsForApplication =
+            onlyGettables(
+                serviceReferences("(cxf.extension=true)").filter(
+                    sr -> {
+                        Object appFilter = sr.getProperty(
+                            JAX_RS_APPLICATION_SELECT);
+
+                        if (appFilter == null) {
+                            return true;
+                        }
+                        else {
+                            try {
+                                Filter filter = FrameworkUtil.createFilter(
+                                    appFilter.toString());
+
+                                return filter.match(
+                                    applicationReference.getServiceReference());
+                            }
+                            catch (InvalidSyntaxException e) {
+                                return false;
+                            }
+                        }
+                    }
+                ).filter(
+                    new TargetFilter<>(_runtimeReference)
+                ),
+                __ -> {}, __ -> {});
+
+        return accumulateInMap(
+            cxfExtensionsForApplication,
+            st -> just(
+                Arrays.asList(
+                    canonicalize(
+                        st.getCachingServiceReference().
+                            getProperty("objectClass")))),
+            OSGi::just);
+    }
+
+    private ClassLoader getClassLoader(ServiceTuple<?> serviceTuple) {
+        return serviceTuple.
+            getCachingServiceReference().
+            getServiceReference().
+            getBundle().
+            adapt(BundleWiring.class).
+            getClassLoader();
     }
 
     private OSGi<CxfJaxrsServiceRegistrator> deployRegistrator(
+        Map<String, ServiceTuple<Object>> extensions,
         ServiceTuple<Application> tuple, Supplier<Map<String, ?>> props) {
 
         return
             just(() ->
                     new CxfJaxrsServiceRegistrator(
-                        createBus(), tuple, props.get())).
+                        createBus(extensions), tuple, props.get())).
                 flatMap(registrator ->
             onClose(registrator::close).then(
             register(
