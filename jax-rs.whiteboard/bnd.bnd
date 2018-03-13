@@ -12,7 +12,10 @@ Provide-Capability: \
         uses:="org.osgi.service.jaxrs.runtime,org.osgi.service.jaxrs.runtime.dto", \
     osgi.service; \
         objectClass:List<String>="javax.ws.rs.client.ClientBuilder"; \
-        uses:="javax.ws.rs.client,org.osgi.service.jaxrs.client"
+        uses:="javax.ws.rs.client,org.osgi.service.jaxrs.client",\
+	osgi.service; \
+		objectClass:List<String>="org.osgi.service.jaxrs.client.SseEventSourceFactory"; \
+		uses:="javax.ws.rs.client,org.osgi.service.jaxrs.client"
     
 Require-Capability: \
     osgi.implementation; \
