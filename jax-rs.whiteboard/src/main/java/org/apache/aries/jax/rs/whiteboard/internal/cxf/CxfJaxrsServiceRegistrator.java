@@ -209,10 +209,7 @@ public class CxfJaxrsServiceRegistrator {
         _bus.setExtension(
             context -> {
                 ConfigurableImpl<FeatureContext> configurable =
-                    new ConfigurableImpl<>(
-                        context, RuntimeType.SERVER,
-                        ServerConfigurableFactory.
-                            SERVER_FILTER_INTERCEPTOR_CLASSES);
+                    new ConfigurableImpl<>(context, RuntimeType.SERVER);
 
                 configurable.property(
                     "osgi.jaxrs.application.serviceProperties", _properties);
