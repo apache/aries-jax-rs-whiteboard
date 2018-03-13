@@ -142,6 +142,10 @@ public class CxfJaxrsServiceRegistrator {
     }
 
     public Iterable<Class<?>> getStaticResourceClasses() {
+        if (_jaxRsServerFactoryBean == null) {
+            return Collections.emptyList();
+        }
+
         JAXRSServiceFactoryBean serviceFactory =
             _jaxRsServerFactoryBean.getServiceFactory();
 
