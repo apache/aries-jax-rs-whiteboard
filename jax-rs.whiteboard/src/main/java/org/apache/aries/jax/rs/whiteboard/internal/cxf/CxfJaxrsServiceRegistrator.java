@@ -269,6 +269,8 @@ public class CxfJaxrsServiceRegistrator {
         _jaxRsServerFactoryBean.setProvider(new SseContextProvider());
 
         if (!features.isEmpty()) {
+            features.addAll(_jaxRsServerFactoryBean.getFeatures());
+
             _jaxRsServerFactoryBean.setFeatures(features);
         }
 
