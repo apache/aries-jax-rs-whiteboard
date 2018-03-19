@@ -70,7 +70,7 @@ import java.util.stream.Stream;
 
 import static java.lang.String.format;
 import static java.util.stream.Collectors.toMap;
-import static org.apache.aries.jax.rs.whiteboard.internal.AriesJaxrsServiceRuntime.getApplicationName;
+import static org.apache.aries.jax.rs.whiteboard.internal.AriesJaxrsServiceRuntime.getServiceName;
 import static org.apache.aries.jax.rs.whiteboard.internal.utils.Utils.canonicalize;
 import static org.apache.aries.jax.rs.whiteboard.internal.utils.Utils.generateApplicationName;
 import static org.apache.aries.jax.rs.whiteboard.internal.utils.Utils.getProperties;
@@ -127,8 +127,6 @@ public class Whiteboard {
                 org.apache.cxf.feature.Feature.class)
             .collect(toMap(Class::getName, Function.identity())));
     static final String DEFAULT_NAME = ".default";
-    private static final Function<CachingServiceReference<Application>, String>
-        APPLICATION_BASE = sr -> getApplicationBase(sr::getProperty);
 
     private final AriesJaxrsServiceRuntime _runtime;
     private final Map<String, ?> _configurationMap;
@@ -237,7 +235,7 @@ public class Whiteboard {
             (OSGi)getApplicationsForWhiteboard();
         return
             highestPer(
-                sr -> getApplicationName(sr::getProperty),
+                sr -> getServiceName(sr::getProperty),
                 all(
                     countChanges(getResourcesForWhiteboard(), _counter),
                     countChanges(
@@ -328,7 +326,7 @@ public class Whiteboard {
         });
     }
 
-    private static <T> boolean testFilters(Object propertyObject) {
+    private static boolean testFilters(Object propertyObject) {
         if (propertyObject != null) {
             try {
                 String[] properties = canonicalize(propertyObject);
@@ -686,7 +684,7 @@ public class Whiteboard {
         CachingServiceReference<CxfJaxrsServiceRegistrator>
             registratorReference) {
 
-        String applicationName = getApplicationName(
+        String applicationName = getServiceName(
             registratorReference::getProperty);
 
         Bundle originalBundle = _bundleContext.getBundle(
@@ -733,7 +731,7 @@ public class Whiteboard {
                 "original.service.bundleid"));
 
         return
-            just(() -> getApplicationName(registratorReference::getProperty)).
+            just(() -> getServiceName(registratorReference::getProperty)).
                 flatMap(applicationName ->
             service(registratorReference).flatMap(registrator ->
             changeContext(
@@ -861,7 +859,7 @@ public class Whiteboard {
         Consumer<CachingServiceReference<?>> onAddingDependent,
         Consumer<CachingServiceReference<?>> onRemovingDependent) {
 
-        String applicationName = getApplicationName(
+        String applicationName = getServiceName(
             applicationRegistratorReference::getProperty);
 
         String[] extensionDependencies = canonicalize(
@@ -1020,7 +1018,7 @@ public class Whiteboard {
 
         String finalAddress = address;
 
-        String applicationName = getApplicationName(configuration::get);
+        String applicationName = getServiceName(configuration::get);
 
         Supplier<Map<String, ?>> contextPropertiesSup;
 

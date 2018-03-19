@@ -70,7 +70,7 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
     private static final Logger _LOGGER = LoggerFactory.getLogger(
         Whiteboard.class);
 
-    public static String getApplicationName(PropertyHolder properties) {
+    public static String getServiceName(PropertyHolder properties) {
         Object property = properties.get(JAX_RS_NAME);
 
         if (property == null) {
@@ -428,7 +428,7 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
             path,
             (__, prop) -> {
                 if (DEFAULT_NAME.equals(
-                    getApplicationName(
+                    getServiceName(
                         ari._cachingServiceReference::getProperty))) {
 
                     _defaultApplicationProperties = ari;
@@ -521,7 +521,7 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
     private static <T extends BaseDTO> T populateBaseDTO(
     		T baseDTO, CachingServiceReference<?> serviceReference) {
 
-        baseDTO.name = getApplicationName(serviceReference::getProperty);
+        baseDTO.name = getServiceName(serviceReference::getProperty);
         baseDTO.serviceId = (Long)serviceReference.getProperty(
             "service.id");
 
@@ -642,7 +642,7 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
 
         ApplicationDTO applicationDTO = new ApplicationDTO(){};
 
-        applicationDTO.name = getApplicationName(
+        applicationDTO.name = getServiceName(
             ari._cachingServiceReference::getProperty);
         applicationDTO.base = getApplicationBase(
             ari._cachingServiceReference::getProperty);
