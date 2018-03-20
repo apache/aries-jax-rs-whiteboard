@@ -33,6 +33,7 @@ import org.apache.aries.jax.rs.whiteboard.internal.utils.PropertyHolder;
 import org.apache.aries.osgi.functional.OSGi;
 import org.apache.aries.osgi.functional.OSGiResult;
 import org.apache.cxf.jaxrs.impl.RuntimeDelegateImpl;
+import org.apache.cxf.jaxrs.sse.client.SseEventSourceBuilderImpl;
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.Constants;
@@ -167,42 +168,16 @@ public class CxfJaxrsBundleActivator implements BundleActivator {
     }
 
     private static OSGi<?> registerSseEventSourceFactory() {
-        ClassLoader classLoader = CxfJaxrsBundleActivator.class.getClassLoader();
-
         return register(
             SseEventSourceFactory.class, new SseEventSourceFactory() {
                 @Override
                 public SseEventSource.Builder newBuilder(WebTarget target) {
-                    Thread thread = Thread.currentThread();
-
-                    ClassLoader contextClassLoader =
-                        thread.getContextClassLoader();
-
-                    thread.setContextClassLoader(classLoader);
-
-                    try {
-                        return SseEventSource.target(target);
-                    }
-                    finally {
-                        thread.setContextClassLoader(contextClassLoader);
-                    }
+                    return new SseEventSourceBuilderImpl(){{target(target);}};
                 }
 
                 @Override
                 public SseEventSource newSource(WebTarget target) {
-                    Thread thread = Thread.currentThread();
-
-                    ClassLoader contextClassLoader =
-                        thread.getContextClassLoader();
-
-                    thread.setContextClassLoader(classLoader);
-
-                    try {
-                        return SseEventSource.target(target).build();
-                    }
-                    finally {
-                        thread.setContextClassLoader(contextClassLoader);
-                    }
+                    return newBuilder(target).build();
                 }
             },
             new Hashtable<>());
