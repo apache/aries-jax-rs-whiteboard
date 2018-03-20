@@ -43,6 +43,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static java.lang.String.format;
+import static org.apache.aries.jax.rs.whiteboard.internal.utils.LogUtils.ifInfoEnabled;
+import static org.apache.aries.jax.rs.whiteboard.internal.utils.LogUtils.debugTracking;
 import static org.apache.aries.jax.rs.whiteboard.internal.utils.Utils.canonicalize;
 import static org.apache.aries.jax.rs.whiteboard.internal.Whiteboard.createWhiteboard;
 import static org.apache.aries.osgi.functional.OSGi.all;
@@ -72,8 +74,11 @@ public class CxfJaxrsBundleActivator implements BundleActivator {
         }
 
         OSGi<?> whiteboards =
-            configurations("org.apache.aries.jax.rs.whiteboard").flatMap(
-                configuration -> runWhiteboard(bundleContext, configuration)
+            configurations("org.apache.aries.jax.rs.whiteboard").
+                effects(
+                    debugTracking(_log, () -> "whiteboard configuration")
+                ).flatMap(configuration ->
+                runWhiteboard(bundleContext, configuration)
             );
 
         _whiteboardsResult = whiteboards.run(bundleContext);
@@ -146,7 +151,17 @@ public class CxfJaxrsBundleActivator implements BundleActivator {
                     endpointFilter(configuration::get),
                     __ -> false //never reload
                 ).then(
-                    just(createWhiteboard(bundleContext, configuration))
+                    just(createWhiteboard(bundleContext, configuration)).
+                    effects(
+                        ifInfoEnabled(
+                            _log,
+                            () -> "created whiteboard from configuration: " +
+                                configuration),
+                        ifInfoEnabled(
+                            _log,
+                            () -> "destroyed whiteboard from configuration: " +
+                                configuration)
+                    )
                 .flatMap(
                     whiteboard ->
                         all(
@@ -154,6 +169,12 @@ public class CxfJaxrsBundleActivator implements BundleActivator {
                                 endpoints.effects(
                                     whiteboard::addHttpEndpoints,
                                     whiteboard::removeHttpEndpoints)
+                            ).
+                            effects(
+                                debugTracking(
+                                    _log,
+                                    () -> "endpoint for whiteboard: " +
+                                        whiteboard)
                             ),
                             effects(whiteboard::start, whiteboard::stop)
                         )
@@ -164,7 +185,11 @@ public class CxfJaxrsBundleActivator implements BundleActivator {
     private static OSGi<?> registerClient() {
         return register(
             ClientBuilder.class, new ClientBuilderFactory(),
-            (Map<String, Object>) null);
+            (Map<String, Object>) null).
+            effects(
+                ifInfoEnabled(_log, () -> "Registered ClientBuilder"),
+                ifInfoEnabled(_log, () -> "Unregistered ClientBuilder")
+            );
     }
 
     private static OSGi<?> registerSseEventSourceFactory() {
@@ -180,7 +205,11 @@ public class CxfJaxrsBundleActivator implements BundleActivator {
                     return newBuilder(target).build();
                 }
             },
-            new Hashtable<>());
+            new Hashtable<>()).
+            effects(
+                ifInfoEnabled(_log, () -> "Registered SseEventSourceFactory"),
+                ifInfoEnabled(_log, () -> "Unregistered SseEventSourceFactory")
+            );
     }
 
 }

@@ -22,6 +22,8 @@ import static org.apache.aries.jax.rs.whiteboard.internal.utils.Utils.generateAp
 import static org.apache.aries.jax.rs.whiteboard.internal.Whiteboard.DEFAULT_NAME;
 import static org.apache.aries.jax.rs.whiteboard.internal.Whiteboard.SUPPORTED_EXTENSION_INTERFACES;
 import static org.apache.aries.jax.rs.whiteboard.internal.Whiteboard.getApplicationBase;
+import static org.apache.aries.jax.rs.whiteboard.internal.utils.Utils.getServiceId;
+import static org.osgi.service.http.whiteboard.HttpWhiteboardConstants.HTTP_WHITEBOARD_CONTEXT_SELECT;
 import static org.osgi.service.jaxrs.whiteboard.JaxrsWhiteboardConstants.JAX_RS_NAME;
 
 import java.util.ArrayList;
@@ -45,6 +47,7 @@ import org.apache.aries.jax.rs.whiteboard.AriesJaxrsWhiteboardConstants;
 import org.apache.aries.jax.rs.whiteboard.internal.cxf.CxfJaxrsServiceRegistrator;
 import org.apache.aries.jax.rs.whiteboard.internal.utils.PropertyHolder;
 import org.apache.aries.jax.rs.whiteboard.internal.introspection.ClassIntrospector;
+import org.apache.aries.jax.rs.whiteboard.internal.utils.Utils;
 import org.apache.aries.osgi.functional.CachingServiceReference;
 import org.apache.cxf.Bus;
 import org.apache.cxf.jaxrs.utils.AnnotationUtils;
@@ -68,8 +71,8 @@ import org.slf4j.LoggerFactory;
 public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
 
     private static final long serialVersionUID = 1L;
-    private static final Logger _LOGGER = LoggerFactory.getLogger(
-        Whiteboard.class);
+    private static final Logger _log = LoggerFactory.getLogger(
+        AriesJaxrsServiceRuntime.class);
 
     public static String getServiceName(PropertyHolder properties) {
         Object property = properties.get(JAX_RS_NAME);
@@ -94,51 +97,105 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
     }
 
     public void addApplicationEndpoint(
-        String applicationName,
+        CachingServiceReference<CxfJaxrsServiceRegistrator>
+            registratorReference,
         CachingServiceReference<?> endpointImmutableServiceReference,
         Bus bus, Class<?> theClass) {
 
         _applicationEndpoints.compute(
-            applicationName,
+            getServiceName(registratorReference::getProperty),
             merger(
                 new EndpointRuntimeInformation(
                     endpointImmutableServiceReference, bus, theClass)));
+
+        if (_log.isInfoEnabled()) {
+        	_log.info(
+        	    "Resource service {} has been registered into application {}",
+                getServiceId(endpointImmutableServiceReference),
+                registratorReference.getProperty("original.service.id"));
+        }
     }
 
     public void addApplicationExtension(
-        String applicationName,
+        CachingServiceReference<CxfJaxrsServiceRegistrator>
+            registratorReference,
         CachingServiceReference<?> extensionImmutableServiceReference,
         Class<?> theClass) {
 
         _applicationExtensions.compute(
-            applicationName,
+            getServiceName(registratorReference::getProperty),
             merger(
                 new ExtensionRuntimeInformation(
                     extensionImmutableServiceReference, theClass)));
+
+        if (_log.isInfoEnabled()) {
+        	_log.info(
+        	    "Extension {} has been registered to application {}",
+                getServiceId(extensionImmutableServiceReference),
+                registratorReference.getProperty("original.service.id"));
+        }
     }
 
     public void addClashingApplication(
         CachingServiceReference<?> serviceReference) {
 
         _clashingApplications.add(serviceReference);
+
+        String serviceName = getServiceName(serviceReference::getProperty);
+
+        if (_log.isInfoEnabled()) {
+        	_log.info(
+        	    "Application {} clashes with {} for name {}",
+                getServiceId(serviceReference),
+                getServiceId(_servicesForName.get(serviceName)),
+                serviceName);
+        }
     }
 
     public void addClashingExtension(
         CachingServiceReference<?> serviceReference) {
 
         _clashingExtensions.add(serviceReference);
+
+
+        String serviceName = getServiceName(serviceReference::getProperty);
+
+        if (_log.isInfoEnabled()) {
+            _log.info(
+                "Extension {} clashes with {} for name {}",
+                getServiceId(serviceReference),
+                getServiceId(_servicesForName.get(serviceName)),
+                serviceName);
+        }
     }
 
     public void addClashingResource(
         CachingServiceReference<?> serviceReference) {
 
         _clashingResources.add(serviceReference);
+
+        String serviceName = getServiceName(serviceReference::getProperty);
+
+        if (_log.isInfoEnabled()) {
+            _log.info(
+                "Resource {} clashes with {} for name {}",
+                getServiceId(serviceReference),
+                getServiceId(_servicesForName.get(serviceName)),
+                serviceName);
+        }
     }
 
     public void addContextDependentApplication(
         CachingServiceReference<Application> serviceReference) {
 
         _contextDependentApplications.add(serviceReference);
+
+        if (_log.isInfoEnabled()) {
+            _log.info(
+                "Application {} depends on context filter {}",
+                getServiceId(serviceReference),
+                serviceReference.getProperty(HTTP_WHITEBOARD_CONTEXT_SELECT));
+        }
     }
 
     public void addDependentApplication(
@@ -153,7 +210,9 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
         _dependentExtensions.add(cachingServiceReference);
     }
 
-    public void addDependentService(CachingServiceReference<?> serviceReference) {
+    public void addDependentService(
+        CachingServiceReference<?> serviceReference) {
+
         _dependentServices.add(serviceReference);
     }
 
@@ -161,14 +220,34 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
         CachingServiceReference<Application> serviceReference) {
 
         _erroredApplications.add(serviceReference);
+
+        if (_log.isWarnEnabled()) {
+            _log.warn(
+                "Application {} is registered with error",
+                getServiceId(serviceReference));
+        }
     }
 
-    public <T> void addErroredEndpoint(CachingServiceReference<T> serviceReference) {
+    public <T> void addErroredEndpoint(
+        CachingServiceReference<T> serviceReference) {
+
+        if (_log.isWarnEnabled()) {
+            _log.warn(
+                "Resource {} is registered with error",
+                getServiceId(serviceReference));
+        }
+
         _erroredEndpoints.add(serviceReference);
     }
 
     public void addErroredExtension(
         CachingServiceReference<?> cachingServiceReference) {
+
+        if (_log.isWarnEnabled()) {
+        	_log.warn(
+        	    "Extension {} is registered with error",
+                getServiceId(cachingServiceReference));
+        }
 
         _erroredExtensions.add(cachingServiceReference);
     }
@@ -176,11 +255,21 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
     public void addInvalidApplication(
         CachingServiceReference<?> serviceReference) {
 
+        if (_log.isWarnEnabled()) {
+        	_log.warn(
+        	    "Application {} is not valid", getServiceId(serviceReference));
+        }
+
         _invalidApplications.add(serviceReference);
     }
 
     public void addInvalidExtension(
         CachingServiceReference<?> serviceReference) {
+
+        if (_log.isWarnEnabled()) {
+            _log.warn(
+                "Extension {} is not valid", getServiceId(serviceReference));
+        }
 
         _invalidExtensions.add(serviceReference);
     }
@@ -188,16 +277,21 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
     public void addInvalidResource(
         CachingServiceReference<?> serviceReference) {
 
+        if (_log.isWarnEnabled()) {
+            _log.warn(
+                "Resource {} is not valid", getServiceId(serviceReference));
+        }
+
         _invalidResources.add(serviceReference);
     }
 
     public boolean addNotGettableApplication(
         CachingServiceReference<Application> serviceReference) {
 
-        if (_LOGGER.isWarnEnabled()) {
-            _LOGGER.warn(
-                "Application from reference " + serviceReference +
-                    " can't be got");
+        if (_log.isWarnEnabled()) {
+            _log.warn(
+                "Application from reference {} can't be got",
+                getServiceId(serviceReference));
         }
 
         return _ungettableApplications.add(serviceReference);
@@ -206,10 +300,10 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
     public <T> boolean addNotGettableEndpoint(
         CachingServiceReference<T> serviceReference) {
 
-        if (_LOGGER.isWarnEnabled()) {
-            _LOGGER.warn(
-                "Resource from reference " + serviceReference +
-                    " can't be got");
+        if (_log.isWarnEnabled()) {
+            _log.warn(
+                "Resource from reference {} can't be got",
+                getServiceId(serviceReference));
         }
 
         return _ungettableEndpoints.add(serviceReference);
@@ -218,17 +312,44 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
     public <T> void addNotGettableExtension(
         CachingServiceReference<T> serviceReference) {
 
-        if (_LOGGER.isWarnEnabled()) {
-            _LOGGER.warn(
-                "Extension from reference " + serviceReference +
-                    " can't be got");
+        if (_log.isWarnEnabled()) {
+            _log.warn(
+                "Extension from reference {} can't be got",
+                getServiceId(serviceReference));
         }
 
         _ungettableExtensions.add(serviceReference);
     }
 
+    public void addServiceForName(CachingServiceReference<?> serviceReference) {
+        _servicesForName.put(
+            getServiceName(serviceReference::getProperty), serviceReference);
+
+        if (_log.isInfoEnabled()) {
+        	_log.info(
+        	    "Registered service {} for name {}",
+                getServiceId(serviceReference),
+                getServiceName(serviceReference::getProperty));
+        }
+    }
+
     public boolean addShadowedApplication(
-        CachingServiceReference<Application> serviceReference) {
+        CachingServiceReference<Application> serviceReference,
+        String actualBasePath) {
+
+        if (_log.isInfoEnabled()) {
+            ApplicationRuntimeInformation applicationRuntimeInformation =
+                _applications.get(actualBasePath);
+
+            if (applicationRuntimeInformation != null) {
+                _log.info(
+                    "Application reference {} is shadowed by {}",
+                    getServiceId(serviceReference),
+                    getServiceId(
+                        applicationRuntimeInformation._cachingServiceReference)
+                );
+            }
+        }
 
         return _shadowedApplications.add(serviceReference);
     }
@@ -299,10 +420,30 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
         return runtimeDTO;
     }
 
-    private Stream<FailedApplicationDTO> contextDependentApplicationsDTOStream() {
+    public void removedServiceForName(
+        CachingServiceReference<?> serviceReference) {
+
+        _servicesForName.remove(getServiceName(serviceReference::getProperty));
+
+        if (_log.isInfoEnabled()) {
+            _log.info(
+                "Unregistered service {} for name {}",
+                getServiceId(serviceReference),
+                getServiceName(serviceReference::getProperty));
+        }
+    }
+
+    private ConcurrentHashMap<String, CachingServiceReference<?>>
+        _servicesForName = new ConcurrentHashMap<>();
+
+    private Stream<FailedApplicationDTO>
+        contextDependentApplicationsDTOStream() {
+
         return _contextDependentApplications.stream().map(
             sr -> buildFailedApplicationDTO(
-                AriesJaxrsWhiteboardConstants.FAILURE_REASON_REQUIRED_CONTEXT_UNAVAILABLE, sr)
+                AriesJaxrsWhiteboardConstants.
+                    FAILURE_REASON_REQUIRED_CONTEXT_UNAVAILABLE,
+                sr)
         );
     }
 
@@ -319,49 +460,95 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
     }
 
     public void removeApplicationEndpoint(
-        String applicationName,
+        CachingServiceReference<CxfJaxrsServiceRegistrator>
+            registratorReference,
         CachingServiceReference<?> cachingServiceReference) {
 
         _applicationEndpoints.compute(
-            applicationName,
+            getServiceName(registratorReference::getProperty),
             remover(
                 new EndpointRuntimeInformation(
                 cachingServiceReference, null, null)));
+
+        if (_log.isInfoEnabled()) {
+        	_log.info(
+        	    "Endpoint {} has been removed from application {}",
+                getServiceId(cachingServiceReference),
+                registratorReference.getProperty("original.service.id"));
+        }
     }
 
     public void removeApplicationExtension(
-        String applicationName,
+        CachingServiceReference<CxfJaxrsServiceRegistrator>
+            registratorReference,
         CachingServiceReference<?> extensionImmutableServiceReference) {
 
         _applicationExtensions.computeIfPresent(
-            applicationName,
+            getServiceName(registratorReference::getProperty),
             remover(
                 new ExtensionRuntimeInformation(
                 extensionImmutableServiceReference, null)));
+
+        if (_log.isInfoEnabled()) {
+            _log.info(
+                "Extension {} has been removed from application {}",
+                getServiceId(extensionImmutableServiceReference),
+                registratorReference.getProperty("original.service.id"));
+        }
     }
 
     public void removeClashingApplication(
         CachingServiceReference<?> serviceReference) {
 
         _clashingApplications.remove(serviceReference);
+
+        if (_log.isInfoEnabled()) {
+            _log.info(
+                "Application {} no longer clashes for name {}",
+                getServiceId(serviceReference),
+                getServiceName(serviceReference::getProperty));
+        }
     }
 
     public void removeClashingExtension(
         CachingServiceReference<?> serviceReference) {
 
         _clashingExtensions.remove(serviceReference);
+
+        if (_log.isInfoEnabled()) {
+            _log.info(
+                "Extension {} no longer clashes for name {}",
+                getServiceId(serviceReference),
+                getServiceName(serviceReference::getProperty));
+        }
     }
 
     public void removeClashingResource(
         CachingServiceReference<?> serviceReference) {
 
         _clashingResources.remove(serviceReference);
+
+        if (_log.isInfoEnabled()) {
+            _log.info(
+                "Resource {} no longer clashes for name {}",
+                getServiceId(serviceReference),
+                getServiceName(serviceReference::getProperty));
+        }
+
     }
 
     public void removeContextDependentApplication(
         CachingServiceReference<Application> serviceReference) {
 
         _contextDependentApplications.remove(serviceReference);
+
+        if (_log.isInfoEnabled()) {
+            _log.info(
+                "Application {} no longer depends on context filter {}",
+                getServiceId(serviceReference),
+                serviceReference.getProperty(HTTP_WHITEBOARD_CONTEXT_SELECT));
+        }
+
     }
 
     public void removeDependentApplication(
@@ -376,7 +563,9 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
         _dependentExtensions.remove(cachingServiceReference);
     }
 
-    public void removeDependentService(CachingServiceReference<?> serviceReference) {
+    public void removeDependentService(
+        CachingServiceReference<?> serviceReference) {
+
         _dependentServices.remove(serviceReference);
     }
 
@@ -384,63 +573,120 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
         CachingServiceReference<Application> serviceReference) {
 
         _erroredApplications.remove(serviceReference);
+
+        if (_log.isWarnEnabled()) {
+            _log.warn(
+                "Errored application {} is gone",
+                getServiceId(serviceReference));
+        }
     }
 
-    public <T> void removeErroredEndpoint(CachingServiceReference<T> serviceReference) {
+    public <T> void removeErroredEndpoint(
+        CachingServiceReference<T> serviceReference) {
+
         _erroredEndpoints.remove(serviceReference);
+
+        if (_log.isWarnEnabled()) {
+            _log.warn(
+                "Errored resource {} is gone", getServiceId(serviceReference));
+        }
     }
 
     public void removeErroredExtension(
-        CachingServiceReference<?> cachingServiceReference) {
+        CachingServiceReference<?> serviceReference) {
 
-        _erroredExtensions.remove(cachingServiceReference);
+        _erroredExtensions.remove(serviceReference);
+
+        if (_log.isWarnEnabled()) {
+            _log.warn(
+                "Errored extension {} is gone", getServiceId(serviceReference));
+        }
     }
 
     public void removeInvalidApplication(
         CachingServiceReference<?> serviceReference) {
 
         _invalidApplications.remove(serviceReference);
+
+        if (_log.isWarnEnabled()) {
+            _log.warn(
+                "Invalid application {} is gone",
+                getServiceId(serviceReference));
+        }
     }
 
     public void removeInvalidExtension(
         CachingServiceReference<?> serviceReference) {
 
         _invalidExtensions.remove(serviceReference);
+
+        if (_log.isWarnEnabled()) {
+            _log.warn(
+                "Invalid extension {} is gone", getServiceId(serviceReference));
+        }
     }
 
     public void removeInvalidResource(
         CachingServiceReference<?> serviceReference) {
 
         _invalidResources.remove(serviceReference);
+
+        if (_log.isWarnEnabled()) {
+            _log.warn(
+                "Invalid resource {} is gone", getServiceId(serviceReference));
+        }
     }
 
-    public boolean removeNotGettableApplication(
+    public void removeNotGettableApplication(
         CachingServiceReference<Application> serviceReference) {
 
-        return _ungettableApplications.remove(serviceReference);
+        _ungettableApplications.remove(serviceReference);
+
+        if (_log.isWarnEnabled()) {
+            _log.warn(
+                "Ungettable application reference {} is gone",
+                getServiceId(serviceReference));
+        }
     }
 
-    public <T> boolean removeNotGettableEndpoint(
+    public <T> void removeNotGettableEndpoint(
         CachingServiceReference<T> serviceReference) {
 
-        return _ungettableEndpoints.remove(serviceReference);
+        _ungettableEndpoints.remove(serviceReference);
+
+        if (_log.isWarnEnabled()) {
+            _log.warn(
+                "Ungettable resource reference {} is gone",
+                getServiceId(serviceReference));
+        }
     }
 
     public <T> void removeNotGettableExtension(
         CachingServiceReference<T> serviceReference) {
 
         _ungettableExtensions.remove(serviceReference);
+
+        if (_log.isWarnEnabled()) {
+            _log.warn(
+                "Ungettable extension reference {} is gone",
+                getServiceId(serviceReference));
+        }
     }
 
     public boolean removeShadowedApplication(
         CachingServiceReference<Application> serviceReference) {
 
+        if (_log.isDebugEnabled()) {
+        	_log.debug(
+        	    "Application {} is no longer shadowed",
+                getServiceId(serviceReference));
+        }
+
         return _shadowedApplications.remove(serviceReference);
     }
 
     public ApplicationRuntimeInformation setApplicationForPath(
-        String path,
-        CachingServiceReference<Application> serviceReference,
+        String path, CachingServiceReference<Application> serviceReference,
         CxfJaxrsServiceRegistrator cxfJaxRsServiceRegistrator) {
 
         ApplicationRuntimeInformation ari = new ApplicationRuntimeInformation(
@@ -453,7 +699,19 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
                     getServiceName(
                         ari._cachingServiceReference::getProperty))) {
 
+                    if (_log.isInfoEnabled()) {
+                    	_log.info(
+                    	    "Setting application {} as default",
+                            getServiceId(serviceReference));
+                    }
+
                     _defaultApplicationProperties = ari;
+                }
+
+                if (_log.isInfoEnabled()) {
+                	_log.info(
+                	    "Registering application {} for path {}",
+                        getServiceId(serviceReference), path);
                 }
 
                 return ari;
@@ -481,15 +739,16 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
         new CopyOnWriteArrayList<>();
     private Set<CachingServiceReference<Application>>
         _contextDependentApplications = ConcurrentHashMap.newKeySet();
-    private volatile ApplicationRuntimeInformation _defaultApplicationProperties;
+    private volatile ApplicationRuntimeInformation
+        _defaultApplicationProperties;
     private Set<CachingServiceReference<Application>> _dependentApplications =
         ConcurrentHashMap.newKeySet();
     private Set<CachingServiceReference<?>> _dependentExtensions =
         ConcurrentHashMap.newKeySet();
     private Set<CachingServiceReference<?>> _dependentServices =
         ConcurrentHashMap.newKeySet();
-    private Collection<CachingServiceReference<Application>> _erroredApplications =
-        new CopyOnWriteArrayList<>();
+    private Collection<CachingServiceReference<Application>>
+        _erroredApplications = new CopyOnWriteArrayList<>();
     private Collection<CachingServiceReference<?>> _erroredEndpoints =
         new CopyOnWriteArrayList<>();
     private Collection<CachingServiceReference<?>> _erroredExtensions =
@@ -500,8 +759,8 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
         new CopyOnWriteArrayList<>();
     private Collection<CachingServiceReference<?>> _invalidResources =
         new CopyOnWriteArrayList<>();
-    private Collection<CachingServiceReference<Application>> _shadowedApplications =
-        new CopyOnWriteArrayList<>();
+    private Collection<CachingServiceReference<Application>>
+        _shadowedApplications = new CopyOnWriteArrayList<>();
     private Collection<CachingServiceReference<Application>>
         _ungettableApplications = new CopyOnWriteArrayList<>();
     private Collection<CachingServiceReference<?>> _ungettableEndpoints =
@@ -647,17 +906,21 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
             );
     }
 
-    private Stream<FailedExtensionDTO> applicationDependentExtensionsDTOStream() {
+    private Stream<FailedExtensionDTO>
+        applicationDependentExtensionsDTOStream() {
+
         return _applicationDependentExtensions.stream().map(
             sr -> buildFailedExtensionDTO(
-                DTOConstants.FAILURE_REASON_REQUIRED_APPLICATION_UNAVAILABLE, sr)
+                DTOConstants.FAILURE_REASON_REQUIRED_APPLICATION_UNAVAILABLE,
+                sr)
         );
     }
 
     private Stream<FailedResourceDTO> applicationDependentResourcesDTOStream() {
         return _applicationDependentResources.stream().map(
             sr -> buildFailedResourceDTO(
-                DTOConstants.FAILURE_REASON_REQUIRED_APPLICATION_UNAVAILABLE, sr)
+                DTOConstants.FAILURE_REASON_REQUIRED_APPLICATION_UNAVAILABLE,
+                sr)
         );
     }
 
@@ -851,10 +1114,9 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
                 endpointRuntimeInformations.stream() :
                 Stream.empty();
 
-        return
-            applicationEndpointStream.map(
-                sr -> populateResourceDTO(new ResourceDTO(), sr)
-            );
+        return applicationEndpointStream.map(
+            sr -> populateResourceDTO(new ResourceDTO(), sr)
+        );
     }
 
     private Stream<ExtensionDTO> getApplicationExtensionsStream(String name) {
@@ -900,7 +1162,9 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
         );
     }
 
-    private Stream<FailedApplicationDTO> unreferenciableApplicationsDTOStream() {
+    private Stream<FailedApplicationDTO>
+        unreferenciableApplicationsDTOStream() {
+
         return _ungettableApplications.stream().
             map(
                 sr -> buildFailedApplicationDTO(

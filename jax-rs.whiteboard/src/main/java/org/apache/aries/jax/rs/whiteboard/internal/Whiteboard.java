@@ -39,6 +39,8 @@ import org.osgi.framework.ServiceRegistration;
 import org.osgi.framework.wiring.BundleWiring;
 import org.osgi.service.http.context.ServletContextHelper;
 import org.osgi.service.jaxrs.runtime.JaxrsServiceRuntime;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.servlet.Servlet;
 import javax.ws.rs.container.ContainerRequestFilter;
@@ -71,13 +73,18 @@ import java.util.stream.Stream;
 import static java.lang.String.format;
 import static java.util.stream.Collectors.toMap;
 import static org.apache.aries.jax.rs.whiteboard.internal.AriesJaxrsServiceRuntime.getServiceName;
+import static org.apache.aries.jax.rs.whiteboard.internal.utils.LogUtils.ifDebugEnabled;
+import static org.apache.aries.jax.rs.whiteboard.internal.utils.LogUtils.ifErrorEnabled;
+import static org.apache.aries.jax.rs.whiteboard.internal.utils.LogUtils.ifInfoEnabled;
 import static org.apache.aries.jax.rs.whiteboard.internal.utils.Utils.canonicalize;
 import static org.apache.aries.jax.rs.whiteboard.internal.utils.Utils.generateApplicationName;
 import static org.apache.aries.jax.rs.whiteboard.internal.utils.Utils.getProperties;
+import static org.apache.aries.jax.rs.whiteboard.internal.utils.Utils.getServiceId;
 import static org.apache.aries.jax.rs.whiteboard.internal.utils.Utils.highestPer;
 import static org.apache.aries.jax.rs.whiteboard.internal.utils.Utils.onlyGettables;
 import static org.apache.aries.jax.rs.whiteboard.internal.utils.Utils.service;
 import static org.apache.aries.jax.rs.whiteboard.internal.utils.Utils.updateProperty;
+import static org.apache.aries.osgi.functional.OSGi.NOOP;
 import static org.apache.aries.osgi.functional.OSGi.all;
 import static org.apache.aries.osgi.functional.OSGi.changeContext;
 import static org.apache.aries.osgi.functional.OSGi.effects;
@@ -127,7 +134,11 @@ public class Whiteboard {
                 org.apache.cxf.feature.Feature.class,
                 org.apache.cxf.jaxrs.ext.ContextProvider.class)
             .collect(toMap(Class::getName, Function.identity())));
+
     static final String DEFAULT_NAME = ".default";
+
+    private static final Logger _log = LoggerFactory.getLogger(
+        Whiteboard.class);
 
     private final AriesJaxrsServiceRuntime _runtime;
     private final Map<String, ?> _configurationMap;
@@ -245,7 +256,12 @@ public class Whiteboard {
                 ),
                 this::registerShadowedService,
                 this::unregisterShadowedService
-            ).distribute(
+            ).
+            effects(
+                _runtime::addServiceForName,
+                _runtime::removedServiceForName
+            ).
+            distribute(
                 p -> ignore(applications((OSGi)p.filter(this::isApplication))),
                 p -> ignore(applicationResources(p.filter(this::isResource))),
                 p -> ignore(applicationExtensions(p.filter(this::isExtension)))
@@ -298,7 +314,12 @@ public class Whiteboard {
             OSGi<CachingServiceReference<T>> error = effects(
                 () -> onAddingInvalid.accept(serviceReference),
                 () -> onRemovingInvalid.accept(serviceReference)
-            ).then(
+            ).
+            effects(
+                ifDebugEnabled(_log, () -> "Invalid service {}"),
+                ifDebugEnabled(_log, () -> "Invalid service {} is gone")
+            ).
+            then(
                 nothing()
             );
 
@@ -308,17 +329,35 @@ public class Whiteboard {
                 !propertyObject.toString().equals(JAX_RS_DEFAULT_APPLICATION) &&
                 propertyObject.toString().startsWith(".")) {
 
+                if (_log.isWarnEnabled()) {
+                    _log.warn(
+                        "Invalid property {} in service {}",
+                        JAX_RS_DEFAULT_APPLICATION, serviceReference);
+                }
+
                 return error;
             }
 
             if (!testFilters(
                 serviceReference.getProperty(JAX_RS_APPLICATION_SELECT))) {
 
+                if (_log.isWarnEnabled()) {
+                    _log.warn(
+                        "Invalid value for property {} in service {}",
+                        JAX_RS_APPLICATION_SELECT, serviceReference);
+                }
+
                 return error;
             }
 
             if (!testFilters(
                 serviceReference.getProperty(JAX_RS_EXTENSION_SELECT))) {
+
+                if (_log.isWarnEnabled()) {
+                    _log.warn(
+                        "Invalid value for property {} in service {}",
+                        JAX_RS_EXTENSION_SELECT, serviceReference);
+                }
 
                 return error;
             }
@@ -411,7 +450,7 @@ public class Whiteboard {
                 arwc -> just(arwc.getActualBasePath()),
                 applicationsWithContext,
                 t -> _runtime.addShadowedApplication(
-                    t.getApplicationReference()),
+                    t.getApplicationReference(), t.getActualBasePath()),
                 t -> _runtime.removeShadowedApplication(
                     t.getApplicationReference())
         );
@@ -420,7 +459,7 @@ public class Whiteboard {
             onlyGettables(
                 just(application.getApplicationReference()),
                 _runtime::addNotGettableApplication,
-                _runtime::removeNotGettableApplication).
+                _runtime::removeNotGettableApplication, _log).
             recoverWith(
                 (t, e) ->
                     just(t).map(
@@ -481,10 +520,22 @@ public class Whiteboard {
             }
         }
 
+        if (_log.isDebugEnabled()) {
+            _log.debug(
+                "Creating CXF Bus with extensions {} and properties {}",
+                extensions, properties);
+        }
+
         ExtensionManagerBus bus = new ExtensionManagerBus(
             cxfExtensions, properties, wiring.getClassLoader());
 
         bus.initialize();
+
+        if (_log.isDebugEnabled()) {
+            _log.debug(
+                "Created CXF Bus with extensions {} and properties {}",
+                extensions, properties);
+        }
 
         return bus;
     }
@@ -569,7 +620,7 @@ public class Whiteboard {
                 ).filter(
                     new TargetFilter<>(_runtimeReference)
                 ),
-                __ -> {}, __ -> {});
+                __ -> {}, __ -> {}, _log);
 
         return accumulateInMap(
             cxfExtensionsForApplication,
@@ -700,13 +751,24 @@ public class Whiteboard {
                 onlyGettables(
                     just(serviceReference),
                     _runtime::addNotGettableEndpoint,
-                    _runtime::removeNotGettableEndpoint
+                    _runtime::removeNotGettableEndpoint,
+                    _log
                 )
             ).recoverWith((t, e) ->
                 just(serviceReference).
                 effects(
                     _runtime::addErroredEndpoint,
                     _runtime::removeErroredEndpoint).
+                effects(
+                    ifErrorEnabled(
+                        _log,
+                        () -> "ServiceReference {} for endpoint produced " +
+                            "error: {}",
+                        e),
+                    ifErrorEnabled(
+                        _log,
+                        () -> "Errored ServiceReference {} for endpoint left")
+                ).
                 then(nothing())
             ).flatMap(st ->
                 just(st.getServiceObjects()).
@@ -714,14 +776,35 @@ public class Whiteboard {
                         Utils::getResourceProvider
                 ).effects(
                     rp -> _runtime.addApplicationEndpoint(
-                        applicationName, st.getCachingServiceReference(),
+                        registratorReference, st.getCachingServiceReference(),
                         registrator.getBus(), st.getService().getClass()),
                     rp -> _runtime.removeApplicationEndpoint(
-                        applicationName, st.getCachingServiceReference())
+                        registratorReference, st.getCachingServiceReference())
                 ).effects(
                     registrator::add,
                     registrator::remove
-            )));
+                ).effects(
+                    ifDebugEnabled(
+                        _log,
+                        () -> "Registered endpoint " +
+                            st.getCachingServiceReference().
+                                getServiceReference() + " into application " +
+                                getServiceName(
+                                    registratorReference.
+                                        getServiceReference()::getProperty)
+                    ),
+                    ifDebugEnabled(
+                        _log,
+                        () -> "Unregistered endpoint " +
+                            st.getCachingServiceReference().
+                                getServiceReference() + " from application " +
+                                getServiceName(
+                                    registratorReference.
+                                        getServiceReference()::getProperty)
+                    )
+
+                )
+            ));
     }
 
     private OSGi<?> safeRegisterExtension(
@@ -741,7 +824,8 @@ public class Whiteboard {
                     onlyGettables(
                         just(serviceReference),
                         _runtime::addNotGettableExtension,
-                        _runtime::removeNotGettableExtension
+                        _runtime::removeNotGettableExtension,
+                        _log
                     )
                 ).recoverWith(
                 (t, e) ->
@@ -750,17 +834,52 @@ public class Whiteboard {
                         _runtime::addErroredExtension,
                         _runtime::removeErroredExtension
                     ).
+                    effects(
+                        ifErrorEnabled(
+                            _log,
+                            () -> "ServiceReference {} for extension " +
+                                "produced error: {}",
+                            e),
+                        ifErrorEnabled(
+                            _log,
+                            () -> "Errored ServiceReference {} for extension " +
+                                "left")
+                    ).
                     then(nothing())
             ).effects(
                 registrator::addProvider,
                 registrator::removeProvider
             ).effects(
                 t -> _runtime.addApplicationExtension(
-                    applicationName, serviceReference,
+                    registratorReference, serviceReference,
                     t.getService().getClass()),
                 __ -> _runtime.removeApplicationExtension(
-                    applicationName, serviceReference)
-            ).then(
+                    registratorReference, serviceReference)
+            ).
+            effects(
+                ifDebugEnabled(
+                    _log,
+                    () ->
+                        "Registered extension " +
+                            serviceReference.getServiceReference() +
+                                " into application " +
+                            getServiceName(
+                                registratorReference.
+                                    getServiceReference()::getProperty)
+                ),
+                ifDebugEnabled(
+                    _log,
+                    () ->
+                        "Unregistered extension  " +
+                            serviceReference.getServiceReference() +
+                            " from application " +
+                            getServiceName(
+                                registratorReference.
+                                    getServiceReference()::getProperty)
+                )
+
+            ).
+            then(
             register(
                 ApplicationExtensionRegistration.class,
                 () -> new ApplicationExtensionRegistration(){},
@@ -803,13 +922,19 @@ public class Whiteboard {
             }
 
             for (String extensionDependency : extensionDependencies) {
-                extensionDependency = String.format(
+                if  (_log.isDebugEnabled()) {
+                    _log.debug(
+                        "Application {} has a dependency on {}",
+                        reference, extensionDependency);
+                }
+
+                String finalExtensionDependency = String.format(
                     "(&(!(objectClass=%s))%s)",
                     ApplicationExtensionRegistration.class.getName(),
                     extensionDependency);
 
                 program =
-                    once(serviceReferences(extensionDependency)).
+                    once(serviceReferences(finalExtensionDependency)).
                         flatMap(
                             sr -> {
                                 Object applicationSelectProperty =
@@ -838,11 +963,23 @@ public class Whiteboard {
                                 return nothing();
                             }
                         ).effects(
-                        __ -> {},
-                        __ -> _runtime.addDependentApplication(
-                            reference)
-                    ).
-                        then(program);
+                                __ -> {},
+                                __ -> _runtime.addDependentApplication(
+                                    reference)
+                        ).
+                        effects(
+                            ifInfoEnabled(
+                                _log,
+                                () -> "Application "+ getServiceId(reference) +
+                                    " dependency " + extensionDependency +
+                                        " has been fullfiled"),
+                            ifInfoEnabled(
+                                _log,
+                                () -> "Application "+ getServiceId(reference) +
+                                    " dependency " + extensionDependency +
+                                        " has gone")
+                        ).
+                    then(program);
             }
 
             program = program.effects(
@@ -855,7 +992,7 @@ public class Whiteboard {
     }
 
     private OSGi<?> waitForExtensionDependencies(
-        CachingServiceReference<?> serviceReference,
+        CachingServiceReference<?> reference,
         CachingServiceReference<CxfJaxrsServiceRegistrator>
             applicationRegistratorReference,
         Consumer<CachingServiceReference<?>> onAddingDependent,
@@ -865,38 +1002,45 @@ public class Whiteboard {
             applicationRegistratorReference::getProperty);
 
         String[] extensionDependencies = canonicalize(
-            serviceReference.getProperty(JAX_RS_EXTENSION_SELECT));
+            reference.getProperty(JAX_RS_EXTENSION_SELECT));
 
-        OSGi<CachingServiceReference<?>> program = just(serviceReference);
+        OSGi<CachingServiceReference<?>> program = just(reference);
 
         if (extensionDependencies.length > 0) {
-            onAddingDependent.accept(serviceReference);
+            onAddingDependent.accept(reference);
         }
         else {
             return program;
         }
 
         for (String extensionDependency : extensionDependencies) {
+            if  (_log.isDebugEnabled()) {
+                _log.debug(
+                    "Extension {} has a dependency on {}",
+                    reference, extensionDependency);
+            }
+
             try {
-                extensionDependency = extensionDependency.replace(
+                String finalExtensionDependency = extensionDependency.replace(
                     "(objectClass=", "(original.objectClass=");
 
                 Filter extensionFilter = _bundleContext.createFilter(
-                    extensionDependency);
+                    finalExtensionDependency);
 
                 if (
                     extensionFilter.match(_runtimeReference) ||
                     extensionFilter.match(
-                        applicationRegistratorReference.getServiceReference())) {
-
+                        applicationRegistratorReference.getServiceReference()))
+                {
                     continue;
                 }
 
                 program =
-                    once(serviceReferences(ApplicationExtensionRegistration.class).
+                    once(serviceReferences(
+                        ApplicationExtensionRegistration.class).
                         filter(
                             sr -> sr.getProperty("original.application.name").
-                                    equals(applicationName)
+                                equals(applicationName)
                         ).map(
                             CachingServiceReference::getServiceReference
                         ).filter(
@@ -904,9 +1048,21 @@ public class Whiteboard {
                         )
                     ).effects(
                         __ -> {},
-                        __ -> onAddingDependent.accept(serviceReference)
+                        __ -> onAddingDependent.accept(reference)
                     ).
-                    then(program);
+                    effects(
+                        ifInfoEnabled(
+                            _log,
+                            () -> "Extension " + getServiceId(reference) +
+                                " dependency " + extensionDependency +
+                                    " has been fullfiled"),
+                        ifInfoEnabled(
+                            _log,
+                            () -> "Extension " + getServiceId(reference) +
+                                " dependency " + extensionDependency +
+                                    " has gone")
+                    ).
+                then(program);
             }
             catch (InvalidSyntaxException e) {
 
@@ -914,11 +1070,11 @@ public class Whiteboard {
         }
 
         program = onClose(
-            () -> onRemovingDependent.accept(serviceReference)).
+            () -> onRemovingDependent.accept(reference)).
             then(program);
 
         program = program.effects(
-            __ -> onRemovingDependent.accept(serviceReference),
+            __ -> onRemovingDependent.accept(reference),
             __ -> {}
         );
 
@@ -1024,7 +1180,7 @@ public class Whiteboard {
 
         Supplier<Map<String, ?>> contextPropertiesSup;
 
-        OSGi<?> program = just(0);
+        OSGi<?> program = effects(NOOP, NOOP);
 
         if (contextReference == null) {
             contextPropertiesSup = () -> {

@@ -22,6 +22,7 @@ import org.apache.aries.osgi.functional.OSGi;
 import org.osgi.framework.ServiceObjects;
 import org.osgi.framework.ServiceReference;
 import org.osgi.framework.ServiceRegistration;
+import org.slf4j.Logger;
 
 import java.util.Collection;
 import java.util.Comparator;
@@ -32,6 +33,7 @@ import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+import static org.apache.aries.jax.rs.whiteboard.internal.utils.LogUtils.ifDebugEnabled;
 import static org.apache.aries.osgi.functional.OSGi.bundleContext;
 import static org.apache.aries.osgi.functional.OSGi.effects;
 import static org.apache.aries.osgi.functional.OSGi.just;
@@ -81,22 +83,14 @@ public class Utils {
         return properties;
     }
 
-    public static int getRanking(
+    public static long getServiceId(
         CachingServiceReference<?> cachingServiceReference) {
 
-        Object property = cachingServiceReference.getProperty(
-            "service.ranking");
+        return (long)cachingServiceReference.getProperty("service.id");
+    }
 
-        if (property == null) {
-            return 0;
-        }
-
-        if (property instanceof Number) {
-            return ((Number)property).intValue();
-        }
-        else {
-            return 0;
-        }
+    public static long getServiceId(ServiceReference<?> serviceReference) {
+        return (long)serviceReference.getProperty("service.id");
     }
 
     public static <T> ServiceReferenceResourceProvider getResourceProvider(
@@ -129,14 +123,15 @@ public class Utils {
     public static <T> OSGi<ServiceTuple<T>> onlyGettables(
         OSGi<CachingServiceReference<T>> program,
         Consumer<CachingServiceReference<T>> whenAddedNotGettable,
-        Consumer<CachingServiceReference<T>> whenLeavingNotGettable) {
+        Consumer<CachingServiceReference<T>> whenLeavingNotGettable,
+        Logger log) {
 
         return bundleContext().flatMap(bundleContext ->
             program.recoverWith(
                 (serviceReference, e) ->
                     notGettableResult(
                         whenAddedNotGettable, whenLeavingNotGettable,
-                        serviceReference)
+                        serviceReference, log)
             ).flatMap(serviceReference -> {
                 ServiceObjects<T> serviceObjects =
                     bundleContext.getServiceObjects(
@@ -146,25 +141,37 @@ public class Utils {
                 if (service == null) {
                     return notGettableResult(
                         whenAddedNotGettable, whenLeavingNotGettable,
-                        serviceReference);
+                        serviceReference, log);
                 }
 
                 return
                     just(new ServiceTuple<>(
                             serviceReference, serviceObjects, service)).
-                    effects(__ -> {}, ServiceTuple::dispose);
+                    effects(__ -> {}, ServiceTuple::dispose).
+                    effects(
+                        ifDebugEnabled(
+                            log,
+                            () -> "Obtained instance from " + serviceReference),
+                        ifDebugEnabled(
+                            log,
+                            () -> "Released instance from " + serviceReference)
+                    );
             }));
     }
 
     private static <T, S> OSGi<S> notGettableResult(
         Consumer<CachingServiceReference<T>> whenAddedNotGettable,
         Consumer<CachingServiceReference<T>> whenLeavingNotGettable,
-        CachingServiceReference<T> immutable) {
+        CachingServiceReference<T> immutable, Logger log) {
 
         return effects(
             () -> whenAddedNotGettable.accept(immutable),
             () -> whenLeavingNotGettable.accept(immutable)
-        ).then(
+        ).effects(
+            ifDebugEnabled(log, () -> "Tracked not gettable reference {}"),
+            ifDebugEnabled(log, () -> "Untracked not gettable reference {}")
+        ).
+        then(
             nothing()
         );
     }
@@ -180,16 +187,6 @@ public class Utils {
             onClose(() -> bundleContext.ungetService(serviceReference)).then(
             just(bundleContext.getService(serviceReference))
         ));
-    }
-
-    public static <T> OSGi<ServiceObjects<T>> serviceObjects(
-        CachingServiceReference<T> immutableServiceReference) {
-
-        return
-            bundleContext().flatMap(bundleContext ->
-            just(bundleContext.getServiceObjects(
-                immutableServiceReference.getServiceReference()))
-        );
     }
 
     public static void updateProperty(
