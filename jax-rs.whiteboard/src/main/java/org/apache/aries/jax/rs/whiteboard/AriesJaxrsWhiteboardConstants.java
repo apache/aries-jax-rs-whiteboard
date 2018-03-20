@@ -30,4 +30,8 @@ public class AriesJaxrsWhiteboardConstants {
      */
     public static final String JAX_RS_APPLICATION_SELECT = "org.apache.aries.jaxrs.application.select";
 
+    /**
+     * This application is waiting for a ServletContextHelper
+     */
+    public static final int	FAILURE_REASON_REQUIRED_CONTEXT_UNAVAILABLE	= 101;
 }

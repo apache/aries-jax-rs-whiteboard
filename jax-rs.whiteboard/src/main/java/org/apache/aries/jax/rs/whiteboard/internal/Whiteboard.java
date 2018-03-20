@@ -402,8 +402,9 @@ public class Whiteboard {
 
         OSGi<ApplicationReferenceWithContext> applicationsWithContext =
             waitForApplicationContext(
-                applicationsForWhiteboard, _runtime::addDependentApplication,
-                _runtime::removeDependentApplication);
+                applicationsForWhiteboard,
+                _runtime::addContextDependentApplication,
+                _runtime::removeContextDependentApplication);
 
         OSGi<ApplicationReferenceWithContext> highestRankedPerPath =
             highestPer(

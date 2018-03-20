@@ -917,8 +917,7 @@ public class JaxrsTest extends TestHelper {
             applicationRegistration.getReference().getProperty("service.id"),
             failedApplicationDTOs[0].serviceId);
         assertEquals(
-            DTOConstants.FAILURE_REASON_REQUIRED_EXTENSIONS_UNAVAILABLE,
-            failedApplicationDTOs[0].failureReason);
+            101, failedApplicationDTOs[0].failureReason);
 
         ServiceRegistration<ServletContextHelper> context =
             bundleContext.registerService(
@@ -1049,8 +1048,7 @@ public class JaxrsTest extends TestHelper {
                     "service.id"),
                 failedApplicationDTOs[0].serviceId);
             assertEquals(
-                DTOConstants.FAILURE_REASON_REQUIRED_EXTENSIONS_UNAVAILABLE,
-                failedApplicationDTOs[0].failureReason);
+                101, failedApplicationDTOs[0].failureReason);
 
             webTarget = createDefaultTarget().
                 path(

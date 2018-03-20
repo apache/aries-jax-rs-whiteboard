@@ -41,6 +41,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Application;
 import javax.ws.rs.core.MediaType;
 
+import org.apache.aries.jax.rs.whiteboard.AriesJaxrsWhiteboardConstants;
 import org.apache.aries.jax.rs.whiteboard.internal.cxf.CxfJaxrsServiceRegistrator;
 import org.apache.aries.jax.rs.whiteboard.internal.utils.PropertyHolder;
 import org.apache.aries.jax.rs.whiteboard.internal.introspection.ClassIntrospector;
@@ -132,6 +133,12 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
         CachingServiceReference<?> serviceReference) {
 
         _clashingResources.add(serviceReference);
+    }
+
+    public void addContextDependentApplication(
+        CachingServiceReference<Application> serviceReference) {
+
+        _contextDependentApplications.add(serviceReference);
     }
 
     public void addDependentApplication(
@@ -242,16 +249,18 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
 
         runtimeDTO.failedApplicationDTOs =
             Stream.concat(
-                invalidApplicationsDTOStream(),
+                contextDependentApplicationsDTOStream(),
                 Stream.concat(
-                    shadowedApplicationsDTOStream(),
+                    invalidApplicationsDTOStream(),
                     Stream.concat(
-                        unreferenciableApplicationsDTOStream(),
+                        shadowedApplicationsDTOStream(),
                         Stream.concat(
-                            clashingApplicationsDTOStream(),
+                            unreferenciableApplicationsDTOStream(),
                             Stream.concat(
-                                dependentApplicationsDTOStream(),
-                                erroredApplicationsDTOStream()))))
+                                clashingApplicationsDTOStream(),
+                                Stream.concat(
+                                    dependentApplicationsDTOStream(),
+                                    erroredApplicationsDTOStream())))))
             ).toArray(
                 FailedApplicationDTO[]::new
             );
@@ -288,6 +297,13 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
             );
 
         return runtimeDTO;
+    }
+
+    private Stream<FailedApplicationDTO> contextDependentApplicationsDTOStream() {
+        return _contextDependentApplications.stream().map(
+            sr -> buildFailedApplicationDTO(
+                AriesJaxrsWhiteboardConstants.FAILURE_REASON_REQUIRED_CONTEXT_UNAVAILABLE, sr)
+        );
     }
 
     public void removeApplicationDependentExtension(
@@ -340,6 +356,12 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
         CachingServiceReference<?> serviceReference) {
 
         _clashingResources.remove(serviceReference);
+    }
+
+    public void removeContextDependentApplication(
+        CachingServiceReference<Application> serviceReference) {
+
+        _contextDependentApplications.remove(serviceReference);
     }
 
     public void removeDependentApplication(
@@ -457,6 +479,8 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
         new CopyOnWriteArrayList<>();
     private Collection<CachingServiceReference<?>> _clashingResources =
         new CopyOnWriteArrayList<>();
+    private Set<CachingServiceReference<Application>>
+        _contextDependentApplications = ConcurrentHashMap.newKeySet();
     private volatile ApplicationRuntimeInformation _defaultApplicationProperties;
     private Set<CachingServiceReference<Application>> _dependentApplications =
         ConcurrentHashMap.newKeySet();
