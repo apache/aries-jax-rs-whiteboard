@@ -1,0 +1,6 @@
+Fragment-Host: org.apache.aries.jax.rs.whiteboard
+Export-Package:\
+	org.apache.cxf;version="3.2.3",\
+	org.apache.cxf.message;version="3.2.3",\
+	org.apache.cxf.feature;version="3.2.3",\
+	org.apache.cxf.jaxrs.ext;version="3.2.3"

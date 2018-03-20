@@ -18,6 +18,7 @@
 package test;
 
 import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.osgi.service.http.whiteboard.HttpWhiteboardConstants.HTTP_WHITEBOARD_CONTEXT_NAME;
 import static org.osgi.service.http.whiteboard.HttpWhiteboardConstants.HTTP_WHITEBOARD_CONTEXT_PATH;
@@ -45,6 +46,9 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
+import org.apache.cxf.Bus;
+import org.apache.cxf.jaxrs.ext.ContextProvider;
+import org.apache.cxf.message.Message;
 import org.junit.After;
 import org.junit.Test;
 import org.osgi.framework.Bundle;
@@ -65,6 +69,9 @@ import org.osgi.service.jaxrs.runtime.dto.RuntimeDTO;
 import org.osgi.util.promise.Promise;
 import org.osgi.util.tracker.ServiceTracker;
 import test.types.ConfigurationAwareResource;
+import test.types.CxfExtensionTestAddon;
+import test.types.ExtensionA;
+import test.types.ExtensionB;
 import test.types.TestAddon;
 import test.types.TestAddonConflict;
 import test.types.TestAddonConflict2;
@@ -73,6 +80,7 @@ import test.types.TestApplication;
 import test.types.TestApplicationConflict;
 import test.types.TestApplicationWithException;
 import test.types.TestAsyncResource;
+import test.types.TestCxfExtension;
 import test.types.TestFilter;
 import test.types.TestFilterAndExceptionMapper;
 import test.types.TestHelper;
@@ -89,6 +97,7 @@ import javax.ws.rs.core.Feature;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.ExceptionMapper;
+import javax.ws.rs.ext.Provider;
 import javax.ws.rs.sse.SseEventSource;
 
 import static org.junit.Assert.assertEquals;
@@ -1945,6 +1954,80 @@ public class JaxrsTest extends TestHelper {
         source1.close();
     }
 
+    @Test
+    public void testCxfExtension() {
+        registerApplication(new TestApplication());
+
+        registerExtension(
+            ContextProvider.class,
+            new BusContextProvider(),
+            "Bus provider");
+
+        registerAddon(
+            new CxfExtensionTestAddon(), JAX_RS_APPLICATION_SELECT,
+            String.format(
+                "(%s=%s)", JAX_RS_APPLICATION_BASE, "/test-application"));
+
+        ServiceRegistration<?> extensionRegistration =
+            bundleContext.registerService(
+                new String[]{
+                    ExtensionA.class.getName(),
+                    ExtensionB.class.getName()
+                },
+                new TestCxfExtension(),
+                new Hashtable<String, Object>() {{
+                    put("cxf.extension", Boolean.TRUE);
+                }});
+
+        try {
+            WebTarget path = createDefaultTarget().
+                path("/test-application").
+                path("/extensions").
+                path(ExtensionA.class.getName());
+
+            String result = path.request().get(String.class);
+
+            assertTrue(Boolean.parseBoolean(result));
+
+            path = createDefaultTarget().
+                path("/test-application").
+                path("/extensions").
+                path(ExtensionB.class.getName());
+
+            result = path.request().get(String.class);
+
+            assertTrue(Boolean.parseBoolean(result));
+
+            extensionRegistration.unregister();
+
+            path = createDefaultTarget().
+                path("/test-application").
+                path("/extensions").
+                path(ExtensionA.class.getName());
+
+            result = path.request().get(String.class);
+
+            assertFalse(Boolean.parseBoolean(result));
+
+            path = createDefaultTarget().
+                path("/test-application").
+                path("/extensions").
+                path(ExtensionB.class.getName());
+
+            result = path.request().get(String.class);
+
+            assertFalse(Boolean.parseBoolean(result));
+        }
+        finally {
+            try {
+                extensionRegistration.unregister();
+            }
+            catch (Exception e) {
+            }
+        }
+
+    }
+
 
     private static Function<RuntimeDTO, FailedApplicationDTO[]>
         FAILED_APPLICATIONS = r -> r.failedApplicationDTOs;
@@ -2224,6 +2307,14 @@ public class JaxrsTest extends TestHelper {
         _registrations.add(serviceRegistration);
 
         return serviceRegistration;
+    }
+
+    @Provider
+    private static class BusContextProvider implements ContextProvider<Bus> {
+        @Override
+        public Bus createContext(Message message) {
+            return message.getExchange().getBus();
+        }
     }
 
 }
