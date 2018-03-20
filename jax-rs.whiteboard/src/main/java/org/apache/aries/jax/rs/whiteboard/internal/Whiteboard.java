@@ -124,7 +124,8 @@ public class Whiteboard {
                 ParamConverterProvider.class,
                 Feature.class,
                 DynamicFeature.class,
-                org.apache.cxf.feature.Feature.class)
+                org.apache.cxf.feature.Feature.class,
+                org.apache.cxf.jaxrs.ext.ContextProvider.class)
             .collect(toMap(Class::getName, Function.identity())));
     static final String DEFAULT_NAME = ".default";
 
