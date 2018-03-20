@@ -57,9 +57,7 @@ Import-Package:\
 
 -contract: JavaAnnotation, JavaJAXRS, JavaServlet
 
--exportcontents:\
-    org.apache.aries.jax.rs.whiteboard,\
-    org.apache.cxf.jaxrs.ext.*
+-exportcontents: org.apache.aries.jax.rs.whiteboard
 
 -includeresource:\
 	lib/component-dsl.jar=org.apache.aries.component-dsl.component-dsl-*.jar;lib:=true,\
