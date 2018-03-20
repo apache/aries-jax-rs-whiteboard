@@ -891,7 +891,8 @@ public class JaxrsTest extends TestHelper {
     @Test
     /**
      * Propietary extension... not in the spec
-     * breaks application isolation
+     * breaks application isolation if several applications are forced to
+     * use the same ServletContext
      */
     public void testApplicationWithProvidedServletContext() {
         ServiceRegistration<Application> applicationRegistration =
@@ -954,7 +955,8 @@ public class JaxrsTest extends TestHelper {
     @Test
     /**
      * Propietary extension... not in the spec
-     * breaks application isolation
+     * breaks application isolation if several applications are forced to
+     * use the same ServletContext
      */
     public void testApplicationWithProvidedServletContextClashes() {
         ServiceRegistration<Application> applicationRegistration =
