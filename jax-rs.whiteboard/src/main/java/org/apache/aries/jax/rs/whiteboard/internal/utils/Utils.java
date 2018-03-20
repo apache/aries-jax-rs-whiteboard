@@ -111,13 +111,13 @@ public class Utils {
     }
 
     public static <K, T extends Comparable<? super T>> OSGi<T> highestPer(
-        Function<T, K> keySupplier, OSGi<T> program,
+        Function<T, OSGi<K>> keySupplier, OSGi<T> program,
         Consumer<? super T> onAddingShadowed,
         Consumer<? super T> onRemovedShadowed) {
 
         return program.splitBy(
             keySupplier,
-            p -> highest(
+            (__, p) -> highest(
                 p, Comparator.naturalOrder(),
                 discards -> discards.
                     effects(onAddingShadowed, onRemovedShadowed).

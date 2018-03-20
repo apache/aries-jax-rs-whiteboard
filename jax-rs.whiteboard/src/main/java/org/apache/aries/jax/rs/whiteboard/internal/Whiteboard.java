@@ -236,7 +236,7 @@ public class Whiteboard {
             (OSGi)getApplicationsForWhiteboard();
         return
             highestPer(
-                sr -> getServiceName(sr::getProperty),
+                sr -> just(getServiceName(sr::getProperty)),
                 all(
                     countChanges(getResourcesForWhiteboard(), _counter),
                     countChanges(
@@ -407,7 +407,7 @@ public class Whiteboard {
 
         OSGi<ApplicationReferenceWithContext> highestRankedPerPath =
             highestPer(
-                ApplicationReferenceWithContext::getActualBasePath,
+                arwc -> just(arwc.getActualBasePath()),
                 applicationsWithContext,
                 t -> _runtime.addShadowedApplication(
                     t.getApplicationReference()),
