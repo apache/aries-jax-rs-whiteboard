@@ -117,11 +117,15 @@ public class CxfJaxrsServiceRegistrator {
             return;
         }
 
+        _closed = true;
+
         if (_server != null) {
             _server.destroy();
         }
 
-        _closed = true;
+        if (_bus != null) {
+            _bus.shutdown(false);
+        }
     }
 
     public <T> T createEndpoint(Application app, Class<T> endpointType) {
