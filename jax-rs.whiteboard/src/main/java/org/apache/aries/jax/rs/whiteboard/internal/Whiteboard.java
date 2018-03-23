@@ -477,7 +477,8 @@ public class Whiteboard {
                     _runtime.setApplicationForPath(
                         getApplicationBase(
                             at.getCachingServiceReference()::getProperty),
-                            at.getCachingServiceReference(), registrator),
+                        at.getCachingServiceReference(),
+                        registrator),
                 registrator ->
                     _runtime.unsetApplicationForPath(
                         getApplicationBase(
@@ -737,9 +738,6 @@ public class Whiteboard {
         CachingServiceReference<CxfJaxrsServiceRegistrator>
             registratorReference) {
 
-        String applicationName = getServiceName(
-            registratorReference::getProperty);
-
         Bundle originalBundle = _bundleContext.getBundle(
             (long)registratorReference.getProperty(
                 "original.service.bundleid"));
@@ -809,7 +807,8 @@ public class Whiteboard {
 
     private OSGi<?> safeRegisterExtension(
         CachingServiceReference<?> serviceReference,
-        CachingServiceReference<CxfJaxrsServiceRegistrator> registratorReference) {
+        CachingServiceReference<CxfJaxrsServiceRegistrator>
+            registratorReference) {
 
         Bundle originalBundle = _bundleContext.getBundle(
             (long)registratorReference.getProperty(
@@ -864,8 +863,8 @@ public class Whiteboard {
                             serviceReference.getServiceReference() +
                                 " into application " +
                             getServiceName(
-                                registratorReference.
-                                    getServiceReference()::getProperty)
+                                registratorReference.getServiceReference()
+                                    ::getProperty)
                 ),
                 ifDebugEnabled(
                     _log,
@@ -1131,10 +1130,11 @@ public class Whiteboard {
         return cxfNonSpringServlet;
     }
 
-    private static OSGi<CachingServiceReference<Object>> onlySupportedInterfaces(
-        OSGi<CachingServiceReference<Object>> program,
-        Consumer<CachingServiceReference<?>> onInvalidAdded,
-        Consumer<CachingServiceReference<?>> onInvalidRemoved) {
+    private static OSGi<CachingServiceReference<Object>>
+        onlySupportedInterfaces(
+            OSGi<CachingServiceReference<Object>> program,
+            Consumer<CachingServiceReference<?>> onInvalidAdded,
+            Consumer<CachingServiceReference<?>> onInvalidRemoved) {
 
         return program.flatMap(sr -> {
             if (signalsValidInterface(sr)) {
@@ -1358,7 +1358,9 @@ public class Whiteboard {
             return contextPath + applicationBase;
         }
 
-        public CachingServiceReference<ServletContextHelper> getContextReference() {
+        public CachingServiceReference<ServletContextHelper>
+            getContextReference() {
+
             return _contextReference;
         }
 
