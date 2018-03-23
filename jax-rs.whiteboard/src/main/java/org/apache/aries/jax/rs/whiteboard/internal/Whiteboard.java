@@ -299,7 +299,7 @@ public class Whiteboard {
         if (isExtension(sr)) {
             _runtime.removeClashingExtension(sr);
         }
-        if (isApplication(sr)) {
+        if (isResource(sr)) {
             _runtime.removeClashingResource(sr);
         }
     }
