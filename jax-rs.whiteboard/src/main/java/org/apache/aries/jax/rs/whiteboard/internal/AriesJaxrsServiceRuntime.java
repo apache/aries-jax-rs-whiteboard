@@ -22,7 +22,6 @@ import static org.apache.aries.jax.rs.whiteboard.internal.utils.Utils.generateAp
 import static org.apache.aries.jax.rs.whiteboard.internal.Whiteboard.DEFAULT_NAME;
 import static org.apache.aries.jax.rs.whiteboard.internal.Whiteboard.SUPPORTED_EXTENSION_INTERFACES;
 import static org.apache.aries.jax.rs.whiteboard.internal.Whiteboard.getApplicationBase;
-import static org.apache.aries.jax.rs.whiteboard.internal.utils.Utils.getServiceId;
 import static org.osgi.service.http.whiteboard.HttpWhiteboardConstants.HTTP_WHITEBOARD_CONTEXT_SELECT;
 import static org.osgi.service.jaxrs.whiteboard.JaxrsWhiteboardConstants.JAX_RS_NAME;
 
@@ -108,10 +107,10 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
                 new EndpointRuntimeInformation(
                     endpointImmutableServiceReference, bus, theClass)));
 
-        if (_log.isInfoEnabled()) {
-        	_log.info(
+        if (_log.isDebugEnabled()) {
+        	_log.debug(
         	    "Resource service {} has been registered into application {}",
-                getServiceId(endpointImmutableServiceReference),
+                endpointImmutableServiceReference,
                 registratorReference.getProperty("original.service.id"));
         }
     }
@@ -128,10 +127,10 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
                 new ExtensionRuntimeInformation(
                     extensionImmutableServiceReference, theClass)));
 
-        if (_log.isInfoEnabled()) {
-        	_log.info(
+        if (_log.isDebugEnabled()) {
+        	_log.debug(
         	    "Extension {} has been registered to application {}",
-                getServiceId(extensionImmutableServiceReference),
+                extensionImmutableServiceReference,
                 registratorReference.getProperty("original.service.id"));
         }
     }
@@ -143,11 +142,11 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
 
         String serviceName = getServiceName(serviceReference::getProperty);
 
-        if (_log.isInfoEnabled()) {
-        	_log.info(
+        if (_log.isDebugEnabled()) {
+        	_log.debug(
         	    "Application {} clashes with {} for name {}",
-                getServiceId(serviceReference),
-                getServiceId(_servicesForName.get(serviceName)),
+                serviceReference,
+                _servicesForName.get(serviceName),
                 serviceName);
         }
     }
@@ -160,11 +159,11 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
 
         String serviceName = getServiceName(serviceReference::getProperty);
 
-        if (_log.isInfoEnabled()) {
-            _log.info(
+        if (_log.isDebugEnabled()) {
+            _log.debug(
                 "Extension {} clashes with {} for name {}",
-                getServiceId(serviceReference),
-                getServiceId(_servicesForName.get(serviceName)),
+                serviceReference,
+                _servicesForName.get(serviceName),
                 serviceName);
         }
     }
@@ -176,11 +175,11 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
 
         String serviceName = getServiceName(serviceReference::getProperty);
 
-        if (_log.isInfoEnabled()) {
-            _log.info(
+        if (_log.isDebugEnabled()) {
+            _log.debug(
                 "Resource {} clashes with {} for name {}",
-                getServiceId(serviceReference),
-                getServiceId(_servicesForName.get(serviceName)),
+                serviceReference,
+                _servicesForName.get(serviceName),
                 serviceName);
         }
     }
@@ -190,10 +189,10 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
 
         _contextDependentApplications.add(serviceReference);
 
-        if (_log.isInfoEnabled()) {
-            _log.info(
+        if (_log.isDebugEnabled()) {
+            _log.debug(
                 "Application {} depends on context filter {}",
-                getServiceId(serviceReference),
+                serviceReference,
                 serviceReference.getProperty(HTTP_WHITEBOARD_CONTEXT_SELECT));
         }
     }
@@ -224,7 +223,7 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
         if (_log.isWarnEnabled()) {
             _log.warn(
                 "Application {} is registered with error",
-                getServiceId(serviceReference));
+                serviceReference);
         }
     }
 
@@ -234,7 +233,7 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
         if (_log.isWarnEnabled()) {
             _log.warn(
                 "Resource {} is registered with error",
-                getServiceId(serviceReference));
+                serviceReference);
         }
 
         _erroredEndpoints.add(serviceReference);
@@ -246,7 +245,7 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
         if (_log.isWarnEnabled()) {
         	_log.warn(
         	    "Extension {} is registered with error",
-                getServiceId(cachingServiceReference));
+                cachingServiceReference);
         }
 
         _erroredExtensions.add(cachingServiceReference);
@@ -257,7 +256,7 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
 
         if (_log.isWarnEnabled()) {
         	_log.warn(
-        	    "Application {} is not valid", getServiceId(serviceReference));
+        	    "Application {} is not valid", serviceReference);
         }
 
         _invalidApplications.add(serviceReference);
@@ -268,7 +267,7 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
 
         if (_log.isWarnEnabled()) {
             _log.warn(
-                "Extension {} is not valid", getServiceId(serviceReference));
+                "Extension {} is not valid", serviceReference);
         }
 
         _invalidExtensions.add(serviceReference);
@@ -279,7 +278,7 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
 
         if (_log.isWarnEnabled()) {
             _log.warn(
-                "Resource {} is not valid", getServiceId(serviceReference));
+                "Resource {} is not valid", serviceReference);
         }
 
         _invalidResources.add(serviceReference);
@@ -291,7 +290,7 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
         if (_log.isWarnEnabled()) {
             _log.warn(
                 "Application from reference {} can't be got",
-                getServiceId(serviceReference));
+                serviceReference);
         }
 
         return _ungettableApplications.add(serviceReference);
@@ -303,7 +302,7 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
         if (_log.isWarnEnabled()) {
             _log.warn(
                 "Resource from reference {} can't be got",
-                getServiceId(serviceReference));
+                serviceReference);
         }
 
         return _ungettableEndpoints.add(serviceReference);
@@ -315,7 +314,7 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
         if (_log.isWarnEnabled()) {
             _log.warn(
                 "Extension from reference {} can't be got",
-                getServiceId(serviceReference));
+                serviceReference);
         }
 
         _ungettableExtensions.add(serviceReference);
@@ -325,10 +324,10 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
         _servicesForName.put(
             getServiceName(serviceReference::getProperty), serviceReference);
 
-        if (_log.isInfoEnabled()) {
-        	_log.info(
+        if (_log.isDebugEnabled()) {
+        	_log.debug(
         	    "Registered service {} for name {}",
-                getServiceId(serviceReference),
+                serviceReference,
                 getServiceName(serviceReference::getProperty));
         }
     }
@@ -337,16 +336,16 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
         CachingServiceReference<Application> serviceReference,
         String actualBasePath) {
 
-        if (_log.isInfoEnabled()) {
+        if (_log.isDebugEnabled()) {
             ApplicationRuntimeInformation applicationRuntimeInformation =
                 _applications.get(actualBasePath);
 
             if (applicationRuntimeInformation != null) {
-                _log.info(
+                _log.debug(
                     "Application reference {} is shadowed by {}",
-                    getServiceId(serviceReference),
-                    getServiceId(
-                        applicationRuntimeInformation._cachingServiceReference)
+                    serviceReference,
+                    
+                        applicationRuntimeInformation._cachingServiceReference
                 );
             }
         }
@@ -425,10 +424,10 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
 
         _servicesForName.remove(getServiceName(serviceReference::getProperty));
 
-        if (_log.isInfoEnabled()) {
-            _log.info(
+        if (_log.isDebugEnabled()) {
+            _log.debug(
                 "Unregistered service {} for name {}",
-                getServiceId(serviceReference),
+                serviceReference,
                 getServiceName(serviceReference::getProperty));
         }
     }
@@ -470,10 +469,10 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
                 new EndpointRuntimeInformation(
                 cachingServiceReference, null, null)));
 
-        if (_log.isInfoEnabled()) {
-        	_log.info(
+        if (_log.isDebugEnabled()) {
+        	_log.debug(
         	    "Endpoint {} has been removed from application {}",
-                getServiceId(cachingServiceReference),
+                cachingServiceReference,
                 registratorReference.getProperty("original.service.id"));
         }
     }
@@ -489,10 +488,10 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
                 new ExtensionRuntimeInformation(
                 extensionImmutableServiceReference, null)));
 
-        if (_log.isInfoEnabled()) {
-            _log.info(
+        if (_log.isDebugEnabled()) {
+            _log.debug(
                 "Extension {} has been removed from application {}",
-                getServiceId(extensionImmutableServiceReference),
+                extensionImmutableServiceReference,
                 registratorReference.getProperty("original.service.id"));
         }
     }
@@ -502,10 +501,10 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
 
         _clashingApplications.remove(serviceReference);
 
-        if (_log.isInfoEnabled()) {
-            _log.info(
+        if (_log.isDebugEnabled()) {
+            _log.debug(
                 "Application {} no longer clashes for name {}",
-                getServiceId(serviceReference),
+                serviceReference,
                 getServiceName(serviceReference::getProperty));
         }
     }
@@ -515,10 +514,10 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
 
         _clashingExtensions.remove(serviceReference);
 
-        if (_log.isInfoEnabled()) {
-            _log.info(
+        if (_log.isDebugEnabled()) {
+            _log.debug(
                 "Extension {} no longer clashes for name {}",
-                getServiceId(serviceReference),
+                serviceReference,
                 getServiceName(serviceReference::getProperty));
         }
     }
@@ -528,10 +527,10 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
 
         _clashingResources.remove(serviceReference);
 
-        if (_log.isInfoEnabled()) {
-            _log.info(
+        if (_log.isDebugEnabled()) {
+            _log.debug(
                 "Resource {} no longer clashes for name {}",
-                getServiceId(serviceReference),
+                serviceReference,
                 getServiceName(serviceReference::getProperty));
         }
 
@@ -542,10 +541,10 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
 
         _contextDependentApplications.remove(serviceReference);
 
-        if (_log.isInfoEnabled()) {
-            _log.info(
+        if (_log.isDebugEnabled()) {
+            _log.debug(
                 "Application {} no longer depends on context filter {}",
-                getServiceId(serviceReference),
+                serviceReference,
                 serviceReference.getProperty(HTTP_WHITEBOARD_CONTEXT_SELECT));
         }
 
@@ -577,7 +576,7 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
         if (_log.isWarnEnabled()) {
             _log.warn(
                 "Errored application {} is gone",
-                getServiceId(serviceReference));
+                serviceReference);
         }
     }
 
@@ -588,7 +587,7 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
 
         if (_log.isWarnEnabled()) {
             _log.warn(
-                "Errored resource {} is gone", getServiceId(serviceReference));
+                "Errored resource {} is gone", serviceReference);
         }
     }
 
@@ -599,7 +598,7 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
 
         if (_log.isWarnEnabled()) {
             _log.warn(
-                "Errored extension {} is gone", getServiceId(serviceReference));
+                "Errored extension {} is gone", serviceReference);
         }
     }
 
@@ -611,7 +610,7 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
         if (_log.isWarnEnabled()) {
             _log.warn(
                 "Invalid application {} is gone",
-                getServiceId(serviceReference));
+                serviceReference);
         }
     }
 
@@ -622,7 +621,7 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
 
         if (_log.isWarnEnabled()) {
             _log.warn(
-                "Invalid extension {} is gone", getServiceId(serviceReference));
+                "Invalid extension {} is gone", serviceReference);
         }
     }
 
@@ -633,7 +632,7 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
 
         if (_log.isWarnEnabled()) {
             _log.warn(
-                "Invalid resource {} is gone", getServiceId(serviceReference));
+                "Invalid resource {} is gone", serviceReference);
         }
     }
 
@@ -645,7 +644,7 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
         if (_log.isWarnEnabled()) {
             _log.warn(
                 "Ungettable application reference {} is gone",
-                getServiceId(serviceReference));
+                serviceReference);
         }
     }
 
@@ -657,7 +656,7 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
         if (_log.isWarnEnabled()) {
             _log.warn(
                 "Ungettable resource reference {} is gone",
-                getServiceId(serviceReference));
+                serviceReference);
         }
     }
 
@@ -669,7 +668,7 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
         if (_log.isWarnEnabled()) {
             _log.warn(
                 "Ungettable extension reference {} is gone",
-                getServiceId(serviceReference));
+                serviceReference);
         }
     }
 
@@ -679,7 +678,7 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
         if (_log.isDebugEnabled()) {
         	_log.debug(
         	    "Application {} is no longer shadowed",
-                getServiceId(serviceReference));
+                serviceReference);
         }
 
         return _shadowedApplications.remove(serviceReference);
@@ -699,19 +698,19 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
                     getServiceName(
                         ari._cachingServiceReference::getProperty))) {
 
-                    if (_log.isInfoEnabled()) {
-                    	_log.info(
+                    if (_log.isDebugEnabled()) {
+                    	_log.debug(
                     	    "Setting application {} as default",
-                            getServiceId(serviceReference));
+                            serviceReference);
                     }
 
                     _defaultApplicationProperties = ari;
                 }
 
-                if (_log.isInfoEnabled()) {
-                	_log.info(
+                if (_log.isDebugEnabled()) {
+                	_log.debug(
                 	    "Registering application {} for path {}",
-                        getServiceId(serviceReference), path);
+                        serviceReference, path);
                 }
 
                 return ari;

@@ -85,16 +85,6 @@ public class Utils {
         return properties;
     }
 
-    public static long getServiceId(
-        CachingServiceReference<?> cachingServiceReference) {
-
-        return (long)cachingServiceReference.getProperty("service.id");
-    }
-
-    public static long getServiceId(ServiceReference<?> serviceReference) {
-        return (long)serviceReference.getProperty("service.id");
-    }
-
     public static <T> ServiceReferenceResourceProvider getResourceProvider(
         ServiceObjects<T> serviceObjects) {
 

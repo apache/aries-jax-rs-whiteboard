@@ -75,11 +75,9 @@ import static java.util.stream.Collectors.toMap;
 import static org.apache.aries.jax.rs.whiteboard.internal.AriesJaxrsServiceRuntime.getServiceName;
 import static org.apache.aries.jax.rs.whiteboard.internal.utils.LogUtils.ifDebugEnabled;
 import static org.apache.aries.jax.rs.whiteboard.internal.utils.LogUtils.ifErrorEnabled;
-import static org.apache.aries.jax.rs.whiteboard.internal.utils.LogUtils.ifInfoEnabled;
 import static org.apache.aries.jax.rs.whiteboard.internal.utils.Utils.canonicalize;
 import static org.apache.aries.jax.rs.whiteboard.internal.utils.Utils.generateApplicationName;
 import static org.apache.aries.jax.rs.whiteboard.internal.utils.Utils.getProperties;
-import static org.apache.aries.jax.rs.whiteboard.internal.utils.Utils.getServiceId;
 import static org.apache.aries.jax.rs.whiteboard.internal.utils.Utils.highestPer;
 import static org.apache.aries.jax.rs.whiteboard.internal.utils.Utils.onlyGettables;
 import static org.apache.aries.jax.rs.whiteboard.internal.utils.Utils.service;
@@ -967,14 +965,14 @@ public class Whiteboard {
                                     reference)
                         ).
                         effects(
-                            ifInfoEnabled(
+                            ifDebugEnabled(
                                 _log,
-                                () -> "Application "+ getServiceId(reference) +
+                                () -> "Application "+ reference +
                                     " dependency " + extensionDependency +
                                         " has been fullfiled"),
-                            ifInfoEnabled(
+                            ifDebugEnabled(
                                 _log,
-                                () -> "Application "+ getServiceId(reference) +
+                                () -> "Application "+ reference +
                                     " dependency " + extensionDependency +
                                         " has gone")
                         ).
@@ -1050,14 +1048,14 @@ public class Whiteboard {
                         __ -> onAddingDependent.accept(reference)
                     ).
                     effects(
-                        ifInfoEnabled(
+                        ifDebugEnabled(
                             _log,
-                            () -> "Extension " + getServiceId(reference) +
+                            () -> "Extension " + reference +
                                 " dependency " + extensionDependency +
                                     " has been fullfiled"),
-                        ifInfoEnabled(
+                        ifDebugEnabled(
                             _log,
-                            () -> "Extension " + getServiceId(reference) +
+                            () -> "Extension " + reference +
                                 " dependency " + extensionDependency +
                                     " has gone")
                     ).
