@@ -72,7 +72,9 @@ public class Utils {
         return ".generated.for." + propertyHolder.get("service.id");
     }
 
-    public static Map<String, Object> getProperties(CachingServiceReference<?> sref) {
+    public static Map<String, Object> getProperties(
+        CachingServiceReference<?> sref) {
+
         String[] propertyKeys = sref.getPropertyKeys();
         Map<String, Object> properties = new HashMap<>(propertyKeys.length);
 
