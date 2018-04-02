@@ -19,7 +19,6 @@ package org.apache.aries.jax.rs.whiteboard.internal;
 
 import org.apache.aries.jax.rs.whiteboard.internal.cxf.CxfJaxrsServiceRegistrator;
 import org.apache.aries.jax.rs.whiteboard.internal.utils.Utils;
-import org.apache.aries.jax.rs.whiteboard.internal.utils.ApplicationExtensionRegistration;
 import org.apache.aries.jax.rs.whiteboard.internal.utils.PropertyHolder;
 import org.apache.aries.jax.rs.whiteboard.internal.utils.ServiceTuple;
 import org.apache.aries.osgi.functional.CachingServiceReference;
@@ -137,6 +136,7 @@ public class Whiteboard {
 
     private static final Logger _log = LoggerFactory.getLogger(
         Whiteboard.class);
+    private final ApplicationExtensionRegistry _applicationExtensionRegistry;
 
     private final AriesJaxrsServiceRuntime _runtime;
     private final Map<String, ?> _configurationMap;
@@ -159,6 +159,8 @@ public class Whiteboard {
             new HashMap<>(_configurationMap));
         _runtimeReference = _runtimeRegistration.getReference();
         _counter = new ServiceRegistrationChangeCounter(_runtimeRegistration);
+        _applicationExtensionRegistry = new ApplicationExtensionRegistry();
+
         _program =
             all(
                 ignore(registerDefaultApplication()),
@@ -180,6 +182,7 @@ public class Whiteboard {
         _osgiResult.close();
 
         _runtimeRegistration.unregister();
+        _applicationExtensionRegistry.close();
     }
 
     public void addHttpEndpoints(List<String> endpoints) {
@@ -660,7 +663,7 @@ public class Whiteboard {
     private OSGi<CachingServiceReference<Object>>
         getApplicationExtensionsForWhiteboard() {
 
-        return serviceReferences(_applicationExtensionsFilter.toString()).
+        return serviceReferences(_extensionsFilter.toString()).
             filter(new TargetFilter<>(_runtimeReference));
     }
 
@@ -876,23 +879,16 @@ public class Whiteboard {
                 )
 
             ).
-            then(
-            register(
-                ApplicationExtensionRegistration.class,
-                () -> new ApplicationExtensionRegistration(){},
-                () -> {
-                    Map<String, Object> properties = getProperties(
-                        serviceReference);
-
-                    properties.put(
-                        "original.application.name", applicationName);
-                    properties.put(
-                        "original.objectClass",
-                        serviceReference.getProperty("objectClass"));
-
-                    return properties;
-                }
-            ))));
+            effects(
+                __ ->
+                    _applicationExtensionRegistry.
+                        registerExtensionInApplication(
+                            applicationName, serviceReference),
+                __ ->
+                    _applicationExtensionRegistry.
+                        unregisterExtensionInApplication(
+                            applicationName, serviceReference)
+            )));
     }
 
 
@@ -925,13 +921,8 @@ public class Whiteboard {
                         reference, extensionDependency);
                 }
 
-                String finalExtensionDependency = String.format(
-                    "(&(!(objectClass=%s))%s)",
-                    ApplicationExtensionRegistration.class.getName(),
-                    extensionDependency);
-
                 program =
-                    once(serviceReferences(finalExtensionDependency)).
+                    once(getApplicationExtensionsForWhiteboard()).
                         flatMap(
                             sr -> {
                                 Object applicationSelectProperty =
@@ -1033,17 +1024,8 @@ public class Whiteboard {
                 }
 
                 program =
-                    once(serviceReferences(
-                        ApplicationExtensionRegistration.class).
-                        filter(
-                            sr -> sr.getProperty("original.application.name").
-                                equals(applicationName)
-                        ).map(
-                            CachingServiceReference::getServiceReference
-                        ).filter(
-                            extensionFilter::match
-                        )
-                    ).effects(
+                    _applicationExtensionRegistry.waitForApplicationExtension(
+                        applicationName, extensionDependency).effects(
                         __ -> {},
                         __ -> onAddingDependent.accept(reference)
                     ).
@@ -1292,23 +1274,14 @@ public class Whiteboard {
 
     private static Filter _applicationsFilter;
 
-    private static Filter _applicationExtensionsFilter;
-
     static {
         try {
             _applicationsFilter = FrameworkUtil.createFilter(
                 format(
                     "(&(objectClass=%s)(%s=*))", Application.class.getName(),
                     JAX_RS_APPLICATION_BASE));
-            String extensionFilterString = format(
-                "(%s=true)", JAX_RS_EXTENSION);
             _extensionsFilter = FrameworkUtil.createFilter(
-                extensionFilterString);
-            _applicationExtensionsFilter = FrameworkUtil.createFilter(
-                format(
-                    "(&(!(objectClass=%s))(%s=%s)%s)",
-                    ApplicationExtensionRegistration.class.getName(),
-                    JAX_RS_EXTENSION, true, extensionFilterString));
+                format("(%s=true)", JAX_RS_EXTENSION));
             _resourcesFilter = FrameworkUtil.createFilter(
                 format("(%s=true)", JAX_RS_RESOURCE));
         }
