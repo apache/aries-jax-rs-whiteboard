@@ -137,6 +137,7 @@ public class Whiteboard {
     private static final Logger _log = LoggerFactory.getLogger(
         Whiteboard.class);
     private final ApplicationExtensionRegistry _applicationExtensionRegistry;
+    private final ExtensionRegistry _extensionRegistry;
 
     private final AriesJaxrsServiceRuntime _runtime;
     private final Map<String, ?> _configurationMap;
@@ -160,6 +161,7 @@ public class Whiteboard {
         _runtimeReference = _runtimeRegistration.getReference();
         _counter = new ServiceRegistrationChangeCounter(_runtimeRegistration);
         _applicationExtensionRegistry = new ApplicationExtensionRegistry();
+        _extensionRegistry = new ExtensionRegistry();
 
         _program =
             all(
@@ -180,9 +182,9 @@ public class Whiteboard {
 
     public void stop() {
         _osgiResult.close();
-
         _runtimeRegistration.unregister();
         _applicationExtensionRegistry.close();
+        _extensionRegistry.close();
     }
 
     public void addHttpEndpoints(List<String> endpoints) {
@@ -205,6 +207,9 @@ public class Whiteboard {
                         _runtime::removeInvalidExtension),
                     _runtime::addInvalidExtension,
                     _runtime::removeInvalidExtension).
+                effects(
+                    _extensionRegistry::registerExtension,
+                    _extensionRegistry::unregisterExtension).
                 flatMap(extensionReference ->
             chooseApplication(
                     extensionReference, allApplicationReferences(),
@@ -922,7 +927,9 @@ public class Whiteboard {
                 }
 
                 program =
-                    once(getApplicationExtensionsForWhiteboard()).
+                    once(
+                        _extensionRegistry.waitForExtension(
+                            extensionDependency)).
                         flatMap(
                             sr -> {
                                 Object applicationSelectProperty =
