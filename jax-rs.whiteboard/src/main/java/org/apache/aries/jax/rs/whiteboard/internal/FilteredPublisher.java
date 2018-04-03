@@ -50,10 +50,15 @@ public class FilteredPublisher implements AutoCloseable {
         }
 
         if (_filter.match(serviceReference.getServiceReference())) {
-            OSGiResult result = _results.put(
-                serviceReference, _publisher.publish(serviceReference));
+            OSGiResult result = _publisher.publish(serviceReference);
 
-            if (result != null) {
+            OSGiResult old = _results.put(serviceReference, result);
+
+            if (old != null) {
+                old.close();
+            }
+
+            if (_closed.get()) {
                 result.close();
             }
         }
