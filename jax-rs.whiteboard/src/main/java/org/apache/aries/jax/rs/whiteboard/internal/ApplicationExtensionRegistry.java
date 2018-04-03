@@ -19,8 +19,6 @@ package org.apache.aries.jax.rs.whiteboard.internal;
 
 import org.apache.aries.osgi.functional.CachingServiceReference;
 import org.apache.aries.osgi.functional.OSGi;
-import org.apache.aries.osgi.functional.OSGiResult;
-import org.apache.aries.osgi.functional.Publisher;
 import org.osgi.framework.Filter;
 import org.osgi.framework.FrameworkUtil;
 import org.osgi.framework.InvalidSyntaxException;
@@ -28,7 +26,6 @@ import org.osgi.framework.InvalidSyntaxException;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.apache.aries.osgi.functional.OSGi.fromOsgiRunnable;
 
@@ -41,7 +38,7 @@ public class ApplicationExtensionRegistry implements AutoCloseable {
 
     public void close() {
         _applicationPublishers.forEach(
-            (__, aeps) -> aeps.forEach(ApplicationExtensionPublisher::close)
+            (__, aeps) -> aeps.forEach(FilteredPublisher::close)
         );
     }
 
@@ -59,8 +56,8 @@ public class ApplicationExtensionRegistry implements AutoCloseable {
 
         return fromOsgiRunnable((bc, p) -> {
             synchronized (ApplicationExtensionRegistry.this) {
-                ApplicationExtensionPublisher aep =
-                    new ApplicationExtensionPublisher(p, filter);
+                FilteredPublisher aep =
+                    new FilteredPublisher(p, filter);
 
                 _applicationPublishers.compute(
                     applicationName,
@@ -79,13 +76,13 @@ public class ApplicationExtensionRegistry implements AutoCloseable {
 
                 if (extensions != null) {
                     for (CachingServiceReference<?> extension : extensions) {
-                        aep.enable(extension);
+                        aep.publishIfMatched(extension);
                     }
                 }
 
                 return () -> {
                     synchronized (ApplicationExtensionRegistry.this) {
-                        Collection<ApplicationExtensionPublisher> set =
+                        Collection<FilteredPublisher> set =
                             _applicationPublishers.get(applicationName);
 
                         set.remove(aep);
@@ -94,7 +91,7 @@ public class ApplicationExtensionRegistry implements AutoCloseable {
                             for (CachingServiceReference<?> extension :
                                 extensions) {
 
-                                aep.disable(extension);
+                                aep.retractIfMatched(extension);
                             }
                         }
                     }
@@ -108,12 +105,12 @@ public class ApplicationExtensionRegistry implements AutoCloseable {
         String applicationName, CachingServiceReference<?> extension) {
 
         synchronized (ApplicationExtensionRegistry.this) {
-            Collection<ApplicationExtensionPublisher> publishers =
+            Collection<FilteredPublisher> publishers =
                 _applicationPublishers.get(applicationName);
 
             if (publishers != null) {
-                for (ApplicationExtensionPublisher publisher : publishers) {
-                    publisher.enable(extension);
+                for (FilteredPublisher publisher : publishers) {
+                    publisher.publishIfMatched(extension);
                 }
             }
 
@@ -136,12 +133,12 @@ public class ApplicationExtensionRegistry implements AutoCloseable {
         String applicationName, CachingServiceReference<?> extension) {
 
         synchronized (ApplicationExtensionRegistry.this) {
-            Collection<ApplicationExtensionPublisher> publishers =
+            Collection<FilteredPublisher> publishers =
                 _applicationPublishers.get(applicationName);
 
             if (publishers != null) {
-                for (ApplicationExtensionPublisher publisher : publishers) {
-                    publisher.disable(extension);
+                for (FilteredPublisher publisher : publishers) {
+                    publisher.retractIfMatched(extension);
                 }
             }
 
@@ -161,71 +158,9 @@ public class ApplicationExtensionRegistry implements AutoCloseable {
     }
 
     private final HashMap
-        <String, Collection<ApplicationExtensionPublisher>>
+        <String, Collection<FilteredPublisher>>
             _applicationPublishers;
     private final HashMap<String, Collection<CachingServiceReference<?>>>
         _applicationRegisteredExtensions;
-
-    private static class ApplicationExtensionPublisher
-        implements AutoCloseable {
-
-        public ApplicationExtensionPublisher(
-            Publisher<? super CachingServiceReference<?>> publisher,
-            Filter filter) {
-
-            _publisher = publisher;
-            _filter = filter;
-        }
-
-        public void close() {
-            if (_closed.compareAndSet(false, true)) {
-                if (_enabled.compareAndSet(true, false)) {
-                    if (_result != null) {
-                        _result.close();
-                    }
-
-                    _result = null;
-                }
-            }
-
-        }
-
-
-        public void enable(CachingServiceReference<?> serviceReference) {
-            if (_closed.get()) {
-                return;
-            }
-
-            if (_filter.match(serviceReference.getServiceReference())) {
-
-                if (_enabled.compareAndSet(false, true)) {
-                    _result = _publisher.publish(serviceReference);
-                }
-            }
-        }
-
-        public void disable(CachingServiceReference<?> serviceReference) {
-            if (_closed.get()) {
-                return;
-            }
-
-            if (_filter.match(serviceReference.getServiceReference())) {
-                if (_enabled.compareAndSet(true, false)) {
-                    if (_result != null) {
-                        _result.close();
-                    }
-
-                    _result = null;
-                }
-            }
-        }
-
-        private Publisher<? super CachingServiceReference<?>> _publisher;
-        private Filter _filter;
-        private AtomicBoolean _enabled = new AtomicBoolean(false);
-        private AtomicBoolean _closed = new AtomicBoolean(false);
-        private OSGiResult _result;
-
-    }
 
 }

@@ -19,16 +19,11 @@ package org.apache.aries.jax.rs.whiteboard.internal;
 
 import org.apache.aries.osgi.functional.CachingServiceReference;
 import org.apache.aries.osgi.functional.OSGi;
-import org.apache.aries.osgi.functional.OSGiResult;
-import org.apache.aries.osgi.functional.Publisher;
 import org.osgi.framework.Filter;
 import org.osgi.framework.FrameworkUtil;
 import org.osgi.framework.InvalidSyntaxException;
 
-import java.util.Collection;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.apache.aries.osgi.functional.OSGi.fromOsgiRunnable;
 
@@ -41,7 +36,7 @@ public class ExtensionRegistry implements AutoCloseable {
 
     @Override
     public void close() {
-        for (ExtensionPublisher extensionPublisher : _extensionPublishers) {
+        for (FilteredPublisher extensionPublisher : _extensionPublishers) {
             extensionPublisher.close();
         }
     }
@@ -60,14 +55,14 @@ public class ExtensionRegistry implements AutoCloseable {
 
         return fromOsgiRunnable((bc, p) -> {
             synchronized (ExtensionRegistry.this) {
-                ExtensionPublisher ep = new ExtensionPublisher(p, filter);
+                FilteredPublisher ep = new FilteredPublisher(p, filter);
 
                 _extensionPublishers.add(ep);
 
                 for (CachingServiceReference<?> extension :
                     _registeredExtensions) {
 
-                    ep.enable(extension);
+                    ep.publishIfMatched(extension);
                 }
 
                 return () -> {
@@ -77,7 +72,7 @@ public class ExtensionRegistry implements AutoCloseable {
                         for (CachingServiceReference<?> extension :
                             _registeredExtensions) {
 
-                            ep.disable(extension);
+                            ep.retractIfMatched(extension);
                         }
                     }
                 };
@@ -90,8 +85,8 @@ public class ExtensionRegistry implements AutoCloseable {
         CachingServiceReference<?> extension) {
 
         synchronized (ExtensionRegistry.this) {
-            for (ExtensionPublisher publisher : _extensionPublishers) {
-                publisher.enable(extension);
+            for (FilteredPublisher publisher : _extensionPublishers) {
+                publisher.publishIfMatched(extension);
             }
 
             _registeredExtensions.add(extension);
@@ -102,71 +97,15 @@ public class ExtensionRegistry implements AutoCloseable {
         CachingServiceReference<?> extension) {
 
         synchronized (ExtensionRegistry.this) {
-            for (ExtensionPublisher publisher : _extensionPublishers) {
-                publisher.disable(extension);
+            for (FilteredPublisher publisher : _extensionPublishers) {
+                publisher.retractIfMatched(extension);
             }
 
             _registeredExtensions.remove(extension);
         }
     }
 
-    private final HashSet<ExtensionPublisher> _extensionPublishers;
+    private final HashSet<FilteredPublisher> _extensionPublishers;
     private final HashSet<CachingServiceReference<?>> _registeredExtensions;
-
-    private static class ExtensionPublisher implements AutoCloseable {
-
-        public ExtensionPublisher(
-            Publisher<? super CachingServiceReference<?>> publisher,
-            Filter filter) {
-
-            _publisher = publisher;
-            _filter = filter;
-        }
-
-        public void close() {
-            if (_closed.compareAndSet(false, true)) {
-                if (_enabled.compareAndSet(false, true)) {
-                    if (_result != null) {
-                        _result.close();
-                    }
-                }
-            }
-        }
-
-
-        public void enable(CachingServiceReference<?> serviceReference) {
-            if (_closed.get()) {
-                return;
-            }
-            if (_filter.match(serviceReference.getServiceReference())) {
-
-                if (_enabled.compareAndSet(false, true)) {
-                    _result = _publisher.publish(serviceReference);
-                }
-            }
-        }
-
-        public void disable(CachingServiceReference<?> serviceReference) {
-            if (_closed.get()) {
-                return;
-            }
-            if (_filter.match(serviceReference.getServiceReference())) {
-                if (_enabled.compareAndSet(true, false)) {
-                    if (_result != null) {
-                        _result.close();
-                    }
-
-                    _result = null;
-                }
-            }
-        }
-
-        private Publisher<? super CachingServiceReference<?>> _publisher;
-        private Filter _filter;
-        private AtomicBoolean _enabled = new AtomicBoolean(false);
-        private AtomicBoolean _closed = new AtomicBoolean(false);
-        private OSGiResult _result;
-
-    }
 
 }
