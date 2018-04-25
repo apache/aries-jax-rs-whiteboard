@@ -165,6 +165,7 @@ public class CxfJaxrsBundleActivator implements BundleActivator {
                 .flatMap(
                     whiteboard ->
                         all(
+                            effects(whiteboard::start, whiteboard::stop),
                             ignore(
                                 endpoints.effects(
                                     whiteboard::addHttpEndpoints,
@@ -175,8 +176,7 @@ public class CxfJaxrsBundleActivator implements BundleActivator {
                                     _log,
                                     () -> "endpoint for whiteboard: " +
                                         whiteboard)
-                            ),
-                            effects(whiteboard::start, whiteboard::stop)
+                            )
                         )
                 ))
             );
