@@ -4,7 +4,7 @@ import static org.osgi.service.jaxrs.whiteboard.JaxrsWhiteboardConstants.JAX_RS_
 
 import java.util.function.Predicate;
 
-import org.apache.aries.osgi.functional.CachingServiceReference;
+import org.apache.aries.component.dsl.CachingServiceReference;
 import org.osgi.framework.Filter;
 import org.osgi.framework.FrameworkUtil;
 import org.osgi.framework.InvalidSyntaxException;

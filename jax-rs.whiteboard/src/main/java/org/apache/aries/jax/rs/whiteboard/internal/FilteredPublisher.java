@@ -17,9 +17,9 @@
 
 package org.apache.aries.jax.rs.whiteboard.internal;
 
-import org.apache.aries.osgi.functional.CachingServiceReference;
-import org.apache.aries.osgi.functional.OSGiResult;
-import org.apache.aries.osgi.functional.Publisher;
+import org.apache.aries.component.dsl.CachingServiceReference;
+import org.apache.aries.component.dsl.OSGiResult;
+import org.apache.aries.component.dsl.Publisher;
 import org.osgi.framework.Filter;
 
 import java.util.HashMap;

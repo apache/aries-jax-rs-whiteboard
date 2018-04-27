@@ -44,7 +44,7 @@ import org.apache.aries.jax.rs.whiteboard.internal.cxf.sse.SseContextProvider;
 import org.apache.aries.jax.rs.whiteboard.internal.cxf.sse.SseEventSinkContextProvider;
 import org.apache.aries.jax.rs.whiteboard.internal.utils.ServiceReferenceResourceProvider;
 import org.apache.aries.jax.rs.whiteboard.internal.utils.ServiceTuple;
-import org.apache.aries.osgi.functional.CachingServiceReference;
+import org.apache.aries.component.dsl.CachingServiceReference;
 import org.apache.cxf.Bus;
 import org.apache.cxf.common.util.ClassHelper;
 import org.apache.cxf.endpoint.Server;

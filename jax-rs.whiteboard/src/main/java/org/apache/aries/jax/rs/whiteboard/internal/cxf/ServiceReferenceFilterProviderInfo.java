@@ -17,7 +17,7 @@
 
 package org.apache.aries.jax.rs.whiteboard.internal.cxf;
 
-import org.apache.aries.osgi.functional.CachingServiceReference;
+import org.apache.aries.component.dsl.CachingServiceReference;
 import org.apache.cxf.Bus;
 import org.apache.cxf.jaxrs.model.FilterProviderInfo;
 

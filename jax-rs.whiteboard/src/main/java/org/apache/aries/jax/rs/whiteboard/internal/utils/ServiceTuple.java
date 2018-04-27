@@ -17,7 +17,7 @@
 
 package org.apache.aries.jax.rs.whiteboard.internal.utils;
 
-import org.apache.aries.osgi.functional.CachingServiceReference;
+import org.apache.aries.component.dsl.CachingServiceReference;
 import org.osgi.framework.ServiceObjects;
 
 public class ServiceTuple<T> implements Comparable<ServiceTuple<T>> {

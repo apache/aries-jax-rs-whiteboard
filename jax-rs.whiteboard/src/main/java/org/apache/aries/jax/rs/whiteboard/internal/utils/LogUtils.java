@@ -17,7 +17,7 @@
 
 package org.apache.aries.jax.rs.whiteboard.internal.utils;
 
-import org.apache.aries.osgi.functional.Effect;
+import org.apache.aries.component.dsl.Effect;
 import org.slf4j.Logger;
 
 import java.util.function.Consumer;

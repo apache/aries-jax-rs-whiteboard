@@ -30,8 +30,8 @@ import javax.ws.rs.sse.SseEventSource;
 
 import org.apache.aries.jax.rs.whiteboard.internal.client.ClientBuilderFactory;
 import org.apache.aries.jax.rs.whiteboard.internal.utils.PropertyHolder;
-import org.apache.aries.osgi.functional.OSGi;
-import org.apache.aries.osgi.functional.OSGiResult;
+import org.apache.aries.component.dsl.OSGi;
+import org.apache.aries.component.dsl.OSGiResult;
 import org.apache.cxf.jaxrs.impl.RuntimeDelegateImpl;
 import org.apache.cxf.jaxrs.sse.client.SseEventSourceBuilderImpl;
 import org.osgi.framework.BundleActivator;
@@ -47,14 +47,14 @@ import static org.apache.aries.jax.rs.whiteboard.internal.utils.LogUtils.ifInfoE
 import static org.apache.aries.jax.rs.whiteboard.internal.utils.LogUtils.debugTracking;
 import static org.apache.aries.jax.rs.whiteboard.internal.utils.Utils.canonicalize;
 import static org.apache.aries.jax.rs.whiteboard.internal.Whiteboard.createWhiteboard;
-import static org.apache.aries.osgi.functional.OSGi.all;
-import static org.apache.aries.osgi.functional.OSGi.configurations;
-import static org.apache.aries.osgi.functional.OSGi.effects;
-import static org.apache.aries.osgi.functional.OSGi.ignore;
-import static org.apache.aries.osgi.functional.OSGi.just;
-import static org.apache.aries.osgi.functional.OSGi.once;
-import static org.apache.aries.osgi.functional.OSGi.register;
-import static org.apache.aries.osgi.functional.OSGi.serviceReferences;
+import static org.apache.aries.component.dsl.OSGi.all;
+import static org.apache.aries.component.dsl.OSGi.configurations;
+import static org.apache.aries.component.dsl.OSGi.effects;
+import static org.apache.aries.component.dsl.OSGi.ignore;
+import static org.apache.aries.component.dsl.OSGi.just;
+import static org.apache.aries.component.dsl.OSGi.once;
+import static org.apache.aries.component.dsl.OSGi.register;
+import static org.apache.aries.component.dsl.OSGi.serviceReferences;
 import static org.osgi.service.http.runtime.HttpServiceRuntimeConstants.HTTP_SERVICE_ENDPOINT;
 import static org.osgi.service.http.whiteboard.HttpWhiteboardConstants.HTTP_WHITEBOARD_TARGET;
 

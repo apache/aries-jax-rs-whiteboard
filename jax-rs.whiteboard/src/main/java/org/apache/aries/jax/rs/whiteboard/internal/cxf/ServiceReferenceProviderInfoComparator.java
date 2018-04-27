@@ -17,11 +17,9 @@
 
 package org.apache.aries.jax.rs.whiteboard.internal.cxf;
 
-import org.apache.aries.osgi.functional.CachingServiceReference;
+import org.apache.aries.component.dsl.CachingServiceReference;
 import org.apache.cxf.jaxrs.model.ProviderInfo;
-import org.apache.cxf.jaxrs.provider.ProviderFactory;
 import org.apache.cxf.jaxrs.provider.ProviderFactory.ProviderInfoClassComparator;
-import org.osgi.framework.ServiceReference;
 
 import java.util.Comparator;
 

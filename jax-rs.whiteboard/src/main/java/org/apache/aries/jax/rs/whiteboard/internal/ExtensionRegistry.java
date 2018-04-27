@@ -17,15 +17,15 @@
 
 package org.apache.aries.jax.rs.whiteboard.internal;
 
-import org.apache.aries.osgi.functional.CachingServiceReference;
-import org.apache.aries.osgi.functional.OSGi;
+import org.apache.aries.component.dsl.CachingServiceReference;
+import org.apache.aries.component.dsl.OSGi;
 import org.osgi.framework.Filter;
 import org.osgi.framework.FrameworkUtil;
 import org.osgi.framework.InvalidSyntaxException;
 
 import java.util.HashSet;
 
-import static org.apache.aries.osgi.functional.OSGi.fromOsgiRunnable;
+import static org.apache.aries.component.dsl.OSGi.fromOsgiRunnable;
 
 public class ExtensionRegistry implements AutoCloseable {
 

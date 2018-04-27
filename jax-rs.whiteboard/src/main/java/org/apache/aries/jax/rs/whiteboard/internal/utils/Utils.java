@@ -17,8 +17,8 @@
 
 package org.apache.aries.jax.rs.whiteboard.internal.utils;
 
-import org.apache.aries.osgi.functional.CachingServiceReference;
-import org.apache.aries.osgi.functional.OSGi;
+import org.apache.aries.component.dsl.CachingServiceReference;
+import org.apache.aries.component.dsl.OSGi;
 import org.osgi.framework.ServiceObjects;
 import org.osgi.framework.ServiceReference;
 import org.osgi.framework.ServiceRegistration;
@@ -34,12 +34,12 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 import static org.apache.aries.jax.rs.whiteboard.internal.utils.LogUtils.ifDebugEnabled;
-import static org.apache.aries.osgi.functional.OSGi.bundleContext;
-import static org.apache.aries.osgi.functional.OSGi.effects;
-import static org.apache.aries.osgi.functional.OSGi.just;
-import static org.apache.aries.osgi.functional.OSGi.nothing;
-import static org.apache.aries.osgi.functional.OSGi.onClose;
-import static org.apache.aries.osgi.functional.Utils.highest;
+import static org.apache.aries.component.dsl.OSGi.bundleContext;
+import static org.apache.aries.component.dsl.OSGi.effects;
+import static org.apache.aries.component.dsl.OSGi.just;
+import static org.apache.aries.component.dsl.OSGi.nothing;
+import static org.apache.aries.component.dsl.OSGi.onClose;
+import static org.apache.aries.component.dsl.Utils.highest;
 
 /**
  * @author Carlos Sierra Andrés
