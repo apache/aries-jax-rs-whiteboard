@@ -48,6 +48,11 @@ import org.apache.cxf.Bus;
 import org.apache.cxf.jaxrs.ext.ContextProvider;
 import org.apache.cxf.message.Message;
 import org.junit.Test;
+import org.osgi.framework.Bundle;
+import org.osgi.framework.InvalidSyntaxException;
+import org.osgi.framework.PrototypeServiceFactory;
+import org.osgi.framework.ServiceFactory;
+import org.osgi.framework.ServiceReference;
 import org.osgi.framework.ServiceRegistration;
 
 import org.osgi.service.cm.Configuration;
@@ -63,7 +68,8 @@ import org.osgi.service.jaxrs.runtime.dto.ResourceDTO;
 import org.osgi.service.jaxrs.runtime.dto.ResourceMethodInfoDTO;
 import org.osgi.service.jaxrs.runtime.dto.RuntimeDTO;
 import org.osgi.util.promise.Promise;
-
+import org.osgi.util.tracker.ServiceTracker;
+import org.osgi.util.tracker.ServiceTrackerCustomizer;
 import test.types.ConfigurationAwareResource;
 import test.types.CxfExtensionTestAddon;
 import test.types.ExtensionA;
@@ -1171,7 +1177,9 @@ public class JaxrsTest extends TestHelper {
     }
 
     @Test
-    public void testDefaultWeb() throws IOException, InterruptedException {
+    public void testDefaultWeb() throws
+        IOException, InterruptedException, InvalidSyntaxException {
+
         WebTarget defaultTarget = createDefaultTarget();
 
         assertFalse(
@@ -1190,18 +1198,94 @@ public class JaxrsTest extends TestHelper {
                 "org.apache.aries.jax.rs.whiteboard.default.application",
                 "false");
 
+            CountDownLatch countDownLatch = new CountDownLatch(3);
+
+            ServiceTracker<Object, Object> tracker =
+                new ServiceTracker<>(
+                    bundleContext,
+                    bundleContext.createFilter(
+                        "(&(osgi.jaxrs.name=.default)" +
+                            "(objectClass=org.apache.aries.jax.rs.whiteboard." +
+                                "internal.cxf.CxfJaxrsServiceRegistrator))"),
+                    new ServiceTrackerCustomizer<Object, Object>() {
+
+                        @Override
+                        public Object addingService(
+                            ServiceReference<Object> serviceReference) {
+
+                            countDownLatch.countDown();
+
+                            return serviceReference;
+                        }
+
+                        @Override
+                        public void modifiedService(
+                            ServiceReference<Object> serviceReference,
+                            Object o) {
+
+                        }
+
+                        @Override
+                        public void removedService(
+                            ServiceReference<Object> serviceReference,
+                            Object o) {
+
+                            countDownLatch.countDown();
+                        }
+                    });
+
+            tracker.open();
+
             configuration.update(properties);
 
-            Thread.sleep(3000);
+            countDownLatch.await(1, TimeUnit.MINUTES);
 
             assertTrue(
                 defaultTarget.request().get(String.class).
                     contains("No services have been found"));
         }
         finally {
+            CountDownLatch countDownLatch = new CountDownLatch(3);
+
+            ServiceTracker<Object, Object> tracker =
+                new ServiceTracker<>(
+                    bundleContext,
+                    bundleContext.createFilter(
+                        "(&(osgi.jaxrs.name=.default)" +
+                            "(objectClass=org.apache.aries.jax.rs.whiteboard." +
+                                "internal.cxf.CxfJaxrsServiceRegistrator))"),
+                    new ServiceTrackerCustomizer<Object, Object>() {
+
+                        @Override
+                        public Object addingService(
+                            ServiceReference<Object> serviceReference) {
+
+                            countDownLatch.countDown();
+
+                            return serviceReference;
+                        }
+
+                        @Override
+                        public void modifiedService(
+                            ServiceReference<Object> serviceReference,
+                            Object o) {
+
+                        }
+
+                        @Override
+                        public void removedService(
+                            ServiceReference<Object> serviceReference,
+                            Object o) {
+
+                            countDownLatch.countDown();
+                        }
+                    });
+
+            tracker.open();
+
             configuration.delete();
 
-            Thread.sleep(3000);
+            countDownLatch.await(1, TimeUnit.MINUTES);
         }
 
         assertFalse(
