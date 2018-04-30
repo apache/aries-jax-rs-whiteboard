@@ -32,6 +32,7 @@ import org.osgi.framework.PrototypeServiceFactory;
 import org.osgi.framework.ServiceFactory;
 import org.osgi.framework.ServiceReference;
 import org.osgi.framework.ServiceRegistration;
+import org.osgi.service.cm.ConfigurationAdmin;
 import org.osgi.service.jaxrs.client.SseEventSourceFactory;
 import org.osgi.service.jaxrs.runtime.JaxrsServiceRuntime;
 import org.osgi.service.jaxrs.runtime.dto.RuntimeDTO;
@@ -90,6 +91,10 @@ public class TestHelper {
         }
 
         _clientBuilderTracker.close();
+
+        _configurationAdminTracker.close();
+
+        _sseEventSourceFactoryTracker.close();
     }
 
     @Before
@@ -98,6 +103,11 @@ public class TestHelper {
             bundleContext, ClientBuilder.class, null);
 
         _clientBuilderTracker.open();
+
+        _configurationAdminTracker = new ServiceTracker<>(
+            bundleContext, ConfigurationAdmin.class, null);
+
+        _configurationAdminTracker.open();
 
         _sseEventSourceFactoryTracker = new ServiceTracker<>(
             bundleContext, SseEventSourceFactory.class, null);
@@ -119,6 +129,9 @@ public class TestHelper {
         _runtimeServiceReference = _runtimeTracker.getServiceReference();
     }
 
+    private ServiceTracker<ConfigurationAdmin, ConfigurationAdmin>
+        _configurationAdminTracker;
+
     private ServiceTracker<SseEventSourceFactory, SseEventSourceFactory>
         _sseEventSourceFactoryTracker;
 
@@ -135,6 +148,16 @@ public class TestHelper {
         }
 
         return new String[]{propertyValue.toString()};
+    }
+
+    public ConfigurationAdmin getConfigurationAdmin() {
+
+        try {
+            return _configurationAdminTracker.waitForService(5000);
+        }
+        catch (InterruptedException e) {
+            throw new IllegalStateException(e);
+        }
     }
 
     protected Client createClient() {

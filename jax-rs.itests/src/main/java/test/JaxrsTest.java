@@ -25,6 +25,7 @@ import static org.osgi.service.http.whiteboard.HttpWhiteboardConstants.HTTP_WHIT
 import static org.osgi.service.http.whiteboard.HttpWhiteboardConstants.HTTP_WHITEBOARD_CONTEXT_SELECT;
 import static org.osgi.service.jaxrs.whiteboard.JaxrsWhiteboardConstants.*;
 
+import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
@@ -49,6 +50,8 @@ import org.apache.cxf.message.Message;
 import org.junit.Test;
 import org.osgi.framework.ServiceRegistration;
 
+import org.osgi.service.cm.Configuration;
+import org.osgi.service.cm.ConfigurationAdmin;
 import org.osgi.service.http.context.ServletContextHelper;
 import org.osgi.service.jaxrs.client.PromiseRxInvoker;
 import org.osgi.service.jaxrs.client.SseEventSourceFactory;
@@ -1165,6 +1168,45 @@ public class JaxrsTest extends TestHelper {
 
         assertTrue(executed.get());
         assertEquals(JAX_RS_DEFAULT_APPLICATION, propertyvalue.get());
+    }
+
+    @Test
+    public void testDefaultWeb() throws IOException, InterruptedException {
+        WebTarget defaultTarget = createDefaultTarget();
+
+        assertFalse(
+            defaultTarget.request().get(String.class).
+                contains("No services have been found"));
+
+        ConfigurationAdmin configurationAdmin = getConfigurationAdmin();
+
+        Configuration configuration = configurationAdmin.getConfiguration(
+            "org.apache.aries.jax.rs.whiteboard.default", "?");
+
+        try {
+            Hashtable<String, Object> properties = new Hashtable<>();
+
+            properties.put(
+                "org.apache.aries.jax.rs.whiteboard.default.application",
+                "false");
+
+            configuration.update(properties);
+
+            Thread.sleep(3000);
+
+            assertTrue(
+                defaultTarget.request().get(String.class).
+                    contains("No services have been found"));
+        }
+        finally {
+            configuration.delete();
+
+            Thread.sleep(3000);
+        }
+
+        assertFalse(
+            defaultTarget.request().get(String.class).
+                contains("No services have been found"));
     }
 
     @Test

@@ -28,6 +28,8 @@ import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.ext.RuntimeDelegate;
 import javax.ws.rs.sse.SseEventSource;
 
+import org.apache.aries.component.dsl.Transformer;
+import org.apache.aries.component.dsl.internal.OnlyLastPublisher;
 import org.apache.aries.jax.rs.whiteboard.internal.client.ClientBuilderFactory;
 import org.apache.aries.jax.rs.whiteboard.internal.utils.PropertyHolder;
 import org.apache.aries.component.dsl.OSGi;
@@ -37,12 +39,16 @@ import org.apache.cxf.jaxrs.sse.client.SseEventSourceBuilderImpl;
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.Constants;
+import org.osgi.service.cm.Configuration;
+import org.osgi.service.cm.ConfigurationAdmin;
 import org.osgi.service.http.runtime.HttpServiceRuntime;
 import org.osgi.service.jaxrs.client.SseEventSourceFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static java.lang.String.format;
+import static org.apache.aries.component.dsl.OSGi.configuration;
+import static org.apache.aries.component.dsl.OSGi.services;
 import static org.apache.aries.jax.rs.whiteboard.internal.utils.LogUtils.ifInfoEnabled;
 import static org.apache.aries.jax.rs.whiteboard.internal.utils.LogUtils.debugTracking;
 import static org.apache.aries.jax.rs.whiteboard.internal.utils.Utils.canonicalize;
@@ -83,17 +89,15 @@ public class CxfJaxrsBundleActivator implements BundleActivator {
 
         _whiteboardsResult = whiteboards.run(bundleContext);
 
-        Dictionary<String, Object> defaultConfiguration = new Hashtable<>();
-
-        defaultConfiguration.put(
-            Constants.SERVICE_PID,
-            "org.apache.aries.jax.rs.whiteboard.default");
-
         _defaultOSGiResult =
             all(
                 ignore(registerClient()),
                 ignore(registerSseEventSourceFactory()),
-                ignore(runWhiteboard(bundleContext, defaultConfiguration))
+                ignore(
+                    defaultWhiteboardConfiguration().flatMap(
+                        c -> runWhiteboard(bundleContext, c)
+                    )
+                )
             )
         .run(bundleContext);
 
@@ -116,9 +120,51 @@ public class CxfJaxrsBundleActivator implements BundleActivator {
             _log.debug("Stopped whiteboard factory");
         }
     }
-
     private OSGiResult _defaultOSGiResult;
     private OSGiResult _whiteboardsResult;
+
+    private static OSGi<Dictionary<String, ?>>
+        defaultWhiteboardConfiguration() {
+
+        return once(services(ConfigurationAdmin.class)).flatMap(cm -> {
+            Configuration[] configurations;
+
+            try {
+                configurations = cm.listConfigurations(
+                    "(service.pid=org.apache.aries.jax.rs.whiteboard.default)");
+            }
+            catch (Exception e) {
+                e.printStackTrace();
+
+                throw new RuntimeException(e);
+            }
+
+            Dictionary<String, Object> properties;
+
+            if (configurations == null || configurations.length == 0) {
+                properties = new Hashtable<>();
+
+                properties.put(
+                    Constants.SERVICE_PID,
+                    "org.apache.aries.jax.rs.whiteboard.default");
+            }
+            else {
+                properties = configurations[0].getProperties();
+            }
+
+            Transformer<Dictionary<String, ?>, Dictionary<String, ?>> onlyLast =
+                op -> new OnlyLastPublisher<>(op, () -> properties);
+
+            return
+                all(
+                    just(properties),
+                    configuration("org.apache.aries.jax.rs.whiteboard.default").
+                    filter(c -> !properties.equals(c))
+                ).
+                transform(onlyLast);
+        });
+    }
+
     private static String endpointFilter(PropertyHolder configuration ) {
 
         Object whiteBoardTargetProperty = configuration.get(
@@ -133,6 +179,36 @@ public class CxfJaxrsBundleActivator implements BundleActivator {
         return format(
             "(&(objectClass=%s)%s)", HttpServiceRuntime.class.getName(),
             targetFilter);
+    }
+
+    private static OSGi<?> registerClient() {
+        return register(
+            ClientBuilder.class, new ClientBuilderFactory(),
+            (Map<String, Object>) null).
+            effects(
+                ifInfoEnabled(_log, () -> "Registered ClientBuilder"),
+                ifInfoEnabled(_log, () -> "Unregistered ClientBuilder")
+            );
+    }
+
+    private static OSGi<?> registerSseEventSourceFactory() {
+        return register(
+            SseEventSourceFactory.class, new SseEventSourceFactory() {
+                @Override
+                public SseEventSource.Builder newBuilder(WebTarget target) {
+                    return new SseEventSourceBuilderImpl(){{target(target);}};
+                }
+
+                @Override
+                public SseEventSource newSource(WebTarget target) {
+                    return newBuilder(target).build();
+                }
+            },
+            new Hashtable<>()).
+            effects(
+                ifInfoEnabled(_log, () -> "Registered SseEventSourceFactory"),
+                ifInfoEnabled(_log, () -> "Unregistered SseEventSourceFactory")
+            );
     }
 
     private static OSGi<?> runWhiteboard(
@@ -179,36 +255,6 @@ public class CxfJaxrsBundleActivator implements BundleActivator {
                             )
                         )
                 ))
-            );
-    }
-
-    private static OSGi<?> registerClient() {
-        return register(
-            ClientBuilder.class, new ClientBuilderFactory(),
-            (Map<String, Object>) null).
-            effects(
-                ifInfoEnabled(_log, () -> "Registered ClientBuilder"),
-                ifInfoEnabled(_log, () -> "Unregistered ClientBuilder")
-            );
-    }
-
-    private static OSGi<?> registerSseEventSourceFactory() {
-        return register(
-            SseEventSourceFactory.class, new SseEventSourceFactory() {
-                @Override
-                public SseEventSource.Builder newBuilder(WebTarget target) {
-                    return new SseEventSourceBuilderImpl(){{target(target);}};
-                }
-
-                @Override
-                public SseEventSource newSource(WebTarget target) {
-                    return newBuilder(target).build();
-                }
-            },
-            new Hashtable<>()).
-            effects(
-                ifInfoEnabled(_log, () -> "Registered SseEventSourceFactory"),
-                ifInfoEnabled(_log, () -> "Unregistered SseEventSourceFactory")
             );
     }
 
