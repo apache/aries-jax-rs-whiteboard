@@ -22,7 +22,6 @@ Require-Capability: \
         filter:='(&(osgi.implementation=osgi.http)(version>=1)(!(version>=2)))'
 Import-Package:\
     !com.sun.*,\
-    !com.ctc.wstx.*,\
     !javax.cache.*,\
     !javax.imageio.*,\
     !javax.jws.*,\
@@ -41,7 +40,6 @@ Import-Package:\
     !org.apache.xml.resolver.*,\
     !org.apache.xmlbeans.*,\
     !org.atmosphere.*,\
-    !org.codehaus.stax2.*,\
     !org.dom4j.*,\
     !org.junit.*,\
     !org.jvnet.fastinfoset.*,\
@@ -65,9 +63,9 @@ Import-Package:\
     lib/cxf-rt-databinding-jaxb.jar=cxf-rt-databinding-jaxb-*.jar;lib:=true,\
     lib/cxf-rt-frontend-jaxrs.jar=cxf-rt-frontend-jaxrs-*.jar;lib:=true,\
     lib/cxf-rt-rs-client.jar=cxf-rt-rs-client-*.jar;lib:=true,\
-    lib/cxf-rt-rs-extension-providers.jar=cxf-rt-rs-extension-providers-*.jar;lib:=true,\
     lib/cxf-rt-rs-sse.jar=cxf-rt-rs-sse-*.jar;lib:=true,\
     lib/cxf-rt-transports-http.jar=cxf-rt-transports-http-*.jar;lib:=true,\
     lib/cxf-tools-common.jar=cxf-tools-common-*.jar;lib:=true,\
-    lib/jettison.jar=jettison-*.jar;lib:=true,\
+    lib/stax2-api.jar=stax2-api-*.jar;lib:=true,\
+    lib/woodstox-core.jar=woodstox-core-*.jar;lib:=true,\
     lib/xmlschema-core.jar=xmlschema-core-*.jar;lib:=true
