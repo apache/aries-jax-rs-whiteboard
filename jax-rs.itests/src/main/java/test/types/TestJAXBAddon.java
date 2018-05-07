@@ -46,7 +46,7 @@ public class TestJAXBAddon {
     @Path("/create")
     @Consumes(MediaType.APPLICATION_XML)
     public Response product(Product p) {
-        return Response.ok(p.id + "").build();
+        return Response.ok(String.valueOf(p.id)).build();
     }
 
 }
