@@ -48,10 +48,7 @@ import org.apache.cxf.Bus;
 import org.apache.cxf.jaxrs.ext.ContextProvider;
 import org.apache.cxf.message.Message;
 import org.junit.Test;
-import org.osgi.framework.Bundle;
 import org.osgi.framework.InvalidSyntaxException;
-import org.osgi.framework.PrototypeServiceFactory;
-import org.osgi.framework.ServiceFactory;
 import org.osgi.framework.ServiceReference;
 import org.osgi.framework.ServiceRegistration;
 
