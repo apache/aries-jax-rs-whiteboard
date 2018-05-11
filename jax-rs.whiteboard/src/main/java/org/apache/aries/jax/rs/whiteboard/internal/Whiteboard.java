@@ -94,6 +94,7 @@ import static org.apache.aries.component.dsl.OSGi.register;
 import static org.apache.aries.component.dsl.OSGi.serviceReferences;
 import static org.apache.aries.component.dsl.Utils.accumulateInMap;
 import static org.apache.aries.component.dsl.Utils.highest;
+import static org.osgi.framework.Constants.SERVICE_PID;
 import static org.osgi.service.http.whiteboard.HttpWhiteboardConstants.HTTP_WHITEBOARD_CONTEXT_NAME;
 import static org.osgi.service.http.whiteboard.HttpWhiteboardConstants.HTTP_WHITEBOARD_CONTEXT_PATH;
 import static org.osgi.service.http.whiteboard.HttpWhiteboardConstants.HTTP_WHITEBOARD_CONTEXT_SELECT;
@@ -109,6 +110,7 @@ import static org.osgi.service.jaxrs.whiteboard.JaxrsWhiteboardConstants.JAX_RS_
 import static org.osgi.service.jaxrs.whiteboard.JaxrsWhiteboardConstants.JAX_RS_EXTENSION_SELECT;
 import static org.osgi.service.jaxrs.whiteboard.JaxrsWhiteboardConstants.JAX_RS_NAME;
 import static org.osgi.service.jaxrs.whiteboard.JaxrsWhiteboardConstants.JAX_RS_RESOURCE;
+import static org.osgi.service.jaxrs.whiteboard.JaxrsWhiteboardConstants.JAX_RS_WHITEBOARD_TARGET;
 
 /**
  * @author Carlos Sierra Andrés
@@ -711,6 +713,9 @@ public class Whiteboard {
                 properties.put(JAX_RS_NAME, DEFAULT_NAME);
                 properties.put(JAX_RS_APPLICATION_BASE, "/");
                 properties.put("service.ranking", Integer.MIN_VALUE);
+                properties.put(
+                    JAX_RS_WHITEBOARD_TARGET,
+                    "(" + SERVICE_PID + "=" + _configurationMap.get(SERVICE_PID) + ")");
 
                 return properties;
             });
