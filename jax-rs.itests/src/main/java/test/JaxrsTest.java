@@ -1292,6 +1292,135 @@ public class JaxrsTest extends TestHelper {
     }
 
     @Test
+    public void testDefaultApplicationPath() throws
+        IOException, InterruptedException, InvalidSyntaxException {
+
+        WebTarget defaultTarget = createDefaultTarget();
+
+        WebTarget webTarget = defaultTarget.path("test");
+
+        registerAddon(new TestAddon());
+
+        Response response = webTarget.request().get();
+
+        assertEquals(
+            "This should say hello", "Hello test",
+            response.readEntity(String.class));
+
+        ConfigurationAdmin configurationAdmin = getConfigurationAdmin();
+
+        Configuration configuration = configurationAdmin.getConfiguration(
+            "org.apache.aries.jax.rs.whiteboard.default", "?");
+
+        try {
+            Hashtable<String, Object> properties = new Hashtable<>();
+
+            properties.put("default.application.base", "defaultpath");
+
+            CountDownLatch countDownLatch = new CountDownLatch(3);
+
+            ServiceTracker<Object, Object> tracker =
+                new ServiceTracker<>(
+                    bundleContext,
+                    bundleContext.createFilter(
+                        "(&(osgi.jaxrs.name=.default)" +
+                            "(objectClass=org.apache.aries.jax.rs.whiteboard." +
+                            "internal.cxf.CxfJaxrsServiceRegistrator))"),
+                    new ServiceTrackerCustomizer<Object, Object>() {
+
+                        @Override
+                        public Object addingService(
+                            ServiceReference<Object> serviceReference) {
+
+                            countDownLatch.countDown();
+
+                            return serviceReference;
+                        }
+
+                        @Override
+                        public void modifiedService(
+                            ServiceReference<Object> serviceReference,
+                            Object o) {
+
+                        }
+
+                        @Override
+                        public void removedService(
+                            ServiceReference<Object> serviceReference,
+                            Object o) {
+
+                            countDownLatch.countDown();
+                        }
+                    });
+
+            tracker.open();
+
+            configuration.update(properties);
+
+            countDownLatch.await(1, TimeUnit.MINUTES);
+
+            webTarget = defaultTarget.path("defaultpath").path("test");
+
+            response = webTarget.request().get();
+
+            assertEquals(
+                "This should say hello", "Hello test",
+                response.readEntity(String.class));
+        }
+        finally {
+            CountDownLatch countDownLatch = new CountDownLatch(3);
+
+            ServiceTracker<Object, Object> tracker =
+                new ServiceTracker<>(
+                    bundleContext,
+                    bundleContext.createFilter(
+                        "(&(osgi.jaxrs.name=.default)" +
+                            "(objectClass=org.apache.aries.jax.rs.whiteboard." +
+                            "internal.cxf.CxfJaxrsServiceRegistrator))"),
+                    new ServiceTrackerCustomizer<Object, Object>() {
+
+                        @Override
+                        public Object addingService(
+                            ServiceReference<Object> serviceReference) {
+
+                            countDownLatch.countDown();
+
+                            return serviceReference;
+                        }
+
+                        @Override
+                        public void modifiedService(
+                            ServiceReference<Object> serviceReference,
+                            Object o) {
+
+                        }
+
+                        @Override
+                        public void removedService(
+                            ServiceReference<Object> serviceReference,
+                            Object o) {
+
+                            countDownLatch.countDown();
+                        }
+                    });
+
+            tracker.open();
+
+            configuration.delete();
+
+            countDownLatch.await(1, TimeUnit.MINUTES);
+        }
+
+        webTarget = defaultTarget.path("test");
+
+        response = webTarget.request().get();
+
+        assertEquals(
+            "This should say hello", "Hello test",
+            response.readEntity(String.class));
+    }
+
+    @Test
     public void testEndpointsOverride() {
         WebTarget webTarget = createDefaultTarget().path("conflict");
 
