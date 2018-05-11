@@ -708,10 +708,17 @@ public class Whiteboard {
 
             },
             () -> {
+                Object defaultApplicationBase = _configurationMap.get(
+                    "default.application.base");
+
+                if (defaultApplicationBase == null || !(defaultApplicationBase instanceof String)) {
+                    defaultApplicationBase = "/";
+                }
+
                 Map<String, Object> properties = new HashMap<>(
                     _configurationMap);
                 properties.put(JAX_RS_NAME, DEFAULT_NAME);
-                properties.put(JAX_RS_APPLICATION_BASE, "/");
+                properties.put(JAX_RS_APPLICATION_BASE, defaultApplicationBase);
                 properties.put("service.ranking", Integer.MIN_VALUE);
                 properties.put(
                     JAX_RS_WHITEBOARD_TARGET,
