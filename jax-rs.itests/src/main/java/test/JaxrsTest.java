@@ -1194,9 +1194,7 @@ public class JaxrsTest extends TestHelper {
         try {
             Hashtable<String, Object> properties = new Hashtable<>();
 
-            properties.put(
-                "org.apache.aries.jax.rs.whiteboard.default.application",
-                "false");
+            properties.put("default.web", "false");
 
             CountDownLatch countDownLatch = new CountDownLatch(3);
 

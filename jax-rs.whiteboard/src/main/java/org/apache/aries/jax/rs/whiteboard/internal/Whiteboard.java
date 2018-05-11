@@ -698,8 +698,7 @@ public class Whiteboard {
                 @Override
                 public Set<Object> getSingletons() {
                     Object defaultApplication = _configurationMap.get(
-                        "org.apache.aries.jax.rs.whiteboard.default." +
-                            "application");
+                        "default.web");
 
                     if (defaultApplication == null ||
                         Boolean.parseBoolean(defaultApplication.toString())) {
