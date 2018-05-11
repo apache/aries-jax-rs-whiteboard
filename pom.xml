@@ -49,9 +49,12 @@
     <modules>
         <module>javax.jax.rs-api</module>
         <module>jax-rs.whiteboard</module>
-        <module>jax-rs.itests-fragment</module>
         <module>jax-rs.itests</module>
+        <module>jax-rs.itests-fragment</module>
+        <module>jax-rs.itests-jsonp</module>
         <module>jax-rs.example</module>
+        <module>jax-rs.jsonb</module>
+        <module>jax-rs.jsonp</module>
 	</modules>
 
     <build>

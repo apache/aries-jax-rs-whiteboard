@@ -37,8 +37,6 @@ public class JaxBTest extends TestHelper {
     public void testJAXBEndPoint() throws InterruptedException {
         WebTarget webTarget = createDefaultTarget().path("test");
 
-        getRuntimeDTO();
-
         registerAddon(new TestJAXBAddon());
 
         Response response = webTarget.request(MediaType.APPLICATION_XML).get();
@@ -53,8 +51,6 @@ public class JaxBTest extends TestHelper {
     public void testJAXBClientConversion() throws InterruptedException {
         WebTarget webTarget = createDefaultTarget().path("test");
 
-        getRuntimeDTO();
-
         registerAddon(new TestJAXBAddon());
 
         Product product = webTarget.request(MediaType.APPLICATION_XML).get(Product.class);
@@ -68,8 +64,6 @@ public class JaxBTest extends TestHelper {
     @Test
     public void testJAXBClientPut() throws InterruptedException {
         WebTarget webTarget = createDefaultTarget().path("create");
-
-        getRuntimeDTO();
 
         registerAddon(new TestJAXBAddon());
 
