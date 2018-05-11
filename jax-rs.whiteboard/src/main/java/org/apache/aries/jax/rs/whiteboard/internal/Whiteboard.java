@@ -400,9 +400,14 @@ public class Whiteboard {
                 HTTP_WHITEBOARD_CONTEXT_SELECT);
 
             if (propertyObject == null) {
-                return just(
-                    new ApplicationReferenceWithContext(
-                        null, serviceReference));
+                propertyObject = _configurationMap.get(
+                    HTTP_WHITEBOARD_CONTEXT_SELECT);
+
+                if (propertyObject == null) {
+                    return just(
+                        new ApplicationReferenceWithContext(
+                            null, serviceReference));
+                }
             }
 
             String contextSelect = propertyObject.toString();
