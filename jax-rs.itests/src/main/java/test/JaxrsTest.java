@@ -47,6 +47,7 @@ import java.util.function.Function;
 import org.apache.cxf.Bus;
 import org.apache.cxf.jaxrs.ext.ContextProvider;
 import org.apache.cxf.message.Message;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.osgi.framework.InvalidSyntaxException;
 import org.osgi.framework.ServiceReference;
@@ -1289,6 +1290,7 @@ public class JaxrsTest extends TestHelper {
     }
 
     @Test
+    @Ignore("Asynchronous problems")
     public void testDefaultApplicationPath() throws
         IOException, InterruptedException, InvalidSyntaxException {
 
