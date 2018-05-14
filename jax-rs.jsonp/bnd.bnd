@@ -20,4 +20,4 @@ Bundle-Activator: org.apache.aries.jax.rs.jsonp.activator.JsonpBundleActivator
 -includeresource:\
 	@johnzon-core-*.jar,\
 	lib/johnzon-jaxrs.jar=johnzon-jaxrs-*.jar;lib:=true,\
-	lib/johnzon-mapper.jar=johnzon-mapper-*.jar;lib:=true,\
+	lib/johnzon-mapper.jar=johnzon-mapper-*.jar;lib:=true
