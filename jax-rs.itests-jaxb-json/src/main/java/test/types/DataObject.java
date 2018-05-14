@@ -17,22 +17,21 @@
 
 package test.types;
 
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.MediaType;
+import javax.xml.bind.annotation.XmlRootElement;
 
-public class TestJSONBAddon {
+@XmlRootElement
+public class DataObject {
 
-    @GET
-    @Produces(MediaType.APPLICATION_JSON)
-    @Path("/jsonb")
-    public DataObject getJsonObject() {
-        DataObject dataObject = new DataObject();
+    private String value;
 
-        dataObject.setValue("value");
-
-        return dataObject;
+    public DataObject() {
     }
 
+    public String getValue() {
+        return value;
+    }
+
+    public void setValue(String value) {
+        this.value = value;
+    }
 }

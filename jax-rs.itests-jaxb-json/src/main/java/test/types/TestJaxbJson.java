@@ -22,11 +22,11 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
-public class TestJSONBAddon {
+public class TestJaxbJson {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    @Path("/jsonb")
+    @Path("/jaxbjson")
     public DataObject getJsonObject() {
         DataObject dataObject = new DataObject();
 

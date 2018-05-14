@@ -15,24 +15,29 @@
  * limitations under the License.
  */
 
-package test.types;
+package test;
 
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.MediaType;
+import org.junit.Test;
+import test.types.TestHelper;
+import test.types.TestJaxbJson;
 
-public class TestJSONBAddon {
+import javax.ws.rs.client.WebTarget;
 
-    @GET
-    @Produces(MediaType.APPLICATION_JSON)
-    @Path("/jsonb")
-    public DataObject getJsonObject() {
-        DataObject dataObject = new DataObject();
+import static org.junit.Assert.assertTrue;
 
-        dataObject.setValue("value");
+public class JaxbJsonTest extends TestHelper {
 
-        return dataObject;
+    @Test
+    public void testJSONPEndpoint() {
+        WebTarget webTarget = createDefaultTarget().path("jaxbjson");
+
+        registerAddon(new TestJaxbJson());
+
+        String response = webTarget.request().get(String.class);
+
+        System.out.println(response);
+
+        assertTrue(response.contains("value"));
     }
 
 }

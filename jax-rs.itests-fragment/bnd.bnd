@@ -21,6 +21,7 @@ Export-Package:\
 	org.apache.cxf.attachment;version="3.2.4",\
 	org.apache.cxf.common.classloader;version="3.2.4",\
 	org.apache.cxf.common.logging;version="3.2.4",\
+	org.apache.cxf.common.jaxb;version="3.2.4",\
 	org.apache.cxf.common.security;version="3.2.4",\
 	org.apache.cxf.common.util;version="3.2.4",\
 	org.apache.cxf.configuration.security;version="3.2.4",\
