@@ -4,6 +4,7 @@
 -runrequires: \
 	osgi.identity;filter:='(osgi.identity=org.apache.aries.jax.rs.example)',\
 	osgi.identity;filter:='(osgi.identity=org.apache.aries.jax.rs.whiteboard)',\
+	osgi.identity;filter:='(osgi.identity=org.apache.felix.fileinstall)',\
 	osgi.identity;filter:='(osgi.identity=org.apache.felix.gogo.command)',\
 	osgi.identity;filter:='(osgi.identity=org.apache.felix.gogo.shell)',\
 	osgi.identity;filter:='(osgi.identity=ch.qos.logback.classic)'
@@ -41,4 +42,5 @@
 	org.osgi.service.jaxrs;version='[1.0.0,1.0.1)',\
 	org.osgi.util.function;version='[1.1.0,1.1.1)',\
 	org.osgi.util.promise;version='[1.1.0,1.1.1)',\
-	slf4j.api;version='[1.7.25,1.7.26)'
+	slf4j.api;version='[1.7.25,1.7.26)',\
+	org.apache.felix.fileinstall;version='[3.6.4,3.6.5)'

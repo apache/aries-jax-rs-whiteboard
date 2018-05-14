@@ -177,5 +177,10 @@
             <artifactId>org.osgi.util.promise</artifactId>
             <version>LATEST</version>
         </dependency>
+        <dependency>
+            <groupId>org.apache.felix</groupId>
+            <artifactId>org.apache.felix.fileinstall</artifactId>
+            <version>3.6.4</version>
+        </dependency>
     </dependencies>
 </project>
