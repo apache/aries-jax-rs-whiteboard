@@ -600,9 +600,12 @@ public class Whiteboard {
             createRegistrator(extensions, tuple, properties).
                 flatMap(registrator ->
             registerCXFServletService(
-                registrator.getBus(), properties, contextReference).then(
+                    registrator.getBus(), properties, contextReference).
+                then(
             register(
-                CxfJaxrsServiceRegistrator.class, () -> registrator, properties).then(
+                    CxfJaxrsServiceRegistrator.class,
+                    () -> registrator, properties).
+                then(
             just(registrator)
         ))));
     }
@@ -715,7 +718,9 @@ public class Whiteboard {
                 Object defaultApplicationBase = _configurationMap.get(
                     "default.application.base");
 
-                if (defaultApplicationBase == null || !(defaultApplicationBase instanceof String)) {
+                if (defaultApplicationBase == null ||
+                    !(defaultApplicationBase instanceof String)) {
+
                     defaultApplicationBase = "/";
                 }
 
@@ -726,7 +731,8 @@ public class Whiteboard {
                 properties.put("service.ranking", Integer.MIN_VALUE);
                 properties.put(
                     JAX_RS_WHITEBOARD_TARGET,
-                    "(" + SERVICE_PID + "=" + _configurationMap.get(SERVICE_PID) + ")");
+                    "(" + SERVICE_PID + "=" + _configurationMap.get(SERVICE_PID)
+                        + ")");
 
                 return properties;
             });

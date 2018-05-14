@@ -19,6 +19,8 @@ package org.apache.aries.jax.rs.whiteboard.activator;
 
 import java.util.Arrays;
 import java.util.Dictionary;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
@@ -165,8 +167,7 @@ public class CxfJaxrsBundleActivator implements BundleActivator {
         });
     }
 
-    private static String endpointFilter(PropertyHolder configuration ) {
-
+    private static String endpointFilter(PropertyHolder configuration) {
         Object whiteBoardTargetProperty = configuration.get(
             HTTP_WHITEBOARD_TARGET);
 
