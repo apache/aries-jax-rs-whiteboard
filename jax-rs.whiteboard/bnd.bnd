@@ -62,13 +62,12 @@ Import-Package:\
     !org.jvnet.fastinfoset.*,\
     !org.jvnet.staxex.*,\
     !org.ietf.jgss.*,\
+    !org.objectweb.asm.*,\
     !org.osgi.service.blueprint.*,\
     !org.osgi.service.http,\
     !org.relaxng.datatype.*,\
     !org.slf4j.spi.*,\
     !org.springframework.*,\
-    \
-    org.objectweb.asm.*;resolution:=optional,\
     *
 
 -contract: JavaAnnotation, JavaJAXRS, JavaServlet
