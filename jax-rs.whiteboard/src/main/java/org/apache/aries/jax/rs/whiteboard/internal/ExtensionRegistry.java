@@ -70,7 +70,7 @@ public class ExtensionRegistry implements AutoCloseable {
                         _extensionPublishers.remove(ep);
 
                         for (CachingServiceReference<?> extension :
-                            _registeredExtensions) {
+                            new HashSet<>(_registeredExtensions)) {
 
                             ep.retractIfMatched(extension);
                         }

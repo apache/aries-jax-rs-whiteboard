@@ -89,7 +89,7 @@ public class ApplicationExtensionRegistry implements AutoCloseable {
 
                         if (extensions != null) {
                             for (CachingServiceReference<?> extension :
-                                extensions) {
+                                new HashSet<>(extensions)) {
 
                                 aep.retractIfMatched(extension);
                             }
