@@ -78,6 +78,7 @@ import static org.apache.aries.jax.rs.whiteboard.internal.utils.Utils.canonicali
 import static org.apache.aries.jax.rs.whiteboard.internal.utils.Utils.generateApplicationName;
 import static org.apache.aries.jax.rs.whiteboard.internal.utils.Utils.getProperties;
 import static org.apache.aries.jax.rs.whiteboard.internal.utils.Utils.highestPer;
+import static org.apache.aries.jax.rs.whiteboard.internal.utils.Utils.mergePropertyMaps;
 import static org.apache.aries.jax.rs.whiteboard.internal.utils.Utils.onlyGettables;
 import static org.apache.aries.jax.rs.whiteboard.internal.utils.Utils.service;
 import static org.apache.aries.jax.rs.whiteboard.internal.utils.Utils.updateProperty;
@@ -724,8 +725,10 @@ public class Whiteboard {
                     defaultApplicationBase = "/";
                 }
 
-                Map<String, Object> properties = new HashMap<>(
-                    _configurationMap);
+                Map<String, Object> properties = new HashMap<>();
+
+                mergePropertyMaps(properties, _configurationMap);
+
                 properties.put(JAX_RS_NAME, DEFAULT_NAME);
                 properties.put(JAX_RS_APPLICATION_BASE, defaultApplicationBase);
                 properties.put("service.ranking", Integer.MIN_VALUE);
@@ -1226,7 +1229,7 @@ public class Whiteboard {
             Utils.mergePropertyMaps(servletProperties, serviceProperties);
 
             Utils.mergePropertyMaps(servletProperties, _configurationMap);
-            
+
             servletProperties.putIfAbsent(
                 HTTP_WHITEBOARD_TARGET, "(osgi.http.endpoint=*)");
 
