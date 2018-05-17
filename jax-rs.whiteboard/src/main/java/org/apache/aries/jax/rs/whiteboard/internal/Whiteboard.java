@@ -1153,22 +1153,13 @@ public class Whiteboard {
         });
     }
 
-    private static OSGi<ServiceRegistration<Servlet>> registerCXFServletService(
-        Bus bus, Supplier<Map<String, ?>> configurationSup,
+    private OSGi<ServiceRegistration<Servlet>> registerCXFServletService(
+        Bus bus, Supplier<Map<String, ?>> servicePropertiesSup,
         CachingServiceReference<ServletContextHelper> contextReference) {
 
-        Map<String, ?> configuration = configurationSup.get();
+        Map<String, ?> serviceProperties = servicePropertiesSup.get();
 
-        Supplier<Map<String, ?>> propertiesSup = () -> {
-            HashMap<String, Object> properties = new HashMap<>(configuration);
-
-            properties.putIfAbsent(
-                HTTP_WHITEBOARD_TARGET, "(osgi.http.endpoint=*)");
-
-            return properties;
-        };
-
-        String address = getApplicationBase(configuration::get);
+        String address = getApplicationBase(serviceProperties::get);
 
         if (!address.startsWith("/")) {
             address = "/" + address;
@@ -1180,7 +1171,7 @@ public class Whiteboard {
 
         String finalAddress = address;
 
-        String applicationName = getServiceName(configuration::get);
+        String applicationName = getServiceName(serviceProperties::get);
 
         Supplier<Map<String, ?>> contextPropertiesSup;
 
@@ -1189,6 +1180,13 @@ public class Whiteboard {
         if (contextReference == null) {
             contextPropertiesSup = () -> {
                 HashMap<String, Object> contextProperties = new HashMap<>();
+
+                Utils.mergePropertyMaps(contextProperties, serviceProperties);
+
+                Utils.mergePropertyMaps(contextProperties, _configurationMap);
+
+                contextProperties.putIfAbsent(
+                    HTTP_WHITEBOARD_TARGET, "(osgi.http.endpoint=*)");
 
                 String contextName;
 
@@ -1223,8 +1221,14 @@ public class Whiteboard {
         }
 
         Supplier<Map<String, ?>> servletPropertiesSup = () -> {
-            HashMap<String, Object> servletProperties = new HashMap<>(
-                propertiesSup.get());
+            HashMap<String, Object> servletProperties = new HashMap<>();
+
+            Utils.mergePropertyMaps(servletProperties, serviceProperties);
+
+            Utils.mergePropertyMaps(servletProperties, _configurationMap);
+            
+            servletProperties.putIfAbsent(
+                HTTP_WHITEBOARD_TARGET, "(osgi.http.endpoint=*)");
 
             Map<String, ?> contextProperties = contextPropertiesSup.get();
 

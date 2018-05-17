@@ -112,6 +112,22 @@ public class Utils {
         );
     }
 
+    public static void mergePropertyMaps(
+        Map<String, Object> receptor, Map<String, ?> map) {
+
+        for (Map.Entry<String, ?> entry :
+            map.entrySet()) {
+
+            String key = entry.getKey();
+
+            if (key.startsWith(".")) {
+                continue;
+            }
+
+            receptor.putIfAbsent(key, entry.getValue());
+        }
+    }
+
     public static <T> OSGi<ServiceTuple<T>> onlyGettables(
         OSGi<CachingServiceReference<T>> program,
         Consumer<CachingServiceReference<T>> whenAddedNotGettable,
@@ -151,23 +167,6 @@ public class Utils {
             }));
     }
 
-    private static <T, S> OSGi<S> notGettableResult(
-        Consumer<CachingServiceReference<T>> whenAddedNotGettable,
-        Consumer<CachingServiceReference<T>> whenLeavingNotGettable,
-        CachingServiceReference<T> immutable, Logger log) {
-
-        return effects(
-            () -> whenAddedNotGettable.accept(immutable),
-            () -> whenLeavingNotGettable.accept(immutable)
-        ).effects(
-            ifDebugEnabled(log, () -> "Tracked not gettable reference {}"),
-            ifDebugEnabled(log, () -> "Untracked not gettable reference {}")
-        ).
-        then(
-            nothing()
-        );
-    }
-
     public static <T> OSGi<T> service(
         CachingServiceReference<T> immutableServiceReference) {
 
@@ -197,6 +196,23 @@ public class Utils {
         properties.put(key, value);
 
         serviceRegistration.setProperties(properties);
+    }
+
+    private static <T, S> OSGi<S> notGettableResult(
+        Consumer<CachingServiceReference<T>> whenAddedNotGettable,
+        Consumer<CachingServiceReference<T>> whenLeavingNotGettable,
+        CachingServiceReference<T> immutable, Logger log) {
+
+        return effects(
+            () -> whenAddedNotGettable.accept(immutable),
+            () -> whenLeavingNotGettable.accept(immutable)
+        ).effects(
+            ifDebugEnabled(log, () -> "Tracked not gettable reference {}"),
+            ifDebugEnabled(log, () -> "Untracked not gettable reference {}")
+        ).
+        then(
+            nothing()
+        );
     }
 
 }
