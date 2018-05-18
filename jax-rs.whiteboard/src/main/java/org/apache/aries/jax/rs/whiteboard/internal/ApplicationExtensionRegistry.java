@@ -75,7 +75,9 @@ public class ApplicationExtensionRegistry implements AutoCloseable {
                     _applicationRegisteredExtensions.get(applicationName);
 
                 if (extensions != null) {
-                    for (CachingServiceReference<?> extension : extensions) {
+                    for (CachingServiceReference<?> extension :
+                        new HashSet<>(extensions)) {
+
                         aep.publishIfMatched(extension);
                     }
                 }
@@ -109,7 +111,7 @@ public class ApplicationExtensionRegistry implements AutoCloseable {
                 _applicationPublishers.get(applicationName);
 
             if (publishers != null) {
-                for (FilteredPublisher publisher : publishers) {
+                for (FilteredPublisher publisher : new HashSet<>(publishers)) {
                     publisher.publishIfMatched(extension);
                 }
             }
@@ -137,7 +139,7 @@ public class ApplicationExtensionRegistry implements AutoCloseable {
                 _applicationPublishers.get(applicationName);
 
             if (publishers != null) {
-                for (FilteredPublisher publisher : publishers) {
+                for (FilteredPublisher publisher : new HashSet<>(publishers)) {
                     publisher.retractIfMatched(extension);
                 }
             }

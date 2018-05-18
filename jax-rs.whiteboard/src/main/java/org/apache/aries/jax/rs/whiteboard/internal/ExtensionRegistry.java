@@ -36,7 +36,9 @@ public class ExtensionRegistry implements AutoCloseable {
 
     @Override
     public void close() {
-        for (FilteredPublisher extensionPublisher : _extensionPublishers) {
+        for (FilteredPublisher extensionPublisher :
+            new HashSet<>(_extensionPublishers)) {
+
             extensionPublisher.close();
         }
     }
@@ -60,7 +62,7 @@ public class ExtensionRegistry implements AutoCloseable {
                 _extensionPublishers.add(ep);
 
                 for (CachingServiceReference<?> extension :
-                    _registeredExtensions) {
+                    new HashSet<>(_registeredExtensions)) {
 
                     ep.publishIfMatched(extension);
                 }
@@ -85,7 +87,9 @@ public class ExtensionRegistry implements AutoCloseable {
         CachingServiceReference<?> extension) {
 
         synchronized (ExtensionRegistry.this) {
-            for (FilteredPublisher publisher : _extensionPublishers) {
+            for (FilteredPublisher publisher :
+                new HashSet<>(_extensionPublishers)) {
+
                 publisher.publishIfMatched(extension);
             }
 
@@ -97,7 +101,9 @@ public class ExtensionRegistry implements AutoCloseable {
         CachingServiceReference<?> extension) {
 
         synchronized (ExtensionRegistry.this) {
-            for (FilteredPublisher publisher : _extensionPublishers) {
+            for (FilteredPublisher publisher :
+                new HashSet<>(_extensionPublishers)) {
+
                 publisher.retractIfMatched(extension);
             }
 
