@@ -37,6 +37,7 @@ Export-Package:\
 	org.apache.cxf.jaxrs.provider;version="3.2.4",\
 	org.apache.cxf.jaxrs.utils;version="3.2.4",\
 	org.apache.cxf.jaxrs.utils.multipart;version="3.2.4",\
+	org.apache.cxf.jaxrs.utils.schemas;version="3.2.4",\
 	org.apache.cxf.message;version="3.2.4",\
 	org.apache.cxf.phase;version="3.2.4",\
 	org.apache.cxf.resource;version="3.2.4",\

@@ -17,65 +17,125 @@
 
 package org.apache.aries.jax.rs.jaxb.json.activator;
 
-import org.apache.cxf.jaxrs.provider.json.JSONProvider;
-import org.apache.cxf.jaxrs.provider.jsrjsonp.JsrJsonpProvider;
-import org.osgi.framework.Bundle;
+import org.apache.aries.component.dsl.OSGi;
+import org.apache.aries.component.dsl.OSGiResult;
+import org.apache.cxf.jaxrs.utils.schemas.SchemaHandler;
+import org.codehaus.jettison.mapped.TypeConverter;
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.Constants;
-import org.osgi.framework.PrototypeServiceFactory;
-import org.osgi.framework.ServiceRegistration;
 import org.osgi.service.jaxrs.whiteboard.JaxrsWhiteboardConstants;
 
-import javax.ws.rs.core.MediaType;
 import javax.ws.rs.ext.MessageBodyReader;
 import javax.ws.rs.ext.MessageBodyWriter;
+import javax.xml.bind.Marshaller;
+import javax.xml.bind.Unmarshaller;
+import java.util.Dictionary;
+import java.util.Enumeration;
 import java.util.Hashtable;
+import java.util.Map;
+import java.util.Optional;
+
+import static org.apache.aries.component.dsl.OSGi.all;
+import static org.apache.aries.component.dsl.OSGi.coalesce;
+import static org.apache.aries.component.dsl.OSGi.configuration;
+import static org.apache.aries.component.dsl.OSGi.configurations;
+import static org.apache.aries.component.dsl.OSGi.just;
+import static org.apache.aries.component.dsl.OSGi.register;
+import static org.apache.aries.component.dsl.OSGi.service;
+import static org.apache.aries.component.dsl.OSGi.serviceReferences;
+import static org.apache.aries.component.dsl.Utils.highest;
 
 public class JaxbJsonBundleActivator implements BundleActivator {
 
+    public static final String CONFIG_PID = "org.apache.aries.jax.rs.jaxb.json";
+
+    public static OSGi<Dictionary<String, ?>> CONFIGURATION =
+        coalesce(
+            all(
+                configurations(CONFIG_PID),
+                configuration(CONFIG_PID)
+            ),
+            just(Hashtable::new)
+        );
+
     @Override
     public void start(BundleContext context) throws Exception {
-        _serviceRegistration = context.registerService(
-            new String[]{
-                MessageBodyReader.class.getName(),
-                MessageBodyWriter.class.getName()
-            },
-            new PrototypeServiceFactory<JSONProvider<?>>() {
-
-                @Override
-                public JSONProvider<?> getService(
-                    Bundle bundle,
-                    ServiceRegistration<JSONProvider<?>> registration) {
-
-                    return new JSONProvider<>();
-                }
-
-                @Override
-                public void ungetService(
-                    Bundle bundle,
-                    ServiceRegistration<JSONProvider<?>> registration,
-                    JSONProvider<?> service) {
-
-                }
-            },
-            new Hashtable<String, Object>() {{
-                put(JaxrsWhiteboardConstants.JAX_RS_EXTENSION, true);
-                put(
-                    JaxrsWhiteboardConstants.JAX_RS_NAME, "jaxb-json");
-                put(Constants.SERVICE_RANKING, Integer.MIN_VALUE);
-            }});
+        _result =
+            CONFIGURATION.flatMap(properties ->
+            createJsonFactory(properties).flatMap(jsonFactory ->
+            register(
+                new String[]{
+                    MessageBodyReader.class.getName(),
+                    MessageBodyWriter.class.getName()
+                },
+                () -> jsonFactory,
+                () -> getRegistrationProperties(properties)
+            ))).
+            run(context);
     }
 
     @Override
     public void stop(BundleContext context) throws Exception {
-        try {
-            _serviceRegistration.unregister();
+        _result.close();
+    }
+    private OSGiResult _result;
+
+    private static OSGi<JsonProviderPrototypeServiceFactory> createJsonFactory(
+        Dictionary<String, ?> properties) {
+
+        Object nameObject = properties.get("osgi.jaxrs.name");
+        String name;
+
+        if (nameObject == null) {
+            name = "jaxb-json";
         }
-        catch (Exception e) {
-            e.printStackTrace();
+        else {
+            name = nameObject.toString();
         }
+
+        return OSGi.combine(
+            JsonProviderPrototypeServiceFactory::new,
+            just(properties),
+            getStaticOptionalServices(name, TypeConverter.class),
+            getStaticOptionalServices(name, Marshaller.Listener.class),
+            getStaticOptionalServices(name, Unmarshaller.Listener.class),
+            getStaticOptionalServices(name, SchemaHandler.class)
+        );
     }
 
-    private ServiceRegistration<?> _serviceRegistration;
+    private static <T> OSGi<Optional<T>> getStaticOptionalServices(
+        String name, Class<T> clazz) {
+
+        return coalesce(
+            service(
+                highest(
+                    serviceReferences(
+                        clazz, "(osgi.jaxrs.name=" + name + ")"))).
+                map(Optional::of),
+            just(Optional.empty()));
+    }
+
+    private Map<String, ?> getRegistrationProperties(
+        Dictionary<String, ?> properties) {
+
+        Hashtable<String, Object> serviceProps =
+            new Hashtable<String, Object>() {{
+                put(JaxrsWhiteboardConstants.JAX_RS_EXTENSION, true);
+                putIfAbsent(
+                    JaxrsWhiteboardConstants.JAX_RS_NAME, "jaxb-json");
+                put(Constants.SERVICE_RANKING, Integer.MIN_VALUE);
+            }};
+
+        Enumeration<String> keys = properties.keys();
+
+        while (keys.hasMoreElements()) {
+            String key = keys.nextElement();
+
+            serviceProps.put(key, properties.get(key));
+        }
+
+        return serviceProps;
+    }
+
 }

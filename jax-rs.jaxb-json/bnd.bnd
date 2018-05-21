@@ -52,6 +52,7 @@ Import-Package:\
     *
 
 -includeresource:\
+	lib/component-dsl.jar=org.apache.aries.component-dsl.component-dsl-*.jar;lib:=true,\
 	lib/cxf-rt-rs-extension-providers.jar=cxf-rt-rs-extension-providers-*.jar;lib:=true,\
 	lib/cxf-rt-rs-json-basic.jar=cxf-rt-rs-json-basic-*.jar;lib:=true,\
 	@jettison-*.jar
