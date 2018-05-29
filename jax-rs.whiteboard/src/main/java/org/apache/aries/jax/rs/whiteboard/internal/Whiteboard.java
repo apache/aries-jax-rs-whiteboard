@@ -532,6 +532,9 @@ public class Whiteboard {
                     cxfExtensions.put(clazz, serviceTuple.getService());
                 }
                 catch (Exception e) {
+                    if (_log.isErrorEnabled()) {
+                        _log.error("Could not load extension for CXF bus", e);
+                    }
                 }
             }
         }
