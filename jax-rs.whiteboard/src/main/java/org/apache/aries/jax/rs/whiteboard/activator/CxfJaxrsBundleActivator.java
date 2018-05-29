@@ -49,6 +49,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static java.lang.String.format;
+import static org.apache.aries.component.dsl.OSGi.coalesce;
 import static org.apache.aries.component.dsl.OSGi.configuration;
 import static org.apache.aries.component.dsl.OSGi.services;
 import static org.apache.aries.jax.rs.whiteboard.internal.utils.LogUtils.ifInfoEnabled;
@@ -81,25 +82,34 @@ public class CxfJaxrsBundleActivator implements BundleActivator {
             _log.debug("Starting the whiteboard factory");
         }
 
-        OSGi<?> whiteboards =
-            configurations("org.apache.aries.jax.rs.whiteboard").
-                effects(
-                    debugTracking(_log, () -> "whiteboard configuration")
-                ).flatMap(configuration ->
-                runWhiteboard(bundleContext, configuration)
-            );
+        OSGi<?> runWhiteboards =
+            all(
+                configurations("org.apache.aries.jax.rs.whiteboard"),
+                coalesce(
+                    configuration("org.apache.aries.jax.rs.whiteboard.default"),
+                    just(() -> {
+                        Dictionary<String, Object> properties =
+                            new Hashtable<>();
 
-        _whiteboardsResult = whiteboards.run(bundleContext);
+                        properties.put(
+                            Constants.SERVICE_PID,
+                            "org.apache.aries.jax.rs.whiteboard.default");
+
+                        return properties;
+                    })
+            )
+        ).
+        effects(
+            debugTracking(_log, () -> "whiteboard configuration")
+        ).flatMap(configuration ->
+            runWhiteboard(bundleContext, configuration)
+        );
 
         _defaultOSGiResult =
             all(
                 ignore(registerClient()),
                 ignore(registerSseEventSourceFactory()),
-                ignore(
-                    defaultWhiteboardConfiguration().flatMap(
-                        c -> runWhiteboard(bundleContext, c)
-                    )
-                )
+                ignore(runWhiteboards)
             )
         .run(bundleContext);
 
@@ -116,56 +126,11 @@ public class CxfJaxrsBundleActivator implements BundleActivator {
 
         _defaultOSGiResult.close();
 
-        _whiteboardsResult.close();
-
         if (_log.isDebugEnabled()) {
             _log.debug("Stopped whiteboard factory");
         }
     }
     private OSGiResult _defaultOSGiResult;
-    private OSGiResult _whiteboardsResult;
-
-    private static OSGi<Dictionary<String, ?>>
-        defaultWhiteboardConfiguration() {
-
-        return once(services(ConfigurationAdmin.class)).flatMap(cm -> {
-            Configuration[] configurations;
-
-            try {
-                configurations = cm.listConfigurations(
-                    "(service.pid=org.apache.aries.jax.rs.whiteboard.default)");
-            }
-            catch (Exception e) {
-                e.printStackTrace();
-
-                throw new RuntimeException(e);
-            }
-
-            Dictionary<String, Object> properties;
-
-            if (configurations == null || configurations.length == 0) {
-                properties = new Hashtable<>();
-
-                properties.put(
-                    Constants.SERVICE_PID,
-                    "org.apache.aries.jax.rs.whiteboard.default");
-            }
-            else {
-                properties = configurations[0].getProperties();
-            }
-
-            Transformer<Dictionary<String, ?>, Dictionary<String, ?>> onlyLast =
-                op -> new OnlyLastPublisher<>(op, () -> properties);
-
-            return
-                all(
-                    just(properties),
-                    configuration("org.apache.aries.jax.rs.whiteboard.default").
-                    filter(c -> !properties.equals(c))
-                ).
-                transform(onlyLast);
-        });
-    }
 
     private static String endpointFilter(PropertyHolder configuration) {
         Object whiteBoardTargetProperty = configuration.get(
