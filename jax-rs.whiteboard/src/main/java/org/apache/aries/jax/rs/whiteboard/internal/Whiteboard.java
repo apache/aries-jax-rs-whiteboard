@@ -89,7 +89,6 @@ import static org.apache.aries.component.dsl.OSGi.effects;
 import static org.apache.aries.component.dsl.OSGi.ignore;
 import static org.apache.aries.component.dsl.OSGi.just;
 import static org.apache.aries.component.dsl.OSGi.nothing;
-import static org.apache.aries.component.dsl.OSGi.onClose;
 import static org.apache.aries.component.dsl.OSGi.once;
 import static org.apache.aries.component.dsl.OSGi.register;
 import static org.apache.aries.component.dsl.OSGi.serviceReferences;
@@ -1079,7 +1078,8 @@ public class Whiteboard {
             }
         }
 
-        program = onClose(
+        program = effects(
+            () -> {},
             () -> onRemovingDependent.accept(reference)).
             then(program);
 

@@ -38,7 +38,6 @@ import static org.apache.aries.component.dsl.OSGi.bundleContext;
 import static org.apache.aries.component.dsl.OSGi.effects;
 import static org.apache.aries.component.dsl.OSGi.just;
 import static org.apache.aries.component.dsl.OSGi.nothing;
-import static org.apache.aries.component.dsl.OSGi.onClose;
 import static org.apache.aries.component.dsl.Utils.highest;
 
 /**
@@ -175,7 +174,9 @@ public class Utils {
 
         return
             bundleContext().flatMap(bundleContext ->
-            onClose(() -> bundleContext.ungetService(serviceReference)).then(
+            effects(
+                () -> {},
+                () -> bundleContext.ungetService(serviceReference)).then(
             just(bundleContext.getService(serviceReference))
         ));
     }
