@@ -1024,10 +1024,7 @@ public class Whiteboard {
 
         OSGi<CachingServiceReference<?>> program = just(reference);
 
-        if (extensionDependencies.length > 0) {
-            onAddingDependent.accept(reference);
-        }
-        else {
+        if (extensionDependencies.length == 0) {
             return program;
         }
 
@@ -1079,7 +1076,7 @@ public class Whiteboard {
         }
 
         program = effects(
-            () -> {},
+            () -> onAddingDependent.accept(reference),
             () -> onRemovingDependent.accept(reference)).
             then(program);
 
