@@ -952,7 +952,7 @@ public class Whiteboard {
                 program =
                     once(
                         _extensionRegistry.waitForExtension(
-                            extensionDependency)).
+                            extensionDependency).
                         flatMap(
                             sr -> {
                                 Object applicationSelectProperty =
@@ -980,7 +980,7 @@ public class Whiteboard {
 
                                 return nothing();
                             }
-                        ).effects(
+                        )).effects(
                                 __ -> {},
                                 __ -> _runtime.addDependentApplication(
                                     reference)
