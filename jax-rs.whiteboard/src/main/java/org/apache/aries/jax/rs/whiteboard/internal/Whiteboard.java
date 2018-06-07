@@ -1123,7 +1123,10 @@ public class Whiteboard {
             serviceReferences(
                 CxfJaxrsServiceRegistrator.class,
                 applicationSelectProperty.toString()).
-            effects(__ -> onResolved.accept(serviceReference), __ -> {}));
+            effects(
+                __ -> onResolved.accept(serviceReference),
+                __ -> onWaiting.accept(serviceReference))
+            );
     }
 
     private static <T> OSGi<T> countChanges(
