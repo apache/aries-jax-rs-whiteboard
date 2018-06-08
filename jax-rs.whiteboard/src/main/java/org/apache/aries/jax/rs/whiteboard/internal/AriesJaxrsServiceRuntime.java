@@ -790,7 +790,7 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
 
         return (__, collection) -> {
             if (collection == null) {
-                collection = new ArrayList<>();
+                collection = new HashSet<>();
             }
 
             collection.add(t);
