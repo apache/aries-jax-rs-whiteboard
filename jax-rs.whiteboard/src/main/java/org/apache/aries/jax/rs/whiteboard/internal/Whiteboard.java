@@ -1051,11 +1051,11 @@ public class Whiteboard {
                 }
 
                 program =
-                    _applicationExtensionRegistry.waitForApplicationExtension(
+                    once(_applicationExtensionRegistry.waitForApplicationExtension(
                         applicationName, extensionDependency).effects(
                         __ -> {},
                         __ -> onAddingDependent.accept(reference)
-                    ).
+                    )).
                     effects(
                         ifDebugEnabled(
                             _log,
