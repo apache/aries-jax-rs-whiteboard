@@ -63,6 +63,7 @@ import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -1114,16 +1115,29 @@ public class Whiteboard {
         }
 
         return
+            just(AtomicInteger::new).flatMap(counter ->
             effects(
                 () -> onWaiting.accept(serviceReference),
-                () -> onResolved.accept(serviceReference)).then(
+                () -> {
+                    onResolved.accept(serviceReference);
+
+                    counter.set(0);
+                }).then(
             serviceReferences(
                 CxfJaxrsServiceRegistrator.class,
                 applicationSelectProperty.toString()).
             effects(
-                __ -> onResolved.accept(serviceReference),
-                __ -> onWaiting.accept(serviceReference))
-            );
+                __ -> {
+                    if (counter.getAndIncrement() == 0) {
+                        onResolved.accept(serviceReference);
+                    }
+                },
+                __ -> {
+                    if (counter.decrementAndGet() == 0) {
+                        onWaiting.accept(serviceReference);
+                    }
+                })
+            ));
     }
 
     private static <T> OSGi<T> countChanges(
