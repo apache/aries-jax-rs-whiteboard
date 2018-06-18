@@ -403,6 +403,9 @@ public class JaxrsTest extends TestHelper {
 
     @Test
     public void testApplicationReadd() throws InterruptedException {
+        assertEquals(0, getRuntimeDTO().applicationDTOs.length);
+        assertEquals(0, getRuntimeDTO().failedApplicationDTOs.length);
+
         WebTarget webTarget = createDefaultTarget().path("/test-application");
 
         Runnable testCase = () -> {
@@ -626,14 +629,17 @@ public class JaxrsTest extends TestHelper {
         throws InterruptedException {
 
         assertEquals(0, getRuntimeDTO().applicationDTOs.length);
+        assertEquals(0, getRuntimeDTO().failedApplicationDTOs.length);
 
-        registerApplication(
-            new TestApplication(),
-            JAX_RS_EXTENSION_SELECT,
-            String.format("(%s=%s)", JAX_RS_NAME, "Filter"), "propertyKey",
-            "propertyValue");
+        ServiceRegistration<Application> serviceRegistration =
+            registerApplication(
+                new TestApplication(),
+                JAX_RS_EXTENSION_SELECT,
+                String.format("(%s=%s)", JAX_RS_NAME, "Filter"), "propertyKey",
+                "propertyValue");
 
         assertEquals(0, getRuntimeDTO().applicationDTOs.length);
+        assertEquals(1, getRuntimeDTO().failedApplicationDTOs.length);
 
         WebTarget webTarget = createDefaultTarget().path("/test-application");
 
@@ -645,6 +651,7 @@ public class JaxrsTest extends TestHelper {
             "Filter", JAX_RS_APPLICATION_SELECT, "(propertyKey=propertyValue)");
 
         assertEquals(1, getRuntimeDTO().applicationDTOs.length);
+        assertEquals(0, getRuntimeDTO().failedApplicationDTOs.length);
 
         response = webTarget.request().get();
 
@@ -653,10 +660,16 @@ public class JaxrsTest extends TestHelper {
         filterRegistration.unregister();
 
         assertEquals(0, getRuntimeDTO().applicationDTOs.length);
+        assertEquals(1, getRuntimeDTO().failedApplicationDTOs.length);
 
         response = webTarget.request().get();
 
         assertEquals(404, response.getStatus());
+
+        serviceRegistration.unregister();
+
+        assertEquals(0, getRuntimeDTO().applicationDTOs.length);
+        assertEquals(0, getRuntimeDTO().failedApplicationDTOs.length);
     }
 
     @Test
