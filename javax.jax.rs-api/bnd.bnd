@@ -18,7 +18,10 @@
 # Keep -include instruction first because order matters
 -include: ${.}/target/sources/META-INF/MANIFEST.MF
 
-Bundle-License: CDDL-1.1;link="https://spdx.org/licenses/CDDL-1.1.html"
+Import-Package:\
+	org.apache.geronimo.osgi.registry.api;resolution:=optional,\
+	*
+
 Provide-Capability:\
 	osgi.contract;\
 		osgi.contract=JavaJAXRS;\
@@ -27,5 +30,7 @@ Provide-Capability:\
 
 -exportcontents: javax.ws.rs.*;version='2.1'
 
--includeresource: META-INF/README=README
+-includeresource:\
+	lib/geronimo-osgi-locator.jar=geronimo-osgi-locator-*.jar;lib:=true
+
 -removeheaders: Archiver-Version, Created-By, Built-By, Build-Jdk

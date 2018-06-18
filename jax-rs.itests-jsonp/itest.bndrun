@@ -26,7 +26,6 @@
 -runbundles: \
 	ch.qos.logback.classic;version='[1.2.3,1.2.4)',\
 	ch.qos.logback.core;version='[1.2.3,1.2.4)',\
-	org.apache.aries.javax.annotation-api;version='[0.0.1,0.0.2)',\
 	org.apache.aries.javax.jax.rs-api;version='[0.0.1,0.0.2)',\
 	org.apache.aries.jax.rs.whiteboard;version='[0.0.1,0.0.2)',\
 	org.apache.felix.configadmin;version='[1.8.14,1.8.15)',\
@@ -42,5 +41,7 @@
 	slf4j.api;version='[1.7.25,1.7.26)',\
 	org.apache.aries.jax.rs.jsonp;version='[0.0.1,0.0.2)',\
 	org.apache.servicemix.specs.json-api-1.1;version='[2.9.0,2.9.1)',\
-	org.apache.aries.jax.rs.itests-jsonp;version='[0.0.1,0.0.2)'
+	org.apache.aries.jax.rs.itests-jsonp;version='[0.0.1,0.0.2)',\
+	javax.ws.rs-api;version='[2.1.0,2.1.1)',\
+	org.apache.servicemix.specs.annotation-api-1.3;version='[1.3.0,1.3.1)'
 -include: -personal.bnd

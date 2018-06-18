@@ -32,27 +32,12 @@
     <name>Apache Aries JAX-RS Specification API</name>
     <version>0.0.1-SNAPSHOT</version>
 
-    <properties>
-        <spec.groupId>javax.ws.rs</spec.groupId>
-        <spec.artifactId>javax.ws.rs-api</spec.artifactId>
-        <spec.version>2.1</spec.version>
-        <remoteresources.skip>true</remoteresources.skip>
-    </properties>
-
-    <licenses>
-        <license>
-            <name>CDDL-1.1</name>
-            <url>https://spdx.org/licenses/CDDL-1.1.html</url>
-            <comments>This project uses the javax.ws.rs API artifact under the terms of the CDDL-1.1 license.</comments>
-        </license>
-    </licenses>
-
     <build>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
-                 <configuration>
+                <configuration>
                     <archive>
                         <manifest>
                             <addDefaultImplementationEntries>false</addDefaultImplementationEntries>
@@ -96,4 +81,19 @@
         </plugins>
         <sourceDirectory>${project.build.directory}/sources</sourceDirectory>
     </build>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.apache.geronimo.specs</groupId>
+            <artifactId>geronimo-osgi-locator</artifactId>
+            <version>1.0</version>
+        </dependency>
+    </dependencies>
+
+    <properties>
+        <spec.groupId>org.apache.geronimo.specs</spec.groupId>
+        <spec.artifactId>geronimo-jaxrs_2.1_spec</spec.artifactId>
+        <spec.version>1.0</spec.version>
+        <remoteresources.skip>true</remoteresources.skip>
+    </properties>
 </project>
