@@ -933,13 +933,7 @@ public class Whiteboard {
             OSGi<CachingServiceReference<Application>> program = just(
                 reference);
 
-            if (extensionDependencies.length > 0) {
-                program = effects(
-                    () -> _runtime.addDependentApplication(reference),
-                    () -> _runtime.removeDependentApplication(reference)
-                ).then(program);
-            }
-            else {
+            if (extensionDependencies.length == 0) {
                 return program;
             }
 
@@ -1000,6 +994,11 @@ public class Whiteboard {
                         ).
                     then(program);
             }
+
+            program = effects(
+                () -> _runtime.addDependentApplication(reference),
+                () -> _runtime.removeDependentApplication(reference)
+            ).then(program);
 
             program = program.effects(
                 __ -> _runtime.removeDependentApplication(reference),
