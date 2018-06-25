@@ -52,12 +52,7 @@
         <module>jax-rs.itests</module>
         <module>jax-rs.itests-fragment</module>
         <module>jax-rs.itests-jaxb-json</module>
-        <module>jax-rs.itests-jsonb</module>
-        <module>jax-rs.itests-jsonp</module>
-        <module>jax-rs.example</module>
         <module>jax-rs.jaxb-json</module>
-        <module>jax-rs.jsonb</module>
-        <module>jax-rs.jsonp</module>
 	</modules>
 
     <build>
