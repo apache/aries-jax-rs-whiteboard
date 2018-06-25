@@ -38,6 +38,7 @@ import java.util.Optional;
 
 import static org.apache.aries.component.dsl.OSGi.all;
 import static org.apache.aries.component.dsl.OSGi.coalesce;
+import static org.apache.aries.component.dsl.OSGi.combine;
 import static org.apache.aries.component.dsl.OSGi.configuration;
 import static org.apache.aries.component.dsl.OSGi.configurations;
 import static org.apache.aries.component.dsl.OSGi.just;
@@ -94,7 +95,7 @@ public class JaxbJsonBundleActivator implements BundleActivator {
             name = nameObject.toString();
         }
 
-        return OSGi.combine(
+        return combine(
             JsonProviderPrototypeServiceFactory::new,
             just(properties),
             getStaticOptionalServices(name, TypeConverter.class),

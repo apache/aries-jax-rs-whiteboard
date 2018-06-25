@@ -35,8 +35,6 @@ public class JaxbJsonTest extends TestHelper {
 
         String response = webTarget.request().get(String.class);
 
-        System.out.println(response);
-
         assertTrue(response.contains("value"));
     }
 
