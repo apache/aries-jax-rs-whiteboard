@@ -40,8 +40,6 @@ import javax.ws.rs.core.Feature;
 import javax.ws.rs.core.FeatureContext;
 import javax.ws.rs.ext.RuntimeDelegate;
 
-import org.apache.aries.jax.rs.whiteboard.internal.cxf.sse.SseContextProvider;
-import org.apache.aries.jax.rs.whiteboard.internal.cxf.sse.SseEventSinkContextProvider;
 import org.apache.aries.jax.rs.whiteboard.internal.utils.ServiceReferenceResourceProvider;
 import org.apache.aries.jax.rs.whiteboard.internal.utils.ServiceTuple;
 import org.apache.aries.component.dsl.CachingServiceReference;
@@ -56,6 +54,8 @@ import org.apache.cxf.jaxrs.model.ApplicationInfo;
 import org.apache.cxf.jaxrs.model.ClassResourceInfo;
 import org.apache.cxf.jaxrs.provider.ProviderFactory.ProviderInfoClassComparator;
 import org.apache.cxf.jaxrs.provider.ServerConfigurableFactory;
+import org.apache.cxf.jaxrs.sse.SseContextProvider;
+import org.apache.cxf.jaxrs.sse.SseEventSinkContextProvider;
 import org.apache.cxf.jaxrs.utils.AnnotationUtils;
 import org.osgi.framework.ServiceObjects;
 
