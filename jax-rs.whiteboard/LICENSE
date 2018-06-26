@@ -200,10 +200,3 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License.
-
-This product bundles hightlight.js, by Ivan Sagalaev. For details see
-src/main/resources/static/highlight/LICENSE.
-
-This product bundles github.css, by Vasily Polovnyov. For details see
-src/main/resources/static/highlight/styles/github.css
-
