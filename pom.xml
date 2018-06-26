@@ -15,7 +15,10 @@
   specific language governing permissions and limitations
   under the License.
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project
+    xmlns="http://maven.apache.org/POM/4.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 
     <modelVersion>4.0.0</modelVersion>
 
@@ -29,7 +32,7 @@
     <groupId>org.apache.aries.jax.rs</groupId>
     <artifactId>org.apache.aries.jax.rs</artifactId>
     <name>JAX-RS Integration Project</name>
-    <version>1.0.0</version>
+    <version>0.0.1-SNAPSHOT</version>
     <packaging>pom</packaging>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -41,8 +44,7 @@
         <connection>scm:git:https://git-wip-us.apache.org/repos/asf/aries-jax-rs-whiteboard.git</connection>
         <developerConnection>scm:git:https://git-wip-us.apache.org/repos/asf/aries-jax-rs-whiteboard.git</developerConnection>
         <url>https://git-wip-us.apache.org/repos/asf/aries-jax-rs-whiteboard.git</url>
-      <tag>org.apache.aries.jax.rs-1.0.0</tag>
-  </scm>
+    </scm>
 
     <modules>
         <module>javax.jax.rs-api</module>
