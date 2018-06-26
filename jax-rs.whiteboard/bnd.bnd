@@ -77,6 +77,7 @@ Import-Package:\
 -includeresource:\
 	lib/component-dsl.jar=org.apache.aries.component-dsl.component-dsl-*.jar;lib:=true,\
     lib/cxf-core.jar=cxf-core-*.jar;lib:=true,\
+    lib/cxf-rt-databinding-jaxb.jar=cxf-rt-databinding-jaxb-*.jar;lib:=true,\
     lib/cxf-rt-frontend-jaxrs.jar=cxf-rt-frontend-jaxrs-*.jar;lib:=true,\
     lib/cxf-rt-rs-client.jar=cxf-rt-rs-client-*.jar;lib:=true,\
     lib/cxf-rt-rs-sse.jar=cxf-rt-rs-sse-*.jar;lib:=true,\
