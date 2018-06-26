@@ -36,7 +36,7 @@
     <packaging>pom</packaging>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <cxf.version>3.2.5</cxf.version>
+        <cxf.version>3.2.4</cxf.version>
         <bnd.version>4.0.0</bnd.version>
     </properties>
 
