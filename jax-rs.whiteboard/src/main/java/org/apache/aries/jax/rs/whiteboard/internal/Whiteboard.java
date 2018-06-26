@@ -672,7 +672,9 @@ public class Whiteboard {
         return
             just(() -> new CxfJaxrsServiceRegistrator(
                     createBus(extensions), tuple, props.get())).
-            effects(__ -> {}, CxfJaxrsServiceRegistrator::close);
+            effects(
+                __ -> {}, __ -> {}, CxfJaxrsServiceRegistrator::close,
+                __ -> {});
     }
 
     private OSGi<CachingServiceReference<Object>>
