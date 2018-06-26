@@ -41,8 +41,8 @@
     </properties>
 
     <scm>
-        <connection>scm:git:https://git-wip-us.apache.org/repos/asf/aries-jax-rs-whiteboard.git</connection>
-        <developerConnection>scm:git:https://git-wip-us.apache.org/repos/asf/aries-jax-rs-whiteboard.git</developerConnection>
+        <connection>https://git-wip-us.apache.org/repos/asf/aries-jax-rs-whiteboard.git</connection>
+        <developerConnection>https://git-wip-us.apache.org/repos/asf/aries-jax-rs-whiteboard.git</developerConnection>
         <url>https://git-wip-us.apache.org/repos/asf/aries-jax-rs-whiteboard.git</url>
     </scm>
 
