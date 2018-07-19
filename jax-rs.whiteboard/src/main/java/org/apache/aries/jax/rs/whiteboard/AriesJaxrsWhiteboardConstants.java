@@ -20,17 +20,6 @@ package org.apache.aries.jax.rs.whiteboard;
 public class AriesJaxrsWhiteboardConstants {
 
     /**
-     * A Service property specifying a target filter used to select
-     * an Application onto which to bind the service.
-     * <p>
-     * If this service property is not specified, the service is ignored.
-     * <p>
-     * The value of this service property must be of type {@code String} and be
-     * a valid {@link org.osgi.framework.Filter filter string}.
-     */
-    public static final String JAX_RS_APPLICATION_SELECT = "org.apache.aries.jaxrs.application.select";
-
-    /**
      * This application is waiting for a ServletContextHelper
      */
     public static final int	FAILURE_REASON_REQUIRED_CONTEXT_UNAVAILABLE	= 101;
