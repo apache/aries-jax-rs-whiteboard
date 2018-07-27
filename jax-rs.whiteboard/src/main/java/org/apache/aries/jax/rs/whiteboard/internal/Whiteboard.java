@@ -259,11 +259,13 @@ public class Whiteboard {
         return
             highestPer(
                 sr -> just(getServiceName(sr::getProperty)),
-                all(
-                    countChanges(getResourcesForWhiteboard(), _counter),
-                    countChanges(
-                        getApplicationExtensionsForWhiteboard(), _counter),
-                    countChanges(applicationsForWhiteboard, _counter)
+                countChanges(
+                    all(
+                        getResourcesForWhiteboard(),
+                        getApplicationExtensionsForWhiteboard(),
+                        applicationsForWhiteboard
+                    ),
+                    _counter
                 ),
                 this::registerShadowedService,
                 this::unregisterShadowedService
@@ -1146,7 +1148,9 @@ public class Whiteboard {
         OSGi<T> program, ChangeCounter counter) {
 
         return program.effects(
+            __ -> {},
             __ -> counter.inc(),
+            __ -> {},
             __ -> counter.inc()
         );
     }
