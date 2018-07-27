@@ -33,6 +33,7 @@ import org.osgi.framework.Constants;
 import org.osgi.framework.Filter;
 import org.osgi.framework.FrameworkUtil;
 import org.osgi.framework.InvalidSyntaxException;
+import org.osgi.framework.PrototypeServiceFactory;
 import org.osgi.framework.ServiceReference;
 import org.osgi.framework.ServiceRegistration;
 import org.osgi.framework.wiring.BundleWiring;
@@ -1151,8 +1152,16 @@ public class Whiteboard {
     }
 
     private static CXFNonSpringServlet createCXFServlet(Bus bus) {
-        CXFNonSpringServlet cxfNonSpringServlet = new CXFNonSpringServlet();
+        CXFNonSpringServlet cxfNonSpringServlet = new CXFNonSpringServlet() {
+
+            @Override
+            public void destroyBus() {
+            }
+
+        };
+
         cxfNonSpringServlet.setBus(bus);
+
         return cxfNonSpringServlet;
     }
 
@@ -1277,7 +1286,24 @@ public class Whiteboard {
 
         return program.then(
             register(
-                Servlet.class, () -> createCXFServlet(bus),
+                Servlet.class,
+                new PrototypeServiceFactory<Servlet>() {
+                    @Override
+                    public Servlet getService(
+                        Bundle bundle,
+                        ServiceRegistration<Servlet> registration) {
+
+                        return createCXFServlet(bus);
+                    }
+
+                    @Override
+                    public void ungetService(
+                        Bundle bundle,
+                        ServiceRegistration<Servlet> registration,
+                        Servlet service) {
+
+                    }
+                },
                 servletPropertiesSup));
     }
 
