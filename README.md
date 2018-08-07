@@ -1,6 +1,10 @@
 ## JAX-RS Whiteboard
 
-This is an implementation of a JAX-RS Services whiteboard [OSGi RFC-217](https://github.com/osgi/design/tree/master/rfcs/rfc0217).
+Aries JAX-RS Whiteboard is the reference implementation of the [OSGi JAX-RS Services Whiteboard 1.0](https://osgi.org/specification/osgi.cmpn/7.0.0/service.jaxrs.html).
+
+## Integrations
+
+The `integrations` folder contains OSGi enabled integrations for a variety of useful libraries that you might want to use with JAX-RS. In many cases these are just adding OSGi lifecycle and configuration to existing JAX-RS enabled libraries.
 
 ## Building
 
