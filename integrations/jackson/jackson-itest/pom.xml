@@ -20,14 +20,14 @@
 
     <parent>
         <groupId>org.apache.aries.jax.rs</groupId>
-        <artifactId>org.apache.aries.jax.rs</artifactId>
-        <version>1.0.1-SNAPSHOT</version>
+        <artifactId>jackson-integration</artifactId>
+        <version>1.0.0-SNAPSHOT</version>
         <relativePath>..</relativePath>
     </parent>
 
-    <artifactId>org.apache.aries.jax.rs.itests-jaxb-json</artifactId>
-    <description>Apache Aries JAX-RS Integration Tests</description>
-    <name>Apache Aries JAX-RS Integration Tests</name>
+    <artifactId>org.apache.aries.jax.rs.jackson.itest</artifactId>
+    <description>Apache Aries Jackson JAX-RS Integration Tests</description>
+    <name>Apache Aries Jackson JAX-RS Integration Tests</name>
 
     <properties>
         <maven.deploy.skip>true</maven.deploy.skip>
@@ -99,24 +99,19 @@
         <dependency>
             <groupId>org.apache.aries.jax.rs</groupId>
             <artifactId>org.apache.aries.jax.rs.whiteboard</artifactId>
-            <version>1.0.1-SNAPSHOT</version>
+            <version>${aries.jaxrs.version}</version>
             <scope>runtime</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.aries.jax.rs</groupId>
-            <artifactId>org.apache.aries.jax.rs.itests-fragment</artifactId>
-            <version>1.0.1-SNAPSHOT</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.aries.jax.rs</groupId>
-            <artifactId>org.apache.aries.jax.rs.jaxb.json</artifactId>
-            <version>1.0.1-SNAPSHOT</version>
+            <artifactId>org.apache.aries.jax.rs.jackson</artifactId>
+            <version>1.0.0-SNAPSHOT</version>
             <scope>runtime</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.aries.spec</groupId>
             <artifactId>org.apache.aries.javax.jax.rs-api</artifactId>
-            <version>1.0.1-SNAPSHOT</version>
+            <version>${aries.jaxrs.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.felix</groupId>
@@ -177,18 +172,6 @@
             <groupId>org.osgi</groupId>
             <artifactId>osgi.enroute.hamcrest.wrapper</artifactId>
             <version>1.3.0</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.cxf</groupId>
-            <artifactId>cxf-core</artifactId>
-            <version>${cxf.version}</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.cxf</groupId>
-            <artifactId>cxf-rt-frontend-jaxrs</artifactId>
-            <version>${cxf.version}</version>
-            <scope>provided</scope>
         </dependency>
     </dependencies>
 </project>

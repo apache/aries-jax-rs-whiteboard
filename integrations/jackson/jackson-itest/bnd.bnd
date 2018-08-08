@@ -22,3 +22,5 @@ Test-Cases: \
 	${classes;CONCRETE;ANNOTATED;org.junit.Test}
 
 Require-Capability: osgi.service;filter:="(objectClass=org.osgi.service.cm.ConfigurationAdmin)"
+
+-contract: *

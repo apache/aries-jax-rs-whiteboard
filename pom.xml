@@ -49,8 +49,6 @@
         <module>jax-rs.whiteboard</module>
         <module>jax-rs.itests</module>
         <module>jax-rs.itests-fragment</module>
-        <module>jax-rs.itests-jaxb-json</module>
-        <module>jax-rs.jaxb-json</module>
 	</modules>
 
     <build>
