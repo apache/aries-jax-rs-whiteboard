@@ -21,7 +21,9 @@ import static org.apache.aries.component.dsl.OSGi.coalesce;
 import static org.apache.aries.component.dsl.OSGi.configuration;
 import static org.apache.aries.component.dsl.OSGi.just;
 import static org.apache.aries.component.dsl.OSGi.register;
+import static org.apache.aries.component.dsl.OSGi.service;
 import static org.apache.aries.component.dsl.OSGi.serviceReferences;
+import static org.apache.aries.component.dsl.Utils.accumulate;
 import static org.osgi.service.jaxrs.whiteboard.JaxrsWhiteboardConstants.JAX_RS_EXTENSION;
 
 import java.util.ArrayList;
@@ -37,6 +39,7 @@ import javax.ws.rs.core.Feature;
 import org.apache.aries.component.dsl.CachingServiceReference;
 import org.apache.aries.component.dsl.OSGi;
 import org.apache.aries.component.dsl.OSGiResult;
+import org.apache.aries.component.dsl.Utils;
 import org.apache.shiro.realm.Realm;
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
@@ -51,12 +54,8 @@ public class ShiroAuthenticationActivator implements BundleActivator {
     
     private OSGiResult registration;
 
-    private BundleContext context;
-
     @Override
     public void start(BundleContext context) throws Exception {
-        
-        this.context = context;
         _LOG.debug("Starting the Shiro JAX-RS Authentication Feature");
         
         registration = coalesce(
@@ -101,27 +100,13 @@ public class ShiroAuthenticationActivator implements BundleActivator {
         
         Object filter = properties.get("realms.target");
         
-        ConcurrentSkipListMap<CachingServiceReference<Realm>, Realm> discovered = new ConcurrentSkipListMap<>();
-        
         OSGi<List<Realm>> realms;
         if(filter == null) {
             _LOG.debug("The Shiro JAX-RS Authentication Feature is accepting all realms");
-            realms = serviceReferences(Realm.class)
-                .effects(csr -> discovered.put(csr, context.getService(csr.getServiceReference())), 
-                        csr -> {
-                            discovered.remove(csr);
-                            context.ungetService(csr.getServiceReference());
-                        })
-                .map(x -> new ArrayList<>(discovered.values()));
+            realms = accumulate(service(serviceReferences(Realm.class)));
         } else {
             _LOG.debug("The Shiro JAX-RS Authentication Feature is filtering realms using the filter {}", filter);
-            realms = serviceReferences(Realm.class, String.valueOf(filter))
-                    .effects(csr -> discovered.put(csr, context.getService(csr.getServiceReference())), 
-                            csr -> {
-                                discovered.remove(csr);
-                                context.ungetService(csr.getServiceReference());
-                            })
-                    .map(x -> new ArrayList<>(discovered.values()));
+            realms = accumulate(service(serviceReferences(Realm.class, String.valueOf(filter))));
         }
         
         return realms.map(ShiroAuthenticationFeatureProvider::new)
