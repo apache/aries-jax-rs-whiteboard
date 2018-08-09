@@ -77,7 +77,7 @@ public class CxfJaxrsServiceRegistrator {
         rewire();
     }
 
-    public void add(ResourceProvider resourceProvider) {
+    public synchronized void add(ResourceProvider resourceProvider) {
         if (_closed) {
             return;
         }
@@ -94,7 +94,7 @@ public class CxfJaxrsServiceRegistrator {
         }
     }
 
-    public void addProvider(ServiceTuple<?> tuple) {
+    public synchronized void addProvider(ServiceTuple<?> tuple) {
         if (_closed) {
             return;
         }
@@ -169,7 +169,7 @@ public class CxfJaxrsServiceRegistrator {
         return classes;
     }
 
-    public void remove(ResourceProvider resourceProvider) {
+    public synchronized void remove(ResourceProvider resourceProvider) {
         if (_closed) {
             return;
         }
@@ -179,7 +179,7 @@ public class CxfJaxrsServiceRegistrator {
         rewire();
     }
 
-    public void removeProvider(ServiceTuple<?> tuple) {
+    public synchronized void removeProvider(ServiceTuple<?> tuple) {
         if (_closed) {
             return;
         }
