@@ -48,8 +48,7 @@
         <module>javax.jax.rs-api</module>
         <module>jax-rs.whiteboard</module>
         <module>jax-rs.itests</module>
-        <module>jax-rs.itests-fragment</module>
-	</modules>
+    </modules>
 
     <build>
         <pluginManagement>
