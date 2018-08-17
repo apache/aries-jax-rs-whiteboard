@@ -18,6 +18,8 @@
 package test;
 
 import org.junit.Test;
+import org.osgi.service.jaxrs.whiteboard.JaxrsWhiteboardConstants;
+
 import test.types.TestHelper;
 import test.types.TestJaxbJson;
 
@@ -32,6 +34,20 @@ public class JaxbJsonTest extends TestHelper {
         WebTarget webTarget = createDefaultTarget().path("jaxbjson");
 
         registerAddon(new TestJaxbJson());
+
+        String response = webTarget.request().get(String.class);
+
+        assertTrue(response.contains("value"));
+    }
+
+    @Test
+    public void testJSONPEndpointRequireExtension() {
+        WebTarget webTarget = createDefaultTarget().path("jaxbjson");
+
+        registerAddon(
+            new TestJaxbJson(),
+            JaxrsWhiteboardConstants.JAX_RS_EXTENSION_SELECT,
+            "(osgi.jaxrs.media.type=application/json)");
 
         String response = webTarget.request().get(String.class);
 

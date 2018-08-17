@@ -29,6 +29,7 @@ import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Map;
 
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.ext.MessageBodyReader;
 import javax.ws.rs.ext.MessageBodyWriter;
 
@@ -80,6 +81,7 @@ public class JaxbJsonBundleActivator implements BundleActivator {
         Hashtable<String, Object> serviceProps =
             new Hashtable<String, Object>() {{
                 put(JaxrsWhiteboardConstants.JAX_RS_EXTENSION, true);
+                put(JaxrsWhiteboardConstants.JAX_RS_MEDIA_TYPE, MediaType.APPLICATION_JSON);
                 putIfAbsent(
                     JaxrsWhiteboardConstants.JAX_RS_NAME, "jaxb-json");
                 put(Constants.SERVICE_RANKING, Integer.MIN_VALUE);
@@ -93,7 +95,7 @@ public class JaxbJsonBundleActivator implements BundleActivator {
 
         while (keys.hasMoreElements()) {
             String key = keys.nextElement();
-            
+
             if(!key.startsWith(".")) {
                 serviceProps.put(key, properties.get(key));
             }
