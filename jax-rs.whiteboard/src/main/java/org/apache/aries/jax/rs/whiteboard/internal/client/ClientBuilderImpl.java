@@ -17,27 +17,14 @@
 
 package org.apache.aries.jax.rs.whiteboard.internal.client;
 
-import javax.ws.rs.client.ClientBuilder;
+import org.apache.cxf.jaxrs.client.PromiseRxInvokerProviderImpl;
 
-import org.osgi.framework.Bundle;
-import org.osgi.framework.PrototypeServiceFactory;
-import org.osgi.framework.ServiceRegistration;
+public class ClientBuilderImpl extends org.apache.cxf.jaxrs.client.spec.ClientBuilderImpl {
 
-public class ClientBuilderFactory
-    implements PrototypeServiceFactory<ClientBuilder> {
+    public ClientBuilderImpl() {
+        super();
 
-    @Override
-    public ClientBuilder getService(
-        Bundle bundle, ServiceRegistration<ClientBuilder> registration) {
-
-        return new ClientBuilderImpl();
-    }
-
-    @Override
-    public void ungetService(
-        Bundle bundle, ServiceRegistration<ClientBuilder> registration,
-        ClientBuilder service) {
-
+        register(new PromiseRxInvokerProviderImpl());
     }
 
 }

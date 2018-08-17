@@ -29,14 +29,27 @@ Provide-Capability: \
         uses:="org.osgi.service.jaxrs.runtime,org.osgi.service.jaxrs.runtime.dto", \
     osgi.service; \
         objectClass:List<String>="javax.ws.rs.client.ClientBuilder"; \
-        uses:="javax.ws.rs.client,org.osgi.service.jaxrs.client",\
-	osgi.service; \
-		objectClass:List<String>="org.osgi.service.jaxrs.client.SseEventSourceFactory"; \
-		uses:="javax.ws.rs.client,org.osgi.service.jaxrs.client"
-    
+        uses:="javax.ws.rs.client,org.osgi.service.jaxrs.client", \
+    osgi.service; \
+        objectClass:List<String>="org.osgi.service.jaxrs.client.SseEventSourceFactory"; \
+        uses:="javax.ws.rs.client,org.osgi.service.jaxrs.client", \
+    osgi.serviceloader; \
+        osgi.serviceloader=javax.ws.rs.client.ClientBuilder; \
+        uses:="javax.ws.rs.client,org.osgi.service.jaxrs.client", \
+    osgi.serviceloader; \
+        osgi.serviceloader=javax.ws.rs.ext.RuntimeDelegate; \
+        uses:="javax.ws.rs.core,javax.ws.rs.ext", \
+    osgi.serviceloader; \
+        osgi.serviceloader=javax.ws.rs.sse.SseEventSource.Builder; \
+        uses:="javax.ws.rs.client,javax.ws.rs.sse"
+
 Require-Capability: \
     osgi.implementation; \
-        filter:='(&(osgi.implementation=osgi.http)(version>=1)(!(version>=2)))'
+        filter:='(&(osgi.implementation=osgi.http)(version>=1)(!(version>=2)))',\
+    osgi.extender;\
+        filter:="(osgi.extender=osgi.serviceloader.registrar)";\
+        resolution:='optional'
+
 Import-Package:\
     !com.sun.*,\
     !javax.cache.*,\
