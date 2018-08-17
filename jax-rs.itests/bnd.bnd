@@ -22,5 +22,3 @@ Test-Cases: \
 	${classes;CONCRETE;ANNOTATED;org.junit.Test}
 
 -contract: JavaJAXRS
-
-Require-Capability: osgi.service;filter:="(objectClass=org.osgi.service.cm.ConfigurationAdmin)"
