@@ -18,8 +18,8 @@
 package org.apache.aries.jax.rs.whiteboard.internal.cxf;
 
 import static java.util.stream.Collectors.toMap;
-import static org.apache.aries.jax.rs.whiteboard.internal.utils.Utils.canonicalize;
 import static org.apache.aries.jax.rs.whiteboard.internal.Whiteboard.SUPPORTED_EXTENSION_INTERFACES;
+import static org.apache.aries.jax.rs.whiteboard.internal.utils.Utils.canonicalize;
 import static org.apache.cxf.jaxrs.provider.ProviderFactory.DEFAULT_FILTER_NAME_BINDING;
 
 import java.util.ArrayList;
@@ -40,9 +40,9 @@ import javax.ws.rs.core.Feature;
 import javax.ws.rs.core.FeatureContext;
 import javax.ws.rs.ext.RuntimeDelegate;
 
+import org.apache.aries.component.dsl.CachingServiceReference;
 import org.apache.aries.jax.rs.whiteboard.internal.utils.ServiceReferenceResourceProvider;
 import org.apache.aries.jax.rs.whiteboard.internal.utils.ServiceTuple;
-import org.apache.aries.component.dsl.CachingServiceReference;
 import org.apache.cxf.Bus;
 import org.apache.cxf.common.util.ClassHelper;
 import org.apache.cxf.endpoint.Server;
@@ -57,7 +57,6 @@ import org.apache.cxf.jaxrs.provider.ServerConfigurableFactory;
 import org.apache.cxf.jaxrs.sse.SseContextProvider;
 import org.apache.cxf.jaxrs.sse.SseEventSinkContextProvider;
 import org.apache.cxf.jaxrs.utils.AnnotationUtils;
-import org.osgi.framework.ServiceObjects;
 
 public class CxfJaxrsServiceRegistrator {
 
@@ -212,6 +211,7 @@ public class CxfJaxrsServiceRegistrator {
         _jaxRsServerFactoryBean = createEndpoint(
             application, JAXRSServerFactoryBean.class);
 
+        _jaxRsServerFactoryBean.setInvoker(new PromiseAwareJAXRSInvoker());
         _jaxRsServerFactoryBean.setBus(_bus);
 
         _bus.setExtension(

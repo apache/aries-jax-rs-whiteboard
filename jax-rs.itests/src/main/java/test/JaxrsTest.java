@@ -1087,7 +1087,7 @@ public class JaxrsTest extends TestHelper {
         throws ExecutionException, InterruptedException {
 
         WebTarget webTarget =
-            createDefaultTarget().path("whiteboard").path("async").
+            createDefaultTarget().path("whiteboard").path("async").path("suspended").
                 path("HelloAsync");
 
         AtomicBoolean pre = new AtomicBoolean();
@@ -1127,12 +1127,100 @@ public class JaxrsTest extends TestHelper {
     }
 
     @Test
+    public void testAsyncResourceCompletionStage()
+            throws ExecutionException, InterruptedException {
+        
+        WebTarget webTarget =
+                createDefaultTarget().path("whiteboard").path("async").path("completionstage").
+                path("HelloAsync");
+        
+        AtomicBoolean pre = new AtomicBoolean();
+        AtomicBoolean post = new AtomicBoolean();
+        
+        CountDownLatch countDownLatch = new CountDownLatch(1);
+        
+        registerAddon(
+                new TestAsyncResource(
+                        () -> pre.set(true),
+                        () -> {
+                            post.set(true);
+                            
+                            countDownLatch.countDown();
+                        }));
+        
+        Future<String> future = webTarget.request().async().get(
+                new InvocationCallback<String>() {
+                    @Override
+                    public void completed(String s) {
+                        assertTrue(pre.get());
+                    }
+                    
+                    @Override
+                    public void failed(Throwable throwable) {
+                        
+                    }
+                });
+        
+        String result = future.get();
+        
+        countDownLatch.await(1, TimeUnit.MINUTES);
+        
+        assertTrue(post.get());
+        
+        assertEquals("This should say HelloAsync", "HelloAsync", result);
+    }
+
+    @Test
+    public void testAsyncResourcePromise()
+            throws ExecutionException, InterruptedException {
+        
+        WebTarget webTarget =
+                createDefaultTarget().path("whiteboard").path("async").path("promise").
+                path("HelloAsync");
+        
+        AtomicBoolean pre = new AtomicBoolean();
+        AtomicBoolean post = new AtomicBoolean();
+        
+        CountDownLatch countDownLatch = new CountDownLatch(1);
+        
+        registerAddon(
+                new TestAsyncResource(
+                        () -> pre.set(true),
+                        () -> {
+                            post.set(true);
+                            
+                            countDownLatch.countDown();
+                        }));
+        
+        Future<String> future = webTarget.request().async().get(
+                new InvocationCallback<String>() {
+                    @Override
+                    public void completed(String s) {
+                        assertTrue(pre.get());
+                    }
+                    
+                    @Override
+                    public void failed(Throwable throwable) {
+                        
+                    }
+                });
+        
+        String result = future.get();
+        
+        countDownLatch.await(1, TimeUnit.MINUTES);
+        
+        assertTrue(post.get());
+        
+        assertEquals("This should say HelloAsync", "HelloAsync", result);
+    }
+
+    @Test
     public void testAsyncResourceClientWithPromises()
         throws ExecutionException, InterruptedException,
         InvocationTargetException {
 
         WebTarget webTarget =
-            createDefaultTarget().path("whiteboard").path("async").
+            createDefaultTarget().path("whiteboard").path("async").path("promise").
                 path("HelloAsync");
 
         AtomicBoolean pre = new AtomicBoolean();

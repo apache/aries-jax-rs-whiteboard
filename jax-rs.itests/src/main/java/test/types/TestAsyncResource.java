@@ -17,6 +17,9 @@
 
 package test.types;
 
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
+
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -24,6 +27,9 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.container.AsyncResponse;
 import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.MediaType;
+
+import org.osgi.util.promise.Deferred;
+import org.osgi.util.promise.Promise;
 
 @Path("whiteboard/async")
 public class TestAsyncResource {
@@ -37,7 +43,7 @@ public class TestAsyncResource {
     }
 
     @GET
-    @Path("{name}")
+    @Path("suspended/{name}")
     @Produces(MediaType.TEXT_PLAIN)
     public void echo(@Suspended AsyncResponse async,
                      @PathParam("name") String value) {
@@ -57,5 +63,57 @@ public class TestAsyncResource {
                 postResume.run();
             }
         }).start();
+    }
+
+    @GET
+    @Path("completionstage/{name}")
+    @Produces(MediaType.TEXT_PLAIN)
+    public CompletionStage<String> echoCompletionStage(@PathParam("name") String value) {
+        
+        CompletableFuture<String> cf = new CompletableFuture<>();
+        
+        new Thread(() -> {
+            try {
+                try {
+                    Thread.sleep(1000);
+                } catch (Exception e) {
+                    preResume.run();
+                    cf.completeExceptionally(e);
+                    return;
+                }
+                preResume.run();
+                cf.complete(value);
+            } finally {
+                postResume.run();
+            }
+        }).start();
+        
+        return cf;
+    }
+
+    @GET
+    @Path("promise/{name}")
+    @Produces(MediaType.TEXT_PLAIN)
+    public Promise<String> echoPromise(@PathParam("name") String value) {
+        
+        Deferred<String> d = new Deferred<>();
+        
+        new Thread(() -> {
+            try {
+                try {
+                    Thread.sleep(1000);
+                } catch (Exception e) {
+                    preResume.run();
+                    d.fail(e);
+                    return;
+                }
+                preResume.run();
+                d.resolve(value);
+            } finally {
+                postResume.run();
+            }
+        }).start();
+        
+        return d.getPromise();
     }
 }
