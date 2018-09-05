@@ -26,4 +26,4 @@ Conditional-Package: org.apache.aries.component.dsl.*
 
 Bundle-Activator: org.apache.aries.jax.rs.shiro.authc.impl.ShiroAuthenticationActivator
 
-Provide-Capability: osgi.service;objectclass:List<String>="javax.ws.rs.core.Feature";osgi.jaxrs.name=aries.shiro.authc
+Provide-Capability: osgi.service;objectClass:List<String>="javax.ws.rs.core.Feature";osgi.jaxrs.name=aries.shiro.authc

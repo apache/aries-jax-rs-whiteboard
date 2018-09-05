@@ -19,4 +19,4 @@ Bundle-Activator: org.apache.aries.jax.rs.jackson.JaxbJsonBundleActivator
 
 -contract: *
 
-Provide-Capability: osgi.service;objectclass:List<String>="javax.ws.rs.ext.MessageBodyReader,javax.ws.rs.ext.MessageBodyWriter";osgi.jaxrs.media.type=application/json
+Provide-Capability: osgi.service;objectClass:List<String>="javax.ws.rs.ext.MessageBodyReader,javax.ws.rs.ext.MessageBodyWriter";osgi.jaxrs.media.type=application/json
