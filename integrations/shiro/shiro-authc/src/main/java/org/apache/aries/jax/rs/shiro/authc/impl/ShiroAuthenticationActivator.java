@@ -25,21 +25,18 @@ import static org.apache.aries.component.dsl.OSGi.service;
 import static org.apache.aries.component.dsl.OSGi.serviceReferences;
 import static org.apache.aries.component.dsl.Utils.accumulate;
 import static org.osgi.service.jaxrs.whiteboard.JaxrsWhiteboardConstants.JAX_RS_EXTENSION;
+import static org.osgi.service.jaxrs.whiteboard.JaxrsWhiteboardConstants.JAX_RS_NAME;
 
-import java.util.ArrayList;
 import java.util.Dictionary;
 import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentSkipListMap;
 
 import javax.ws.rs.core.Feature;
 
-import org.apache.aries.component.dsl.CachingServiceReference;
 import org.apache.aries.component.dsl.OSGi;
 import org.apache.aries.component.dsl.OSGiResult;
-import org.apache.aries.component.dsl.Utils;
 import org.apache.shiro.realm.Realm;
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
@@ -90,6 +87,7 @@ public class ShiroAuthenticationActivator implements BundleActivator {
         }
         
         serviceProps.put(JAX_RS_EXTENSION, TRUE);
+        serviceProps.putIfAbsent(JAX_RS_NAME, "aries.shiro.authc");
         
         _LOG.debug("Shiro JAX-RS Authentication Feature service properties are: {}", serviceProps);
         

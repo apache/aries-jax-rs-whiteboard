@@ -22,6 +22,7 @@ import static org.apache.aries.component.dsl.OSGi.configuration;
 import static org.apache.aries.component.dsl.OSGi.just;
 import static org.apache.aries.component.dsl.OSGi.register;
 import static org.osgi.service.jaxrs.whiteboard.JaxrsWhiteboardConstants.JAX_RS_EXTENSION;
+import static org.osgi.service.jaxrs.whiteboard.JaxrsWhiteboardConstants.JAX_RS_NAME;
 
 import java.util.Dictionary;
 import java.util.Enumeration;
@@ -81,6 +82,7 @@ public class ShiroAuthorizationActivator implements BundleActivator {
         }
         
         serviceProps.put(JAX_RS_EXTENSION, TRUE);
+        serviceProps.putIfAbsent(JAX_RS_NAME, "aries.shiro.authz");
 
         _LOG.debug("Shiro JAX-RS Authorization Feature service properties are: {}", serviceProps);
         return serviceProps;
