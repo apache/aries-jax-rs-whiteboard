@@ -221,13 +221,16 @@ public class Whiteboard {
                     _runtime::addApplicationDependentExtension,
                     _runtime::removeApplicationDependentExtension).
                 flatMap(registratorReference ->
+            service(registratorReference).flatMap(registrator ->
             waitForExtensionDependencies(
                     extensionReference, registratorReference,
                     _runtime::addDependentExtension,
                     _runtime::removeDependentExtension).
                 then(
-            safeRegisterExtension(extensionReference, registratorReference)
-        )));
+            safeRegisterExtension(
+                extensionReference, registratorReference::getProperty,
+                registrator)
+        ))));
     }
 
     private OSGi<?> applicationResources(
@@ -243,13 +246,16 @@ public class Whiteboard {
                     _runtime::addApplicationDependentResource,
                     _runtime::removeApplicationDependentResource).
                 flatMap(registratorReference ->
+            service(registratorReference).flatMap(registrator ->
             waitForExtensionDependencies(
                     resourceReference, registratorReference,
                     _runtime::addDependentService,
                     _runtime::removeDependentService).
             then(
-                safeRegisterEndpoint(resourceReference, registratorReference)
-            )));
+                safeRegisterEndpoint(
+                    resourceReference, registratorReference::getProperty,
+                    registrator)
+            ))));
     }
 
     @SuppressWarnings("unchecked")
@@ -770,15 +776,13 @@ public class Whiteboard {
 
     private <T> OSGi<?> safeRegisterEndpoint(
         CachingServiceReference<T> serviceReference,
-        CachingServiceReference<CxfJaxrsServiceRegistrator>
-            registratorReference) {
+        PropertyHolder registratorProperties,
+        CxfJaxrsServiceRegistrator registrator) {
 
         Bundle originalBundle = _bundleContext.getBundle(
-            (long)registratorReference.getProperty(
-                "original.service.bundleid"));
+            (long)registratorProperties.get("original.service.bundleid"));
 
         return
-            service(registratorReference).flatMap(registrator ->
             changeContext(
                 originalBundle.getBundleContext(),
                 onlyGettables(
@@ -809,10 +813,10 @@ public class Whiteboard {
                         Utils::getResourceProvider
                 ).effects(
                     rp -> _runtime.addApplicationEndpoint(
-                        registratorReference, st.getCachingServiceReference(),
+                        registratorProperties, st.getCachingServiceReference(),
                         registrator.getBus(), st.getService().getClass()),
                     rp -> _runtime.removeApplicationEndpoint(
-                        registratorReference, st.getCachingServiceReference())
+                        registratorProperties, st.getCachingServiceReference())
                 ).effects(
                     registrator::add,
                     registrator::remove
@@ -822,37 +826,31 @@ public class Whiteboard {
                         () -> "Registered endpoint " +
                             st.getCachingServiceReference().
                                 getServiceReference() + " into application " +
-                                getServiceName(
-                                    registratorReference.
-                                        getServiceReference()::getProperty)
+                                getServiceName(registratorProperties)
                     ),
                     ifDebugEnabled(
                         _log,
                         () -> "Unregistered endpoint " +
                             st.getCachingServiceReference().
                                 getServiceReference() + " from application " +
-                                getServiceName(
-                                    registratorReference.
-                                        getServiceReference()::getProperty)
+                                getServiceName(registratorProperties)
                     )
 
                 )
-            ));
+            );
     }
 
     private OSGi<?> safeRegisterExtension(
         CachingServiceReference<?> serviceReference,
-        CachingServiceReference<CxfJaxrsServiceRegistrator>
-            registratorReference) {
+        PropertyHolder registratorProperties,
+        CxfJaxrsServiceRegistrator registrator) {
 
         Bundle originalBundle = _bundleContext.getBundle(
-            (long)registratorReference.getProperty(
-                "original.service.bundleid"));
+            (long)registratorProperties.get("original.service.bundleid"));
 
         return
-            just(() -> getServiceName(registratorReference::getProperty)).
+            just(() -> getServiceName(registratorProperties)).
                 flatMap(applicationName ->
-            service(registratorReference).flatMap(registrator ->
             changeContext(
                 originalBundle.getBundleContext(),
                     onlyGettables(
@@ -885,10 +883,10 @@ public class Whiteboard {
                 registrator::removeProvider
             ).effects(
                 t -> _runtime.addApplicationExtension(
-                    registratorReference, serviceReference,
+                    registratorProperties, serviceReference,
                     t.getService().getClass()),
                 __ -> _runtime.removeApplicationExtension(
-                    registratorReference, serviceReference)
+                    registratorProperties, serviceReference)
             ).
             effects(
                 ifDebugEnabled(
@@ -897,9 +895,7 @@ public class Whiteboard {
                         "Registered extension " +
                             serviceReference.getServiceReference() +
                                 " into application " +
-                            getServiceName(
-                                registratorReference.getServiceReference()
-                                    ::getProperty)
+                            getServiceName(registratorProperties)
                 ),
                 ifDebugEnabled(
                     _log,
@@ -907,9 +903,7 @@ public class Whiteboard {
                         "Unregistered extension  " +
                             serviceReference.getServiceReference() +
                             " from application " +
-                            getServiceName(
-                                registratorReference.
-                                    getServiceReference()::getProperty)
+                            getServiceName(registratorProperties)
                 )
 
             ).
@@ -922,7 +916,7 @@ public class Whiteboard {
                     _applicationExtensionRegistry.
                         unregisterExtensionInApplication(
                             applicationName, serviceReference)
-            )));
+            ));
     }
 
 

@@ -95,13 +95,12 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
     }
 
     public void addApplicationEndpoint(
-        CachingServiceReference<CxfJaxrsServiceRegistrator>
-            registratorReference,
+        PropertyHolder registratorReference,
         CachingServiceReference<?> endpointImmutableServiceReference,
         Bus bus, Class<?> theClass) {
 
         _applicationEndpoints.compute(
-            getServiceName(registratorReference::getProperty),
+            getServiceName(registratorReference),
             merger(
                 new EndpointRuntimeInformation(
                     endpointImmutableServiceReference, bus, theClass)));
@@ -110,18 +109,17 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
         	_log.debug(
         	    "Resource service {} has been registered into application {}",
                 endpointImmutableServiceReference,
-                registratorReference.getProperty("original.service.id"));
+                registratorReference.get("original.service.id"));
         }
     }
 
     public void addApplicationExtension(
-        CachingServiceReference<CxfJaxrsServiceRegistrator>
-            registratorReference,
+        PropertyHolder registratorProperties,
         CachingServiceReference<?> extensionImmutableServiceReference,
         Class<?> theClass) {
 
         _applicationExtensions.compute(
-            getServiceName(registratorReference::getProperty),
+            getServiceName(registratorProperties),
             merger(
                 new ExtensionRuntimeInformation(
                     extensionImmutableServiceReference, theClass)));
@@ -130,7 +128,7 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
         	_log.debug(
         	    "Extension {} has been registered to application {}",
                 extensionImmutableServiceReference,
-                registratorReference.getProperty("original.service.id"));
+                registratorProperties.get("original.service.id"));
         }
     }
 
@@ -458,12 +456,11 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
     }
 
     public void removeApplicationEndpoint(
-        CachingServiceReference<CxfJaxrsServiceRegistrator>
-            registratorReference,
+        PropertyHolder registratorProperties,
         CachingServiceReference<?> cachingServiceReference) {
 
         _applicationEndpoints.compute(
-            getServiceName(registratorReference::getProperty),
+            getServiceName(registratorProperties),
             remover(
                 new EndpointRuntimeInformation(
                 cachingServiceReference, null, null)));
@@ -472,17 +469,16 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
         	_log.debug(
         	    "Endpoint {} has been removed from application {}",
                 cachingServiceReference,
-                registratorReference.getProperty("original.service.id"));
+                registratorProperties.get("original.service.id"));
         }
     }
 
     public void removeApplicationExtension(
-        CachingServiceReference<CxfJaxrsServiceRegistrator>
-            registratorReference,
+        PropertyHolder registratorProperties,
         CachingServiceReference<?> extensionImmutableServiceReference) {
 
         _applicationExtensions.computeIfPresent(
-            getServiceName(registratorReference::getProperty),
+            getServiceName(registratorProperties),
             remover(
                 new ExtensionRuntimeInformation(
                 extensionImmutableServiceReference, null)));
@@ -491,7 +487,7 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
             _log.debug(
                 "Extension {} has been removed from application {}",
                 extensionImmutableServiceReference,
-                registratorReference.getProperty("original.service.id"));
+                registratorProperties.get("original.service.id"));
         }
     }
 
