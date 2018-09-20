@@ -21,7 +21,6 @@ import static org.apache.aries.jax.rs.whiteboard.internal.utils.Utils.canonicali
 import static org.apache.aries.jax.rs.whiteboard.internal.utils.Utils.generateApplicationName;
 import static org.apache.aries.jax.rs.whiteboard.internal.Whiteboard.DEFAULT_NAME;
 import static org.apache.aries.jax.rs.whiteboard.internal.Whiteboard.SUPPORTED_EXTENSION_INTERFACES;
-import static org.apache.aries.jax.rs.whiteboard.internal.Whiteboard.getApplicationBase;
 import static org.osgi.service.http.whiteboard.HttpWhiteboardConstants.HTTP_WHITEBOARD_CONTEXT_SELECT;
 import static org.osgi.service.jaxrs.whiteboard.JaxrsWhiteboardConstants.JAX_RS_NAME;
 
@@ -71,6 +70,10 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
     private static final long serialVersionUID = 1L;
     private static final Logger _log = LoggerFactory.getLogger(
         AriesJaxrsServiceRuntime.class);
+
+    public AriesJaxrsServiceRuntime(Whiteboard whiteboard) {
+        _whiteboard = whiteboard;
+    }
 
     public static String getServiceName(PropertyHolder properties) {
         Object property = properties.get(JAX_RS_NAME);
@@ -431,6 +434,7 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
 
     private ConcurrentHashMap<String, CachingServiceReference<?>>
         _servicesForName = new ConcurrentHashMap<>();
+    private Whiteboard _whiteboard;
 
     private Stream<FailedApplicationDTO>
         contextDependentApplicationsDTOStream() {
@@ -925,7 +929,7 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
 
         applicationDTO.name = getServiceName(
             ari._cachingServiceReference::getProperty);
-        applicationDTO.base = getApplicationBase(
+        applicationDTO.base = _whiteboard.getApplicationBase(
             ari._cachingServiceReference::getProperty);
         applicationDTO.serviceId =
             (Long)ari._cachingServiceReference.getProperty("service.id");

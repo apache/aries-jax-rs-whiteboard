@@ -65,6 +65,35 @@ public class Utils {
         return new String[]{propertyValue.toString()};
     }
 
+    public static String canonicalizeAddress(String address) {
+        if (address == null) {
+            return "";
+        }
+
+        if (address.length() == 0) {
+            return address;
+        }
+
+        if (!address.startsWith("/")) {
+            address = "/" + address;
+        }
+
+        if (address.endsWith("/")) {
+            address = address.substring(0, address.length() - 1);
+        }
+
+        return address;
+    }
+
+    public static String getString(Object string) {
+        if (string == null) {
+            return "";
+        }
+        else {
+            return String.valueOf(string);
+        }
+    }
+
     public static String generateApplicationName(
         PropertyHolder propertyHolder) {
 
