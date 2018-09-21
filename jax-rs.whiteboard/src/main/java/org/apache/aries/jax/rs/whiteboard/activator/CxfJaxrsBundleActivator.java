@@ -193,7 +193,7 @@ public class CxfJaxrsBundleActivator implements BundleActivator {
                     endpointFilter(configuration::get),
                     __ -> false //never reload
                 ).then(
-                    just(createWhiteboard(bundleContext, configuration)).
+                    just(createWhiteboard(configuration)).
                     effects(
                         ifInfoEnabled(
                             _log,
@@ -207,7 +207,9 @@ public class CxfJaxrsBundleActivator implements BundleActivator {
                 .flatMap(
                     whiteboard ->
                         all(
-                            effects(whiteboard::start, whiteboard::stop),
+                            effects(
+                                () -> whiteboard.start(bundleContext),
+                                whiteboard::stop),
                             ignore(
                                 endpoints.effects(
                                     whiteboard::addHttpEndpoints,
