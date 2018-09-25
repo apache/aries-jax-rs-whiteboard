@@ -18,86 +18,87 @@
   under the License.
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-	<modelVersion>4.0.0</modelVersion>
-	<parent>
-		<groupId>org.apache.aries.jax.rs</groupId>
-		<artifactId>jackson-integration</artifactId>
-		<version>1.0.0-SNAPSHOT</version>
-	</parent>
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>org.apache.aries.jax.rs</groupId>
+        <artifactId>jackson-integration</artifactId>
+        <version>1.0.0-SNAPSHOT</version>
+    </parent>
 
-	<artifactId>org.apache.aries.jax.rs.jackson</artifactId>
-	<description>Apache Aries JAX-RS Jackson JSON Support</description>
-	<name>Apache Aries JAX-RS JAX-RS Jackson</name>
+    <artifactId>org.apache.aries.jax.rs.jackson</artifactId>
+    <description>Apache Aries JAX-RS Jackson JSON Support</description>
+    <name>Apache Aries JAX-RS JAX-RS Jackson</name>
 
-	<dependencies>
-		<dependency>
-			<groupId>com.fasterxml.jackson.jaxrs</groupId>
-			<artifactId>jackson-jaxrs-json-provider</artifactId>
-			<version>${jackson.version}</version>
-		</dependency>
+    <dependencies>
+        <dependency>
+            <groupId>com.fasterxml.jackson.jaxrs</groupId>
+            <artifactId>jackson-jaxrs-json-provider</artifactId>
+            <version>${jackson.version}</version>
+        </dependency>
 
-		<dependency>
-			<groupId>org.osgi</groupId>
-			<artifactId>org.osgi.core</artifactId>
-			<version>6.0.0</version>
-		</dependency>
-		<dependency>
-			<groupId>org.osgi</groupId>
-			<artifactId>org.osgi.service.jaxrs</artifactId>
-			<version>1.0.0</version>
-		</dependency>
-		<dependency>
+        <dependency>
+            <groupId>org.osgi</groupId>
+            <artifactId>osgi.core</artifactId>
+            <version>6.0.0</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.osgi</groupId>
+            <artifactId>org.osgi.service.jaxrs</artifactId>
+            <version>1.0.0</version>
+        </dependency>
+        <dependency>
             <groupId>org.apache.aries.spec</groupId>
             <artifactId>org.apache.aries.javax.jax.rs-api</artifactId>
             <version>${aries.jaxrs.version}</version>
         </dependency>
-		<dependency>
-			<groupId>org.apache.aries.component-dsl</groupId>
-			<artifactId>org.apache.aries.component-dsl.component-dsl</artifactId>
-			<version>${dsl.version}</version>
-		</dependency>
-	</dependencies>
+        <dependency>
+            <groupId>org.apache.aries.component-dsl</groupId>
+            <artifactId>org.apache.aries.component-dsl.component-dsl</artifactId>
+            <version>${dsl.version}</version>
+        </dependency>
+    </dependencies>
 
-	<build>
-		<pluginManagement>
-			<plugins>
-				<plugin>
-					<groupId>com.github.hazendaz.spotbugs</groupId>
-					<artifactId>spotbugs-maven-plugin</artifactId>
-					<version>3.0.6</version>
-					<configuration>
-						<effort>Max</effort>
-						<threshold>Low</threshold>
-						<failOnError>false</failOnError>
-						<plugins>
-							<plugin>
-								<groupId>com.h3xstream.findsecbugs</groupId>
-								<artifactId>findsecbugs-plugin</artifactId>
-								<version>LATEST</version>
-							</plugin>
-						</plugins>
-					</configuration>
-				</plugin>
-			</plugins>
-		</pluginManagement>
-		<plugins>
-			<plugin>
-				<groupId>biz.aQute.bnd</groupId>
-				<artifactId>bnd-maven-plugin</artifactId>
-			</plugin>
-		</plugins>
-	</build>
+    <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>com.github.hazendaz.spotbugs</groupId>
+                    <artifactId>spotbugs-maven-plugin</artifactId>
+                    <version>3.0.6</version>
+                    <configuration>
+                        <effort>Max</effort>
+                        <threshold>Low</threshold>
+                        <failOnError>false</failOnError>
+                        <plugins>
+                            <plugin>
+                                <groupId>com.h3xstream.findsecbugs</groupId>
+                                <artifactId>findsecbugs-plugin</artifactId>
+                                <version>LATEST</version>
+                            </plugin>
+                        </plugins>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+        <plugins>
+            <plugin>
+                <groupId>biz.aQute.bnd</groupId>
+                <artifactId>bnd-maven-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
 
-	<reporting>
-		<plugins>
-			<plugin>
-				<groupId>com.github.hazendaz.spotbugs</groupId>
-				<artifactId>spotbugs-maven-plugin</artifactId>
-				<version>3.0.6</version>
-			</plugin>
-		</plugins>
-	</reporting>
+    <reporting>
+        <plugins>
+            <plugin>
+                <groupId>com.github.hazendaz.spotbugs</groupId>
+                <artifactId>spotbugs-maven-plugin</artifactId>
+                <version>3.0.6</version>
+            </plugin>
+        </plugins>
+    </reporting>
 
 </project>

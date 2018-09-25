@@ -33,7 +33,7 @@
         <dependency>
             <groupId>org.apache.aries.component-dsl</groupId>
             <artifactId>org.apache.aries.component-dsl.component-dsl</artifactId>
-			<version>${dsl.version}</version>
+            <version>${dsl.version}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>

@@ -22,10 +22,10 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-      <groupId>org.apache</groupId>
-      <artifactId>apache</artifactId>
-      <version>18</version>
-      <relativePath />
+        <groupId>org.apache</groupId>
+        <artifactId>apache</artifactId>
+        <version>18</version>
+        <relativePath />
     </parent>
 
     <groupId>org.apache.aries.jax.rs</groupId>
@@ -45,14 +45,14 @@
         <developerConnection>scm:git:https://gitbox.apache.org/repos/asf/aries-jax-rs-whiteboard.git</developerConnection>
         <url>https://gitbox.apache.org/repos/asf?p=aries-jax-rs-whiteboard.git</url>
         <tag>HEAD</tag>
-  </scm>
+    </scm>
 
     <modules>
         <module>javax.jax.rs-api</module>
         <module>jax-rs.whiteboard</module>
         <module>jax-rs.itests</module>
         <module>jax-rs.itests-fragment</module>
-	</modules>
+    </modules>
 
     <build>
         <pluginManagement>
