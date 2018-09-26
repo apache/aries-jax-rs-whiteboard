@@ -7,7 +7,9 @@
   to you under the Apache License, Version 2.0 (the
   "License"); you may not use this file except in compliance
   with the License. You may obtain a copy of the License at
+
   http://www.apache.org/licenses/LICENSE-2.0
+
   Unless required by applicable law or agreed to in writing,
   software distributed under the License is distributed on an
   "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -20,10 +22,10 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-      <groupId>org.apache.aries.jax.rs</groupId>
-      <artifactId>org.apache.aries.jax.rs</artifactId>
-      <version>1.0.0</version>
-      <relativePath />
+        <groupId>org.apache.aries.jax.rs</groupId>
+        <artifactId>org.apache.aries.jax.rs</artifactId>
+        <version>1.0.0</version>
+        <relativePath />
     </parent>
 
     <artifactId>jackson-integration</artifactId>
@@ -33,18 +35,19 @@
     <properties>
         <aries.jaxrs.version>1.0.0</aries.jaxrs.version>
         <jackson.version>2.9.6</jackson.version>
+        <dsl.version>1.2.1</dsl.version>
     </properties>
 
     <scm>
         <connection>scm:git:https://git-wip-us.apache.org/repos/asf/aries-jax-rs-whiteboard.git</connection>
         <developerConnection>scm:git:https://git-wip-us.apache.org/repos/asf/aries-jax-rs-whiteboard.git</developerConnection>
         <url>https://git-wip-us.apache.org/repos/asf/aries-jax-rs-whiteboard.git</url>
-      <tag>HEAD</tag>
-  </scm>
+        <tag>HEAD</tag>
+    </scm>
 
     <modules>
         <module>jackson-jaxrs</module>
         <module>jackson-itest</module>
-	</modules>
+    </modules>
 
 </project>

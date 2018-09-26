@@ -33,19 +33,20 @@
     <properties>
         <aries.jaxrs.version>1.0.0</aries.jaxrs.version>
         <shiro.version>1.4.0</shiro.version>
+        <dsl.version>1.2.1</dsl.version>
     </properties>
 
     <scm>
         <connection>scm:git:https://git-wip-us.apache.org/repos/asf/aries-jax-rs-whiteboard.git</connection>
         <developerConnection>scm:git:https://git-wip-us.apache.org/repos/asf/aries-jax-rs-whiteboard.git</developerConnection>
         <url>https://git-wip-us.apache.org/repos/asf/aries-jax-rs-whiteboard.git</url>
-      <tag>HEAD</tag>
-  </scm>
+        <tag>HEAD</tag>
+    </scm>
 
     <modules>
         <module>shiro-authc</module>
         <module>shiro-authz</module>
         <module>shiro-itest</module>
-	</modules>
+    </modules>
 
 </project>
