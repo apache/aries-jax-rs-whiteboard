@@ -211,6 +211,10 @@ public class CxfJaxrsServiceRegistrator {
 
         Application application = _applicationTuple.getService();
 
+        if (application == null) {
+            return;
+        }
+
         if (_services.isEmpty() &&
             application.getSingletons().isEmpty() &&
             application.getClasses().isEmpty()) {
@@ -250,7 +254,13 @@ public class CxfJaxrsServiceRegistrator {
 
             Object service = provider.getService();
 
-            if (service instanceof Feature || service instanceof DynamicFeature) {
+            if (service == null) {
+                continue;
+            }
+
+            if (service instanceof Feature ||
+                service instanceof DynamicFeature) {
+
                 _jaxRsServerFactoryBean.setProvider(service);
 
                 continue;
