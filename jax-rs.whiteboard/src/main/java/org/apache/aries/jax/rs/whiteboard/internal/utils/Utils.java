@@ -19,6 +19,7 @@ package org.apache.aries.jax.rs.whiteboard.internal.utils;
 
 import org.apache.aries.component.dsl.CachingServiceReference;
 import org.apache.aries.component.dsl.OSGi;
+import org.osgi.framework.Bundle;
 import org.osgi.framework.ServiceObjects;
 import org.osgi.framework.ServiceReference;
 import org.osgi.framework.ServiceRegistration;
@@ -138,6 +139,24 @@ public class Utils {
                     then(nothing())
             )
         );
+    }
+
+    public static boolean isAvailable(ServiceReference<?> serviceReference) {
+        Bundle bundle = serviceReference.getBundle();
+
+        if (bundle == null) {
+            return false;
+        }
+
+        for (ServiceReference<?> registeredService :
+            bundle.getRegisteredServices()) {
+
+            if (registeredService.equals(serviceReference)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public static void mergePropertyMaps(

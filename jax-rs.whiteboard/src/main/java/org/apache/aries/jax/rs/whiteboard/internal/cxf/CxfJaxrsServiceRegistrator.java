@@ -49,7 +49,6 @@ import org.apache.cxf.endpoint.Server;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.JAXRSServiceFactoryBean;
 import org.apache.cxf.jaxrs.impl.ConfigurableImpl;
-import org.apache.cxf.jaxrs.lifecycle.ResourceProvider;
 import org.apache.cxf.jaxrs.model.ApplicationInfo;
 import org.apache.cxf.jaxrs.model.ClassResourceInfo;
 import org.apache.cxf.jaxrs.provider.ProviderFactory.ProviderInfoClassComparator;
@@ -76,7 +75,9 @@ public class CxfJaxrsServiceRegistrator {
         rewire();
     }
 
-    public synchronized void add(ResourceProvider resourceProvider) {
+    public synchronized void add(
+        ServiceReferenceResourceProvider resourceProvider) {
+
         if (_closed) {
             return;
         }
@@ -168,7 +169,9 @@ public class CxfJaxrsServiceRegistrator {
         return classes;
     }
 
-    public synchronized void remove(ResourceProvider resourceProvider) {
+    public synchronized void remove(
+        ServiceReferenceResourceProvider resourceProvider) {
+
         if (_closed) {
             return;
         }
@@ -189,7 +192,14 @@ public class CxfJaxrsServiceRegistrator {
     }
 
     protected synchronized void rewire() {
+        if (!_applicationTuple.isAvailable()) {
+            _applicationTuple.dispose();
+
+            return;
+        }
+
         if (_server != null) {
+
             _server.destroy();
 
             _applicationTuple.refresh();
@@ -233,6 +243,10 @@ public class CxfJaxrsServiceRegistrator {
         for (ServiceTuple<?> provider : _providers) {
             CachingServiceReference<?> cachingServiceReference =
                 provider.getCachingServiceReference();
+
+            if (!provider.isAvailable()) {
+                continue;
+            }
 
             Object service = provider.getService();
 
@@ -278,7 +292,12 @@ public class CxfJaxrsServiceRegistrator {
             _jaxRsServerFactoryBean.setFeatures(features);
         }
 
-        for (ResourceProvider resourceProvider: _services) {
+        for (ServiceReferenceResourceProvider resourceProvider: _services) {
+            if (!resourceProvider.isAvailable()) {
+
+                continue;
+            }
+
             _jaxRsServerFactoryBean.setResourceProvider(resourceProvider);
         }
 
@@ -312,7 +331,8 @@ public class CxfJaxrsServiceRegistrator {
     private final ServiceTuple<Application> _applicationTuple;
     private final Bus _bus;
     private final Collection<ServiceTuple<?>> _providers;
-    private final Collection<ResourceProvider> _services = new ArrayList<>();
+    private final Collection<ServiceReferenceResourceProvider>
+        _services = new ArrayList<>();
     private volatile boolean _closed = false;
     private JAXRSServerFactoryBean _jaxRsServerFactoryBean;
     private Map<String, Object> _properties;

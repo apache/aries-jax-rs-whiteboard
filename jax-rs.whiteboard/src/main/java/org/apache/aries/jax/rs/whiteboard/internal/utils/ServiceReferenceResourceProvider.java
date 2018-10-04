@@ -38,7 +38,12 @@ public class ServiceReferenceResourceProvider
 
     @Override
     public Object getInstance(Message m) {
-        return _serviceObjects.getService();
+        if (isAvailable()) {
+            return _serviceObjects.getService();
+        }
+        else {
+            return null;
+        }
     }
 
     @Override
@@ -50,6 +55,9 @@ public class ServiceReferenceResourceProvider
     @SuppressWarnings({ "rawtypes", "unchecked" })
     @Override
     public Class<?> getResourceClass() {
+        if (!isAvailable()) {
+            return null;
+        }
         Object service = _serviceObjects.getService();
 
         try {
@@ -67,6 +75,10 @@ public class ServiceReferenceResourceProvider
 
     public CachingServiceReference<?> getImmutableServiceReference() {
         return _serviceReference;
+    }
+
+    public boolean isAvailable() {
+        return Utils.isAvailable(_serviceObjects.getServiceReference());
     }
 
 }

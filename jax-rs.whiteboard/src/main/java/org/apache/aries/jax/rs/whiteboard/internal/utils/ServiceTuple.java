@@ -18,7 +18,9 @@
 package org.apache.aries.jax.rs.whiteboard.internal.utils;
 
 import org.apache.aries.component.dsl.CachingServiceReference;
+import org.osgi.framework.Bundle;
 import org.osgi.framework.ServiceObjects;
+import org.osgi.framework.ServiceReference;
 
 public class ServiceTuple<T> implements Comparable<ServiceTuple<T>> {
 
@@ -47,7 +49,9 @@ public class ServiceTuple<T> implements Comparable<ServiceTuple<T>> {
     public void refresh() {
         dispose();
 
-        _service = _serviceObjects.getService();
+        if (isAvailable()) {
+            _service = _serviceObjects.getService();
+        }
     }
 
     public T getService() {
@@ -75,6 +79,10 @@ public class ServiceTuple<T> implements Comparable<ServiceTuple<T>> {
 
     public CachingServiceReference<T> getCachingServiceReference() {
         return _serviceReference;
+    }
+
+    public boolean isAvailable() {
+        return Utils.isAvailable(_serviceObjects.getServiceReference());
     }
 
 }
