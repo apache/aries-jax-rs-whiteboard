@@ -30,7 +30,10 @@ public class PromiseAwareJAXRSInvoker extends JAXRSInvoker {
      * natively just like a CompletionStage
      */
     protected AsyncResponseImpl checkFutureResponse(Message inMessage, Object result) {
-        
+        if (inMessage == null || result == null) {
+            return null;
+        }
+
         // Fast path - do they share our view of the Promise
         if (result instanceof Promise) {
             return handlePromise(inMessage, (Promise<?>) result);
