@@ -17,6 +17,7 @@
 
 package test;
 
+import static javax.ws.rs.core.MediaType.TEXT_PLAIN_TYPE;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -83,6 +84,7 @@ import test.types.TestCxfExtension;
 import test.types.TestFilter;
 import test.types.TestHelper;
 import test.types.TestSSEApplication;
+import test.types.TestVoidResource;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.HttpMethod;
@@ -2348,6 +2350,13 @@ public class JaxrsTest extends TestHelper {
             }
         }
 
+    }
+
+    @Test
+    public void testVoidResource() {
+        registerAddon(new TestVoidResource());
+        Response response = createDefaultTarget().path("returntype/void").request(TEXT_PLAIN_TYPE).head();
+        assertEquals(Response.Status.NO_CONTENT.getStatusCode(), response.getStatus());
     }
 
     private static Function<RuntimeDTO, FailedApplicationDTO[]>

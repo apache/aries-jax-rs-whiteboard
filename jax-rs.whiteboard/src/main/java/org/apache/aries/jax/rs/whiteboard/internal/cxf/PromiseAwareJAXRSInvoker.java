@@ -35,14 +35,15 @@ public class PromiseAwareJAXRSInvoker extends JAXRSInvoker {
         if (result instanceof Promise) {
             return handlePromise(inMessage, (Promise<?>) result);
         } 
-        
-        // Slower check, is it a Promise?
-        Class<?> clazz = result.getClass();
-        if(Arrays.stream(clazz.getInterfaces())
-            .map(Class::getName)
-            .anyMatch(n -> "org.osgi.util.promise.Promise".equals(n))) {
-            
-            return handlePromiseFromAnotherClassSpace(inMessage, result, clazz);
+
+        if (result != null) { // null is valid for methods returning void
+            // Slower check, is it a Promise?
+            Class<?> clazz = result.getClass();
+            if (Arrays.stream(clazz.getInterfaces())
+                      .map(Class::getName)
+                      .anyMatch("org.osgi.util.promise.Promise"::equals)) {
+                return handlePromiseFromAnotherClassSpace(inMessage, result, clazz);
+            }
         }
         
         return super.checkFutureResponse(inMessage, result);
