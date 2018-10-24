@@ -22,11 +22,13 @@ import org.osgi.framework.Bundle;
 import org.osgi.framework.ServiceObjects;
 import org.osgi.framework.ServiceReference;
 
+import java.util.concurrent.atomic.AtomicReference;
+
 public class ServiceTuple<T> implements Comparable<ServiceTuple<T>> {
 
     private final CachingServiceReference<T> _serviceReference;
     private ServiceObjects<T> _serviceObjects;
-    private volatile T _service;
+    private AtomicReference<T> _service;
 
     ServiceTuple(
         CachingServiceReference<T> cachingServiceReference,
@@ -34,7 +36,7 @@ public class ServiceTuple<T> implements Comparable<ServiceTuple<T>> {
 
         _serviceReference = cachingServiceReference;
         _serviceObjects = serviceObjects;
-        _service = service;
+        _service = new AtomicReference<>(service);
     }
 
     @Override
@@ -43,19 +45,23 @@ public class ServiceTuple<T> implements Comparable<ServiceTuple<T>> {
     }
 
     public void dispose() {
-        _serviceObjects.ungetService(_service);
+        T service = _service.getAndSet(null);
+
+        if (service != null) {
+            _serviceObjects.ungetService(service);
+        }
     }
 
     public void refresh() {
         dispose();
 
         if (isAvailable()) {
-            _service = _serviceObjects.getService();
+            _service.set(_serviceObjects.getService());
         }
     }
 
     public T getService() {
-        return _service;
+        return _service.get();
     }
 
     public ServiceObjects<T> getServiceObjects() {
