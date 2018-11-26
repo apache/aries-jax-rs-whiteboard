@@ -42,6 +42,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 
@@ -2279,11 +2280,18 @@ public class JaxrsTest extends TestHelper {
     @Test
     public void testSSEApplication() throws 
         InterruptedException, MalformedURLException {
-        
+
+        AtomicInteger atomicInteger = new AtomicInteger();
+
         registerApplication(
             new TestSSEApplication(), JAX_RS_APPLICATION_BASE, "/sse");
         registerAddon(
             new SSEResource(), JAX_RS_APPLICATION_SELECT,
+            "(" + JAX_RS_APPLICATION_BASE + "=/sse)");
+        registerExtension(
+            ContainerResponseFilter.class,
+            (req, res) -> atomicInteger.incrementAndGet(), "Filter",
+            JAX_RS_APPLICATION_SELECT,
             "(" + JAX_RS_APPLICATION_BASE + "=/sse)");
 
         SseEventSourceFactory sseFactory = createSseFactory();
@@ -2292,16 +2300,21 @@ public class JaxrsTest extends TestHelper {
             createDefaultTarget().path("/sse").path("/subscribe"));
 
         SseEventSource source2 = sseFactory.newSource(
-                createDefaultTarget().path("/sse").path("/subscribe"));
+            createDefaultTarget().path("/sse").path("/subscribe"));
 
         ArrayList<String> source1Events = new ArrayList<>();
         ArrayList<String> source2Events = new ArrayList<>();
 
-        source1.register(event -> source1Events.add(event.readData(String.class)));
-        source2.register(event -> source2Events.add(event.readData(String.class)));
+        source1.register(
+            event -> source1Events.add(event.readData(String.class)));
+        source2.register(
+            event -> source2Events.add(event.readData(String.class)));
 
         source1.open();
         source2.open();
+
+        //The filter IS NOT invoked on the subscribe method
+        assertEquals(0, atomicInteger.get());
 
         WebTarget broadcast = createDefaultTarget().path("/sse").path(
             "/broadcast");
@@ -2323,6 +2336,9 @@ public class JaxrsTest extends TestHelper {
         assertEquals(Arrays.asList("welcome", "message"), source2Events);
 
         source1.close();
+
+        //The filter IS invoked when broadcasting events
+        assertEquals(2, atomicInteger.get());
     }
 
     @Test
@@ -2404,6 +2420,40 @@ public class JaxrsTest extends TestHelper {
         registerAddon(new TestVoidResource());
         Response response = createDefaultTarget().path("returntype/void").request(TEXT_PLAIN_TYPE).head();
         assertEquals(Response.Status.NO_CONTENT.getStatusCode(), response.getStatus());
+    }
+
+    @Test
+    public void testVoidResourceWithFilter() {
+        registerAddon(new TestAddon());
+        registerAddon(new TestVoidResource());
+        ServiceRegistration<?> serviceRegistration = registerExtension(
+            "Filter");
+
+        Response response = createDefaultTarget().path("name").request().get();
+        assertEquals("Hello name", response.readEntity(String.class));
+        assertEquals("true", response.getHeaders().getFirst("Filtered"));
+
+        response = createDefaultTarget().
+            path("returntype/void").
+            request(TEXT_PLAIN_TYPE).
+            head();
+        assertEquals(
+            Response.Status.NO_CONTENT.getStatusCode(), response.getStatus());
+        assertEquals("true", response.getHeaders().getFirst("Filtered"));
+
+        serviceRegistration.unregister();
+
+        response = createDefaultTarget().path("name").request().get();
+        assertEquals("Hello name", response.readEntity(String.class));
+        assertNull(response.getHeaders().getFirst("Filtered"));
+
+        response = createDefaultTarget().
+            path("returntype/void").
+            request(TEXT_PLAIN_TYPE).
+            head();
+        assertEquals(
+            Response.Status.NO_CONTENT.getStatusCode(), response.getStatus());
+        assertNull(response.getHeaders().getFirst("Filtered"));
     }
 
     private static Function<RuntimeDTO, FailedApplicationDTO[]>

@@ -19,6 +19,7 @@ package test.types;
 
 import static javax.ws.rs.core.MediaType.TEXT_PLAIN;
 
+import javax.ws.rs.GET;
 import javax.ws.rs.HEAD;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -29,6 +30,13 @@ public class TestVoidResource {
     @Path("void")
     @Produces(TEXT_PLAIN)
     public void touch() {
+        // no returned value -> 204
+    }
+
+    @GET
+    @Path("void")
+    @Produces(TEXT_PLAIN)
+    public void touchGet() {
         // no returned value -> 204
     }
 }
