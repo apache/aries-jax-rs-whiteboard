@@ -73,6 +73,7 @@ import test.types.ConfigurationAwareResource;
 import test.types.CxfExtensionTestAddon;
 import test.types.ExtensionA;
 import test.types.ExtensionB;
+import test.types.SSEResource;
 import test.types.TestAddon;
 import test.types.TestAddonConflict;
 import test.types.TestAddonConflict2;
@@ -2281,6 +2282,9 @@ public class JaxrsTest extends TestHelper {
         
         registerApplication(
             new TestSSEApplication(), JAX_RS_APPLICATION_BASE, "/sse");
+        registerAddon(
+            new SSEResource(), JAX_RS_APPLICATION_SELECT,
+            "(" + JAX_RS_APPLICATION_BASE + "=/sse)");
 
         SseEventSourceFactory sseFactory = createSseFactory();
 

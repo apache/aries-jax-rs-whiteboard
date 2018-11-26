@@ -17,58 +17,10 @@
 
 package test.types;
 
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
 import javax.ws.rs.core.Application;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.sse.Sse;
-import javax.ws.rs.sse.SseBroadcaster;
-import javax.ws.rs.sse.SseEventSink;
 import java.util.Collections;
 import java.util.Set;
-import java.util.concurrent.CompletionStage;
-import java.util.concurrent.ExecutionException;
 
 public class TestSSEApplication extends Application {
-
-    @Override
-    public Set<Object> getSingletons() {
-        return Collections.singleton(new SSEResource());
-    }
-
-    public static class SSEResource {
-
-        @Produces(MediaType.SERVER_SENT_EVENTS)
-        @GET
-        @Path("/subscribe")
-        public void subscribe(@Context SseEventSink sink) {
-            sink.send(_sse.newEvent("welcome"));
-
-            _sseBroadcaster.register(sink);
-        }
-
-        @POST
-        @Path("/broadcast")
-        public void broadcast(String body)
-            throws ExecutionException, InterruptedException {
-
-            CompletionStage<?> broadcast = _sseBroadcaster.broadcast(
-                _sse.newEvent(body));
-
-            broadcast.toCompletableFuture().get();
-        }
-
-        @Context
-        public void setSse(Sse sse) {
-            _sse = sse;
-            _sseBroadcaster = _sse.newBroadcaster();
-        }
-
-        private Sse _sse;
-        private SseBroadcaster _sseBroadcaster;
-    }
 
 }

@@ -70,7 +70,10 @@ public class ServiceReferenceResourceProvider
 
     @Override
     public boolean isSingleton() {
-        return false;
+        String scope =
+            _serviceReference.getProperty("service.scope").toString();
+
+        return !scope.equals("prototype");
     }
 
     public CachingServiceReference<?> getImmutableServiceReference() {
