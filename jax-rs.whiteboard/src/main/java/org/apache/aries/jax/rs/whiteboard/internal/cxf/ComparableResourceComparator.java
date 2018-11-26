@@ -17,6 +17,7 @@
 
 package org.apache.aries.jax.rs.whiteboard.internal.cxf;
 
+import org.apache.aries.component.dsl.CachingServiceReference;
 import org.apache.aries.jax.rs.whiteboard.internal.utils.ServiceReferenceResourceProvider;
 import org.apache.cxf.jaxrs.ext.ResourceComparator;
 import org.apache.cxf.jaxrs.lifecycle.ResourceProvider;
@@ -28,11 +29,6 @@ import java.util.Comparator;
 
 public class ComparableResourceComparator
     implements ResourceComparator {
-
-    static {
-        comparator = Comparator.comparing(
-            srrp -> srrp.getImmutableServiceReference());
-    }
 
     @Override
     public int compare(
@@ -67,6 +63,31 @@ public class ComparableResourceComparator
 
         return 0;
     }
-    private static Comparator<ServiceReferenceResourceProvider> comparator;
+
+    private static Comparator<ServiceReferenceResourceProvider> comparator =
+        new ServiceReferenceResourceProviderComparator();
+
+    private static class ServiceReferenceResourceProviderComparator
+        implements Comparator<ServiceReferenceResourceProvider> {
+
+        @Override
+        public int compare(
+            ServiceReferenceResourceProvider rp1,
+            ServiceReferenceResourceProvider rp2) {
+
+            CachingServiceReference ref1 = rp1.getImmutableServiceReference();
+            CachingServiceReference ref2 = rp2.getImmutableServiceReference();
+
+            if ((ref1.getProperty("service.ranking") == null) &&
+                (ref2.getProperty("service.ranking") == null)) {
+
+                return 0;
+            }
+            else {
+                return ref1.compareTo(ref2);
+            }
+        }
+
+    }
 
 }
