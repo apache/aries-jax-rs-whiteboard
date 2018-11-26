@@ -83,6 +83,8 @@ import test.types.TestAsyncResource;
 import test.types.TestCxfExtension;
 import test.types.TestFilter;
 import test.types.TestHelper;
+import test.types.TestResourceTie;
+import test.types.TestResourceTie2;
 import test.types.TestSSEApplication;
 import test.types.TestVoidResource;
 
@@ -1549,6 +1551,47 @@ public class JaxrsTest extends TestHelper {
 
         assertEquals(
             "This should say hello1", "hello1",
+            response.readEntity(String.class));
+    }
+
+    @Test
+    public void testEndpointsOverrideTie() {
+        WebTarget webTarget = createDefaultTarget().
+            path("tie").
+            path("a").
+            path("b");
+
+        registerAddon(new TestResourceTie());
+
+        Response response = webTarget.request().get();
+
+        assertEquals(
+            "This should say tie/a/b 1", "tie/a/b 1",
+            response.readEntity(String.class));
+
+        ServiceRegistration<?> serviceRegistration = registerAddon(
+            new TestResourceTie2());
+
+        response = webTarget.request().get();
+
+        assertEquals(
+            "This should say tie/a/b 2", "tie/a/b 2",
+            response.readEntity(String.class));
+
+        serviceRegistration.unregister();
+
+        response = webTarget.request().get();
+
+        assertEquals(
+            "This should say tie/a/b 1", "tie/a/b 1",
+            response.readEntity(String.class));
+
+        registerAddon(new TestResourceTie2(), "service.ranking", -1);
+
+        response = webTarget.request().get();
+
+        assertEquals(
+            "This should say tie/a/b 1", "tie/a/b 1",
             response.readEntity(String.class));
     }
 
