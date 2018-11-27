@@ -31,11 +31,9 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import java.lang.reflect.Method;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -195,12 +193,8 @@ public class ClassIntrospector {
         resourceMethodInfoDTO.nameBindings = nameBindings == null ? null :
             nameBindings.toArray(new String[0]);
 
-        try {
-            resourceMethodInfoDTO.path = Paths.get(path).normalize().toString();
-        }
-        catch (Exception e) {
-            resourceMethodInfoDTO.path = "/";
-        }
+        resourceMethodInfoDTO.path = normalize(path);
+
         resourceMethodInfoDTO.method = httpMethod;
 
         return Stream.of(resourceMethodInfoDTO);
@@ -241,6 +235,12 @@ public class ClassIntrospector {
             clazz, Produces.class);
 
         return produces == null ? null : JAXRSUtils.getMediaTypes(produces.value());
+    }
+
+    private static String normalize(String path) {
+        return "/" + Arrays.stream(path.split("/")).
+            filter(s -> !s.isEmpty()).
+            collect(Collectors.joining("/"));
     }
 
 }
