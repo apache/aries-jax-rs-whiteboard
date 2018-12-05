@@ -1563,7 +1563,8 @@ public class JaxrsTest extends TestHelper {
             path("a").
             path("b");
 
-        registerAddon(new TestResourceTie());
+        ServiceRegistration<?> serviceRegistration1 = registerAddon(
+            new TestResourceTie());
 
         Response response = webTarget.request().get();
 
@@ -1571,7 +1572,7 @@ public class JaxrsTest extends TestHelper {
             "This should say tie/a/b 1", "tie/a/b 1",
             response.readEntity(String.class));
 
-        ServiceRegistration<?> serviceRegistration = registerAddon(
+        ServiceRegistration<?> serviceRegistration2 = registerAddon(
             new TestResourceTie2());
 
         response = webTarget.request().get();
@@ -1580,7 +1581,7 @@ public class JaxrsTest extends TestHelper {
             "This should say tie/a/b 2", "tie/a/b 2",
             response.readEntity(String.class));
 
-        serviceRegistration.unregister();
+        serviceRegistration2.unregister();
 
         response = webTarget.request().get();
 
@@ -1588,12 +1589,25 @@ public class JaxrsTest extends TestHelper {
             "This should say tie/a/b 1", "tie/a/b 1",
             response.readEntity(String.class));
 
-        registerAddon(new TestResourceTie2(), "service.ranking", -1);
+        serviceRegistration2 = registerAddon(
+            new TestResourceTie2(), "service.ranking", -1);
 
         response = webTarget.request().get();
 
         assertEquals(
             "This should say tie/a/b 1", "tie/a/b 1",
+            response.readEntity(String.class));
+
+        serviceRegistration2.unregister();
+        serviceRegistration1.unregister();
+
+        registerAddon(new TestResourceTie(), "service.ranking", 1);
+        registerAddon(new TestResourceTie2(), "service.ranking", 1);
+
+        response = webTarget.request().get();
+
+        assertEquals(
+            "This should say tie/a/b 2", "tie/a/b 2",
             response.readEntity(String.class));
     }
 

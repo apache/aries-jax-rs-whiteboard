@@ -26,6 +26,7 @@ import org.apache.cxf.jaxrs.model.OperationResourceInfo;
 import org.apache.cxf.message.Message;
 
 import java.util.Comparator;
+import java.util.Objects;
 
 public class ComparableResourceComparator
     implements ResourceComparator {
@@ -78,8 +79,11 @@ public class ComparableResourceComparator
             CachingServiceReference ref1 = rp1.getImmutableServiceReference();
             CachingServiceReference ref2 = rp2.getImmutableServiceReference();
 
-            if ((ref1.getProperty("service.ranking") == null) &&
-                (ref2.getProperty("service.ranking") == null)) {
+            Object serviceRanking1 = ref1.getProperty("service.ranking");
+            Object serviceRanking2 = ref2.getProperty("service.ranking");
+
+            if ((serviceRanking1 == null && serviceRanking2 == null) ||
+                Objects.equals(serviceRanking1, serviceRanking2)) {
 
                 return 0;
             }
