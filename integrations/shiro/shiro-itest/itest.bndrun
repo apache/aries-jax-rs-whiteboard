@@ -69,7 +69,5 @@
 	org.apache.shiro.crypto.core;version='[1.4.0,1.4.1)',\
 	org.apache.aries.javax.jax.rs-api;version='[1.0.0,1.0.1)',\
 	org.apache.aries.jax.rs.whiteboard;version='[1.0.0,1.0.1)',\
-	org.apache.shiro.crypto.hash;version='[1.4.0,1.4.1)',\
-	org.apache.shiro.lang;version='[1.4.0,1.4.1)',\
 	org.osgi.service.http.whiteboard;version='[1.0.0,1.0.1)'
 -include: -personal.bnd
