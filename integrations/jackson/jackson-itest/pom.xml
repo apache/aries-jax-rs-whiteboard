@@ -23,7 +23,7 @@
     <parent>
         <groupId>org.apache.aries.jax.rs</groupId>
         <artifactId>jackson-integration</artifactId>
-        <version>1.0.0</version>
+        <version>1.0.1-SNAPSHOT</version>
         <relativePath>..</relativePath>
     </parent>
 
@@ -107,7 +107,7 @@
         <dependency>
             <groupId>org.apache.aries.jax.rs</groupId>
             <artifactId>org.apache.aries.jax.rs.jackson</artifactId>
-            <version>1.0.0</version>
+            <version>1.0.1-SNAPSHOT</version>
             <scope>runtime</scope>
         </dependency>
         <dependency>
