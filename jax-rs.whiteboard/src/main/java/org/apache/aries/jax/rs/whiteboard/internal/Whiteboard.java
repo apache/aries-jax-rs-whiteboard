@@ -1243,7 +1243,8 @@ public class Whiteboard {
                 contextProperties.put(
                     HTTP_WHITEBOARD_CONTEXT_NAME, contextName);
                 contextProperties.put(
-                    HTTP_WHITEBOARD_CONTEXT_PATH, address);
+                    HTTP_WHITEBOARD_CONTEXT_PATH,
+                    address.equals("") ? "/" : address);
 
                 return contextProperties;
             };
