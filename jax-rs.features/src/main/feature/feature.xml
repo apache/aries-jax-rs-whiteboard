@@ -31,4 +31,14 @@
         <bundle>mvn:org.apache.aries.jax.rs/org.apache.aries.jax.rs.whiteboard/${project.version}</bundle>
     </feature>
 
+    <feature version="1.0.1" name="aries-jax-rs-whiteboard-jackson">
+        <bundle dependency="true">mvn:com.fasterxml.jackson.core/jackson-core/2.9.6</bundle>
+        <bundle dependency="true">mvn:com.fasterxml.jackson.core/jackson-annotations/2.9.6</bundle>
+        <bundle dependency="true">mvn:com.fasterxml.jackson.core/jackson-databind/2.9.6</bundle>
+        <bundle dependency="true">mvn:com.fasterxml.jackson.jaxrs/jackson-jaxrs-base/2.9.6</bundle>
+        <bundle dependency="true">mvn:com.fasterxml.jackson.jaxrs/jackson-jaxrs-json-provider/2.9.6</bundle>
+        <bundle dependency="true">mvn:com.fasterxml.jackson.module/jackson-module-jaxb-annotations/2.9.6</bundle>
+        <bundle>mvn:org.apache.aries.jax.rs/org.apache.aries.jax.rs.jackson/1.0.1-SNAPSHOT</bundle>
+    </feature>
+
 </features>
