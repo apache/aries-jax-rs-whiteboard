@@ -22,5 +22,5 @@ public class AriesJaxrsWhiteboardConstants {
     /**
      * This application is waiting for a ServletContextHelper
      */
-    public static final int	FAILURE_REASON_REQUIRED_CONTEXT_UNAVAILABLE	= 101;
+    public static final int FAILURE_REASON_REQUIRED_CONTEXT_UNAVAILABLE = 101;
 }

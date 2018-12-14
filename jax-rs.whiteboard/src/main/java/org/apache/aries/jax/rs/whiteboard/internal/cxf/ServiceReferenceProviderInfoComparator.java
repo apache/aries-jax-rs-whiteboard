@@ -33,6 +33,7 @@ public class ServiceReferenceProviderInfoComparator implements
     }
 
     @Override
+    @SuppressWarnings({ "rawtypes", "unchecked" })
     public int compare(ProviderInfo<?> pi1, ProviderInfo<?> pi2) {
         if (pi1 instanceof ServiceReferenceFilterProviderInfo<?>) {
             if (pi2 instanceof ServiceReferenceFilterProviderInfo<?>) {

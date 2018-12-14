@@ -18,9 +18,7 @@
 package org.apache.aries.jax.rs.whiteboard.internal.utils;
 
 import org.apache.aries.component.dsl.CachingServiceReference;
-import org.osgi.framework.Bundle;
 import org.osgi.framework.ServiceObjects;
-import org.osgi.framework.ServiceReference;
 
 import java.util.concurrent.atomic.AtomicReference;
 

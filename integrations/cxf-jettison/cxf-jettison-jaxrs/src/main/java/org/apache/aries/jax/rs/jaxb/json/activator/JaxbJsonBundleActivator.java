@@ -120,6 +120,7 @@ public class JaxbJsonBundleActivator implements BundleActivator {
     private Map<String, ?> getRegistrationProperties(
         Dictionary<String, ?> properties) {
 
+        @SuppressWarnings("serial")
         Hashtable<String, Object> serviceProps =
             new Hashtable<String, Object>() {{
                 put(JaxrsWhiteboardConstants.JAX_RS_EXTENSION, true);

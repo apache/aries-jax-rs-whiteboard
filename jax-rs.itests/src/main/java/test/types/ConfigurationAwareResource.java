@@ -26,6 +26,7 @@ public class ConfigurationAwareResource {
 
     @GET
     public String hello() {
+        @SuppressWarnings("unchecked")
         Map<String, Object> properties =
             (Map<String, Object>)
                 configuration.getProperty(

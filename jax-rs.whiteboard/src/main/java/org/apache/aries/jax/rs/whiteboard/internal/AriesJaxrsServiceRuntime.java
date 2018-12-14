@@ -67,7 +67,6 @@ import org.slf4j.LoggerFactory;
 
 public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
 
-    private static final long serialVersionUID = 1L;
     private static final Logger _log = LoggerFactory.getLogger(
         AriesJaxrsServiceRuntime.class);
 
@@ -109,8 +108,8 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
                     endpointImmutableServiceReference, bus, theClass)));
 
         if (_log.isDebugEnabled()) {
-        	_log.debug(
-        	    "Resource service {} has been registered into application {}",
+            _log.debug(
+                "Resource service {} has been registered into application {}",
                 endpointImmutableServiceReference,
                 registratorReference.get("original.service.id"));
         }
@@ -128,8 +127,8 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
                     extensionImmutableServiceReference, theClass)));
 
         if (_log.isDebugEnabled()) {
-        	_log.debug(
-        	    "Extension {} has been registered to application {}",
+            _log.debug(
+                "Extension {} has been registered to application {}",
                 extensionImmutableServiceReference,
                 registratorProperties.get("original.service.id"));
         }
@@ -143,8 +142,8 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
         String serviceName = getServiceName(serviceReference::getProperty);
 
         if (_log.isDebugEnabled()) {
-        	_log.debug(
-        	    "Application {} clashes with {} for name {}",
+            _log.debug(
+                "Application {} clashes with {} for name {}",
                 serviceReference,
                 _servicesForName.get(serviceName),
                 serviceName);
@@ -243,8 +242,8 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
         CachingServiceReference<?> cachingServiceReference) {
 
         if (_log.isWarnEnabled()) {
-        	_log.warn(
-        	    "Extension {} is registered with error",
+            _log.warn(
+                "Extension {} is registered with error",
                 cachingServiceReference);
         }
 
@@ -255,8 +254,8 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
         CachingServiceReference<?> serviceReference) {
 
         if (_log.isWarnEnabled()) {
-        	_log.warn(
-        	    "Application {} is not valid", serviceReference);
+            _log.warn(
+                "Application {} is not valid", serviceReference);
         }
 
         _invalidApplications.add(serviceReference);
@@ -325,8 +324,8 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
             getServiceName(serviceReference::getProperty), serviceReference);
 
         if (_log.isDebugEnabled()) {
-        	_log.debug(
-        	    "Registered service {} for name {}",
+            _log.debug(
+                "Registered service {} for name {}",
                 serviceReference,
                 getServiceName(serviceReference::getProperty));
         }
@@ -344,7 +343,7 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
                 _log.debug(
                     "Application reference {} is shadowed by {}",
                     serviceReference,
-                    
+
                         applicationRuntimeInformation._cachingServiceReference
                 );
             }
@@ -470,8 +469,8 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
                 cachingServiceReference, null, null)));
 
         if (_log.isDebugEnabled()) {
-        	_log.debug(
-        	    "Endpoint {} has been removed from application {}",
+            _log.debug(
+                "Endpoint {} has been removed from application {}",
                 cachingServiceReference,
                 registratorProperties.get("original.service.id"));
         }
@@ -675,8 +674,8 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
         CachingServiceReference<Application> serviceReference) {
 
         if (_log.isDebugEnabled()) {
-        	_log.debug(
-        	    "Application {} is no longer shadowed",
+            _log.debug(
+                "Application {} is no longer shadowed",
                 serviceReference);
         }
 
@@ -698,8 +697,8 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
                         ari._cachingServiceReference::getProperty))) {
 
                     if (_log.isDebugEnabled()) {
-                    	_log.debug(
-                    	    "Setting application {} as default",
+                        _log.debug(
+                            "Setting application {} as default",
                             serviceReference);
                     }
 
@@ -707,8 +706,8 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
                 }
 
                 if (_log.isDebugEnabled()) {
-                	_log.debug(
-                	    "Registering application {} for path {}",
+                    _log.debug(
+                        "Registering application {} for path {}",
                         serviceReference, path);
                 }
 
@@ -800,7 +799,7 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
     }
 
     private static <T extends BaseDTO> T populateBaseDTO(
-    		T baseDTO, CachingServiceReference<?> serviceReference) {
+            T baseDTO, CachingServiceReference<?> serviceReference) {
 
         baseDTO.name = getServiceName(serviceReference::getProperty);
         baseDTO.serviceId = (Long)serviceReference.getProperty(
@@ -1186,7 +1185,7 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
     private static class EndpointRuntimeInformation {
 
         public EndpointRuntimeInformation(
-            CachingServiceReference cachingServiceReference, Bus bus,
+            CachingServiceReference<?> cachingServiceReference, Bus bus,
             Class<?> aClass) {
 
             _cachingServiceReference = cachingServiceReference;
@@ -1211,7 +1210,7 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
         }
 
         Bus _bus;
-        CachingServiceReference _cachingServiceReference;
+        CachingServiceReference<?> _cachingServiceReference;
         Class<?> _class;
 
     }
@@ -1242,7 +1241,7 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
                 that._cachingServiceReference);
         }
 
-        CachingServiceReference _cachingServiceReference;
+        CachingServiceReference<?> _cachingServiceReference;
         Class<?> _class;
 
     }
@@ -1250,14 +1249,14 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
     private static class ApplicationRuntimeInformation {
 
         public ApplicationRuntimeInformation(
-            CachingServiceReference cachingServiceReference,
+            CachingServiceReference<?> cachingServiceReference,
             CxfJaxrsServiceRegistrator cxfJaxRsServiceRegistrator) {
 
             _cachingServiceReference = cachingServiceReference;
             _cxfJaxRsServiceRegistrator = cxfJaxRsServiceRegistrator;
         }
 
-        CachingServiceReference _cachingServiceReference;
+        CachingServiceReference<?> _cachingServiceReference;
         CxfJaxrsServiceRegistrator _cxfJaxRsServiceRegistrator;
 
         @Override

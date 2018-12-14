@@ -18,8 +18,6 @@
 package test.types;
 
 import javax.ws.rs.core.Application;
-import java.util.Collections;
-import java.util.Set;
 
 public class TestSSEApplication extends Application {
 

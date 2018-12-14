@@ -726,39 +726,39 @@ public class JaxrsTest extends TestHelper {
             registerApplication(new TestApplication());
 
         try {
-	        runtimeDTO = getRuntimeDTO();
-	
-	        assertEquals(1, runtimeDTO.applicationDTOs.length);
-	        assertEquals(0, runtimeDTO.failedApplicationDTOs.length);
-	
-	        ServiceRegistration<?> erroredRegistration = registerApplication(
-	            new TestApplication() {
+            runtimeDTO = getRuntimeDTO();
 
-	                @Override
-	                public Set<Object> getSingletons() {
-	                    throw new RuntimeException();
-	                }
+            assertEquals(1, runtimeDTO.applicationDTOs.length);
+            assertEquals(0, runtimeDTO.failedApplicationDTOs.length);
 
-	            }, "service.ranking", 10);
-	
-	        runtimeDTO = getRuntimeDTO();
-	
-	        assertEquals(0, runtimeDTO.applicationDTOs.length);
-	        assertEquals(2, runtimeDTO.failedApplicationDTOs.length);
-	
-	        erroredRegistration.unregister();
-	
-	        runtimeDTO = getRuntimeDTO();
-	
-	        assertEquals(1, runtimeDTO.applicationDTOs.length);
-	        assertEquals(0, runtimeDTO.failedApplicationDTOs.length);
-	
-	        WebTarget webTarget = createDefaultTarget().path("/test-application");
-	
-	        assertEquals(200, webTarget.request().get().getStatus());
-	        assertEquals("Hello application", webTarget.request().get(String.class));
+            ServiceRegistration<?> erroredRegistration = registerApplication(
+                new TestApplication() {
+
+                    @Override
+                    public Set<Object> getSingletons() {
+                        throw new RuntimeException();
+                    }
+
+                }, "service.ranking", 10);
+
+            runtimeDTO = getRuntimeDTO();
+
+            assertEquals(0, runtimeDTO.applicationDTOs.length);
+            assertEquals(2, runtimeDTO.failedApplicationDTOs.length);
+
+            erroredRegistration.unregister();
+
+            runtimeDTO = getRuntimeDTO();
+
+            assertEquals(1, runtimeDTO.applicationDTOs.length);
+            assertEquals(0, runtimeDTO.failedApplicationDTOs.length);
+
+            WebTarget webTarget = createDefaultTarget().path("/test-application");
+
+            assertEquals(200, webTarget.request().get().getStatus());
+            assertEquals("Hello application", webTarget.request().get(String.class));
         } finally {
-        	applicationRegistration.unregister();
+            applicationRegistration.unregister();
         }
     }
 
@@ -915,6 +915,7 @@ public class JaxrsTest extends TestHelper {
         assertEquals(
             101, failedApplicationDTOs[0].failureReason);
 
+        @SuppressWarnings("serial")
         ServiceRegistration<ServletContextHelper> context =
             bundleContext.registerService(
                 ServletContextHelper.class, new ServletContextHelper() {},
@@ -959,6 +960,7 @@ public class JaxrsTest extends TestHelper {
                 new TestApplication(), JAX_RS_APPLICATION_BASE,
                 "/context/test-application", "service.ranking", 10);
 
+        @SuppressWarnings("serial")
         ServiceRegistration<ServletContextHelper> context =
             bundleContext.registerService(
                 ServletContextHelper.class, new ServletContextHelper() {},
@@ -1135,88 +1137,88 @@ public class JaxrsTest extends TestHelper {
     @Test
     public void testAsyncResourceCompletionStage()
             throws ExecutionException, InterruptedException {
-        
+
         WebTarget webTarget =
                 createDefaultTarget().path("whiteboard").path("async").path("completionstage").
                 path("HelloAsync");
-        
+
         AtomicBoolean pre = new AtomicBoolean();
         AtomicBoolean post = new AtomicBoolean();
-        
+
         CountDownLatch countDownLatch = new CountDownLatch(1);
-        
+
         registerAddon(
                 new TestAsyncResource(
                         () -> pre.set(true),
                         () -> {
                             post.set(true);
-                            
+
                             countDownLatch.countDown();
                         }));
-        
+
         Future<String> future = webTarget.request().async().get(
                 new InvocationCallback<String>() {
                     @Override
                     public void completed(String s) {
                         assertTrue(pre.get());
                     }
-                    
+
                     @Override
                     public void failed(Throwable throwable) {
-                        
+
                     }
                 });
-        
+
         String result = future.get();
-        
+
         countDownLatch.await(1, TimeUnit.MINUTES);
-        
+
         assertTrue(post.get());
-        
+
         assertEquals("This should say HelloAsync", "HelloAsync", result);
     }
 
     @Test
     public void testAsyncResourcePromise()
             throws ExecutionException, InterruptedException {
-        
+
         WebTarget webTarget =
                 createDefaultTarget().path("whiteboard").path("async").path("promise").
                 path("HelloAsync");
-        
+
         AtomicBoolean pre = new AtomicBoolean();
         AtomicBoolean post = new AtomicBoolean();
-        
+
         CountDownLatch countDownLatch = new CountDownLatch(1);
-        
+
         registerAddon(
                 new TestAsyncResource(
                         () -> pre.set(true),
                         () -> {
                             post.set(true);
-                            
+
                             countDownLatch.countDown();
                         }));
-        
+
         Future<String> future = webTarget.request().async().get(
                 new InvocationCallback<String>() {
                     @Override
                     public void completed(String s) {
                         assertTrue(pre.get());
                     }
-                    
+
                     @Override
                     public void failed(Throwable throwable) {
-                        
+
                     }
                 });
-        
+
         String result = future.get();
-        
+
         countDownLatch.await(1, TimeUnit.MINUTES);
-        
+
         assertTrue(post.get());
-        
+
         assertEquals("This should say HelloAsync", "HelloAsync", result);
     }
 
@@ -1267,6 +1269,7 @@ public class JaxrsTest extends TestHelper {
             Feature.class, featureContext -> {
                 executed.set(true);
 
+                @SuppressWarnings("unchecked")
                 Map<String, Object> properties =
                     (Map<String, Object>)
                         featureContext.getConfiguration().getProperty(
@@ -1940,6 +1943,7 @@ public class JaxrsTest extends TestHelper {
             Feature.class, featureContext -> {
                 executed.set(true);
 
+                @SuppressWarnings("unchecked")
                 Map<String, Object> properties =
                     (Map<String, Object>)
                         featureContext.getConfiguration().getProperty(
@@ -1981,6 +1985,7 @@ public class JaxrsTest extends TestHelper {
                         (Feature)featureContext -> {
                             executed.set(true);
 
+                            @SuppressWarnings("unchecked")
                             Map<String, Object> properties =
                                 (Map<String, Object>)
                                     featureContext.getConfiguration().getProperty(
@@ -2292,7 +2297,7 @@ public class JaxrsTest extends TestHelper {
     }
 
     @Test
-    public void testSSEApplication() throws 
+    public void testSSEApplication() throws
         InterruptedException, MalformedURLException {
 
         AtomicInteger atomicInteger = new AtomicInteger();
@@ -2369,6 +2374,7 @@ public class JaxrsTest extends TestHelper {
             String.format(
                 "(%s=%s)", JAX_RS_APPLICATION_BASE, "/test-application"));
 
+        @SuppressWarnings("serial")
         ServiceRegistration<?> extensionRegistration =
             bundleContext.registerService(
                 new String[]{

@@ -191,6 +191,7 @@ public class CxfJaxrsServiceRegistrator {
         rewire();
     }
 
+    @SuppressWarnings("serial")
     protected synchronized void rewire() {
         if (!_applicationTuple.isAvailable()) {
             _applicationTuple.dispose();

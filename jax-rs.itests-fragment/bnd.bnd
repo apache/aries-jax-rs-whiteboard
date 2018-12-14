@@ -51,3 +51,5 @@ Export-Package:\
 	org.apache.cxf.helpers;version="3.2.5",\
 	org.apache.cxf.helpers;version="3.2.5",\
 	org.apache.cxf.common.util;version="3.2.5"
+
+-fixupmessages: Classpath is empty...;is:=ignore

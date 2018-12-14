@@ -30,8 +30,9 @@
     <name>Apache Shiro JAX-RS Integration Project</name>
     <version>1.0.1-SNAPSHOT</version>
     <packaging>pom</packaging>
+
     <properties>
-        <aries.jaxrs.version>1.0.0</aries.jaxrs.version>
+        <aries.jaxrs.version>1.0.3-SNAPSHOT</aries.jaxrs.version>
         <shiro.version>1.4.0</shiro.version>
         <dsl.version>1.2.1</dsl.version>
     </properties>
@@ -48,5 +49,37 @@
         <module>shiro-authz</module>
         <module>shiro-itest</module>
     </modules>
+
+    <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.eclipse.m2e</groupId>
+                    <artifactId>lifecycle-mapping</artifactId>
+                    <version>1.0.0</version>
+                    <configuration>
+                        <lifecycleMappingMetadata>
+                            <pluginExecutions>
+                                <pluginExecution>
+                                    <pluginExecutionFilter>
+                                        <groupId>org.apache.maven.plugins</groupId>
+                                        <artifactId>maven-remote-resources-plugin</artifactId>
+                                        <versionRange>[1.0,)</versionRange>
+                                        <goals>
+                                            <goal>process</goal>
+                                        </goals>
+                                    </pluginExecutionFilter>
+                                    <action>
+                                        <ignore>
+                                        </ignore>
+                                    </action>
+                                </pluginExecution>
+                            </pluginExecutions>
+                        </lifecycleMappingMetadata>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+    </build>
 
 </project>

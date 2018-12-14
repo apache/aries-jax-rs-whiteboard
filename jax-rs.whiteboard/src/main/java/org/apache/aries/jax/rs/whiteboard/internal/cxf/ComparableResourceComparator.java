@@ -72,6 +72,7 @@ public class ComparableResourceComparator
         implements Comparator<ServiceReferenceResourceProvider> {
 
         @Override
+        @SuppressWarnings({ "rawtypes", "unchecked" })
         public int compare(
             ServiceReferenceResourceProvider rp1,
             ServiceReferenceResourceProvider rp2) {

@@ -262,7 +262,7 @@ public class Whiteboard {
             ))));
     }
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({ "rawtypes", "unchecked" })
     private OSGi<?> getAllServices() {
         OSGi<CachingServiceReference<Object>> applicationsForWhiteboard =
             (OSGi)getApplicationsForWhiteboard();
@@ -545,7 +545,6 @@ public class Whiteboard {
         BundleWiring wiring = _bundleContext.getBundle().adapt(
             BundleWiring.class);
 
-        @SuppressWarnings("unchecked")
         Map<String, Object> properties = new HashMap<>(_configurationMap);
 
         HashMap<Class<?>, Object> cxfExtensions = new HashMap<>();
@@ -1174,6 +1173,7 @@ public class Whiteboard {
     }
 
     private static CXFNonSpringServlet createCXFServlet(Bus bus) {
+        @SuppressWarnings("serial")
         CXFNonSpringServlet cxfNonSpringServlet = new CXFNonSpringServlet() {
 
             @Override
