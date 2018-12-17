@@ -21,20 +21,15 @@
 
     <parent>
         <groupId>org.apache.aries.jax.rs</groupId>
-        <artifactId>org.apache.aries.jax.rs</artifactId>
-        <version>1.0.0</version>
-        <relativePath />
+        <artifactId>integration</artifactId>
+        <version>1.0.1-SNAPSHOT</version>
+        <relativePath>..</relativePath>
     </parent>
 
     <artifactId>cxf-jettison-integration</artifactId>
     <name>Apache Jettison JAX-RS Integration Project</name>
     <version>1.0.1-SNAPSHOT</version>
     <packaging>pom</packaging>
-
-    <properties>
-        <aries.jaxrs.version>1.0.3-SNAPSHOT</aries.jaxrs.version>
-        <dsl.version>1.2.1</dsl.version>
-    </properties>
 
     <scm>
         <connection>scm:git:http://gitbox.apache.org/repos/asf/aries-jax-rs-whiteboard.git</connection>

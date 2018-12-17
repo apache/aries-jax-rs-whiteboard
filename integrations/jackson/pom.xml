@@ -23,9 +23,9 @@
 
     <parent>
         <groupId>org.apache.aries.jax.rs</groupId>
-        <artifactId>org.apache.aries.jax.rs</artifactId>
-        <version>1.0.0</version>
-        <relativePath />
+        <artifactId>integration</artifactId>
+        <version>1.0.1-SNAPSHOT</version>
+        <relativePath>..</relativePath>
     </parent>
 
     <artifactId>jackson-integration</artifactId>
@@ -34,9 +34,7 @@
     <packaging>pom</packaging>
 
     <properties>
-        <aries.jaxrs.version>1.0.3-SNAPSHOT</aries.jaxrs.version>
         <jackson.version>2.9.6</jackson.version>
-        <dsl.version>1.2.1</dsl.version>
     </properties>
 
     <scm>
