@@ -24,13 +24,13 @@
     <parent>
         <groupId>org.apache.aries.jax.rs</groupId>
         <artifactId>integration</artifactId>
-        <version>1.0.1-SNAPSHOT</version>
+        <version>1.0.1</version>
         <relativePath>..</relativePath>
     </parent>
 
     <artifactId>jackson-integration</artifactId>
     <name>Jackson JAXB-JSON JAX-RS Integration Project</name>
-    <version>1.0.1-SNAPSHOT</version>
+    <version>1.0.1</version>
     <packaging>pom</packaging>
 
     <properties>
@@ -41,7 +41,7 @@
         <connection>scm:git:http://gitbox.apache.org/repos/asf/aries-jax-rs-whiteboard.git</connection>
         <developerConnection>scm:git:https://gitbox.apache.org/repos/asf/aries-jax-rs-whiteboard.git</developerConnection>
         <url>https://gitbox.apache.org/repos/asf?p=aries-jax-rs-whiteboard.git</url>
-        <tag>HEAD</tag>
+        <tag>org.apache.aries.jax.rs.whiteboard.integrations-1.0.1</tag>
     </scm>
 
     <modules>
