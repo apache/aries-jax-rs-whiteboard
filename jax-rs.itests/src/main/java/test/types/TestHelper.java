@@ -40,6 +40,7 @@ import org.osgi.util.tracker.ServiceTracker;
 
 import static org.junit.Assert.assertTrue;
 import static org.osgi.service.jaxrs.whiteboard.JaxrsWhiteboardConstants.JAX_RS_APPLICATION_BASE;
+import static org.osgi.service.jaxrs.whiteboard.JaxrsWhiteboardConstants.JAX_RS_APPLICATION_SELECT;
 import static org.osgi.service.jaxrs.whiteboard.JaxrsWhiteboardConstants.JAX_RS_EXTENSION;
 import static org.osgi.service.jaxrs.whiteboard.JaxrsWhiteboardConstants.JAX_RS_NAME;
 import static org.osgi.service.jaxrs.whiteboard.JaxrsWhiteboardConstants.JAX_RS_RESOURCE;
@@ -333,10 +334,12 @@ public class TestHelper {
 
         TestFilter testFilter = new TestFilter();
 
-        Dictionary<String, Object> properties = new Hashtable<>();
+        Hashtable<String, Object> properties = new Hashtable<>();
 
         properties.put(JAX_RS_EXTENSION, true);
         properties.put(JAX_RS_NAME, name);
+        properties.putIfAbsent(
+            JAX_RS_APPLICATION_SELECT, "(osgi.jaxrs.name=*)");
 
         for (int i = 0; i < keyValues.length; i = i + 2) {
             properties.put(keyValues[i].toString(), keyValues[i + 1]);
@@ -354,10 +357,12 @@ public class TestHelper {
     protected <T> ServiceRegistration<T> registerExtension(
         Class<T> clazz, T extension, String name, Object... keyValues) {
 
-        Dictionary<String, Object> properties = new Hashtable<>();
+        Hashtable<String, Object> properties = new Hashtable<>();
 
         properties.put(JAX_RS_EXTENSION, true);
         properties.put(JAX_RS_NAME, name);
+        properties.putIfAbsent(
+            JAX_RS_APPLICATION_SELECT, "(osgi.jaxrs.name=*)");
 
         for (int i = 0; i < keyValues.length; i = i + 2) {
             properties.put(keyValues[i].toString(), keyValues[i + 1]);
@@ -376,10 +381,12 @@ public class TestHelper {
 
         TestFilter testFilter = new TestFilter();
 
-        Dictionary<String, Object> properties = new Hashtable<>();
+        Hashtable<String, Object> properties = new Hashtable<>();
 
         properties.put(JAX_RS_EXTENSION, true);
         properties.put(JAX_RS_NAME, name);
+        properties.putIfAbsent(
+            JAX_RS_APPLICATION_SELECT, "(osgi.jaxrs.name=*)");
 
         for (int i = 0; i < keyValues.length; i = i + 2) {
             properties.put(keyValues[i].toString(), keyValues[i + 1]);
@@ -397,10 +404,12 @@ public class TestHelper {
     protected ServiceRegistration<?> registerMultiExtension(
         String name, String... classes) {
 
-        Dictionary<String, Object> properties = new Hashtable<>();
+        Hashtable<String, Object> properties = new Hashtable<>();
 
         properties.put(JAX_RS_EXTENSION, true);
         properties.put(JAX_RS_NAME, name);
+        properties.putIfAbsent(
+            JAX_RS_APPLICATION_SELECT, "(osgi.jaxrs.name=*)");
 
         ServiceRegistration<?> serviceRegistration =
             bundleContext.registerService(
@@ -437,10 +446,12 @@ public class TestHelper {
     protected ServiceRegistration<?> registerUngettableExtension(
         String name, Object... keyValues) {
 
-        Dictionary<String, Object> properties = new Hashtable<>();
+        Hashtable<String, Object> properties = new Hashtable<>();
 
         properties.put(JAX_RS_EXTENSION, true);
         properties.put(JAX_RS_NAME, name);
+        properties.putIfAbsent(
+            JAX_RS_APPLICATION_SELECT, "(osgi.jaxrs.name=*)");
 
         for (int i = 0; i < keyValues.length; i = i + 2) {
             properties.put(keyValues[i].toString(), keyValues[i + 1]);

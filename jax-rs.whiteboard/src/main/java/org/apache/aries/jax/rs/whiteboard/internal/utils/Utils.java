@@ -40,6 +40,7 @@ import static org.apache.aries.component.dsl.OSGi.effects;
 import static org.apache.aries.component.dsl.OSGi.just;
 import static org.apache.aries.component.dsl.OSGi.nothing;
 import static org.apache.aries.component.dsl.Utils.highest;
+import static org.osgi.service.jaxrs.whiteboard.JaxrsWhiteboardConstants.JAX_RS_NAME;
 
 /**
  * @author Carlos Sierra Andrés
@@ -99,6 +100,17 @@ public class Utils {
         PropertyHolder propertyHolder) {
 
         return ".generated.for." + propertyHolder.get("service.id");
+    }
+
+    public static Map<String, Object> getApplicationProperties(
+        CachingServiceReference<?> reference) {
+
+        Map<String, Object> properties = Utils.getProperties(reference);
+
+        properties.putIfAbsent(
+            JAX_RS_NAME, generateApplicationName(reference::getProperty));
+
+        return properties;
     }
 
     public static Map<String, Object> getProperties(

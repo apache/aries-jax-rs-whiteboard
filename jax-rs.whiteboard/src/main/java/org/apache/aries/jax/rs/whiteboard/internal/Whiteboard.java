@@ -78,8 +78,7 @@ import static org.apache.aries.jax.rs.whiteboard.internal.utils.LogUtils.ifDebug
 import static org.apache.aries.jax.rs.whiteboard.internal.utils.LogUtils.ifErrorEnabled;
 import static org.apache.aries.jax.rs.whiteboard.internal.utils.Utils.canonicalize;
 import static org.apache.aries.jax.rs.whiteboard.internal.utils.Utils.canonicalizeAddress;
-import static org.apache.aries.jax.rs.whiteboard.internal.utils.Utils.generateApplicationName;
-import static org.apache.aries.jax.rs.whiteboard.internal.utils.Utils.getProperties;
+import static org.apache.aries.jax.rs.whiteboard.internal.utils.Utils.getApplicationProperties;
 import static org.apache.aries.jax.rs.whiteboard.internal.utils.Utils.getString;
 import static org.apache.aries.jax.rs.whiteboard.internal.utils.Utils.highestPer;
 import static org.apache.aries.jax.rs.whiteboard.internal.utils.Utils.mergePropertyMaps;
@@ -221,7 +220,7 @@ public class Whiteboard {
                     _extensionRegistry::unregisterExtension).
                 flatMap(extensionReference ->
             chooseApplication(
-                    extensionReference, allApplicationReferences(),
+                    extensionReference,
                     _runtime::addApplicationDependentExtension,
                     _runtime::removeApplicationDependentExtension).
                 flatMap(registratorReference ->
@@ -246,7 +245,7 @@ public class Whiteboard {
                     _runtime::removeInvalidResource).
                 flatMap(resourceReference ->
             chooseApplication(
-                    resourceReference, defaultApplication(),
+                    resourceReference,
                     _runtime::addApplicationDependentResource,
                     _runtime::removeApplicationDependentResource).
                 flatMap(registratorReference ->
@@ -596,15 +595,13 @@ public class Whiteboard {
     }
 
     private OSGi<CachingServiceReference<CxfJaxrsServiceRegistrator>>
-        defaultApplication() {
+        applicationMatching(String filter) {
 
-        return
-            highest(
-                serviceReferences(
-                    CxfJaxrsServiceRegistrator.class,
-                    String.format("(%s=%s)", JAX_RS_NAME, DEFAULT_NAME)
-                ).filter(this::matchesWhiteboard)
-            );
+        return serviceReferences(
+            CxfJaxrsServiceRegistrator.class, filter
+        ).filter(
+            this::matchesWhiteboard
+        );
     }
 
     private OSGi<CxfJaxrsServiceRegistrator> deployApplication(
@@ -615,12 +612,8 @@ public class Whiteboard {
             CachingServiceReference<Application> serviceReference =
                 tuple.getCachingServiceReference();
 
-            Map<String, Object> props = getProperties(
+            Map<String, Object> props = getApplicationProperties(
                 serviceReference);
-
-            props.computeIfAbsent(
-                JAX_RS_NAME, (__) -> generateApplicationName(
-                    serviceReference::getProperty));
 
             props.put(
                 "original.service.id",
@@ -989,8 +982,8 @@ public class Whiteboard {
                                     return nothing();
                                 }
 
-                                if (filter.match(
-                                    reference.getServiceReference())) {
+                                if (filter.matches(
+                                    getApplicationProperties(reference))) {
 
                                     return just(reference);
                                 }
@@ -1115,17 +1108,9 @@ public class Whiteboard {
             properties.get(JAX_RS_APPLICATION_BASE));
     }
 
-    private static OSGi<CachingServiceReference<CxfJaxrsServiceRegistrator>>
-        allApplicationReferences() {
-
-        return serviceReferences(CxfJaxrsServiceRegistrator.class);
-    }
-
-    private static OSGi<CachingServiceReference<CxfJaxrsServiceRegistrator>>
+    private OSGi<CachingServiceReference<CxfJaxrsServiceRegistrator>>
         chooseApplication(
             CachingServiceReference<?> serviceReference,
-            OSGi<CachingServiceReference<CxfJaxrsServiceRegistrator>>
-                theDefault,
             Consumer<CachingServiceReference<?>> onWaiting,
             Consumer<CachingServiceReference<?>> onResolved) {
 
@@ -1133,7 +1118,8 @@ public class Whiteboard {
             JAX_RS_APPLICATION_SELECT);
 
         if (applicationSelectProperty == null) {
-            return theDefault;
+            return applicationMatching(
+                String.format("(%s=%s)", JAX_RS_NAME, DEFAULT_NAME));
         }
 
         return
@@ -1145,9 +1131,7 @@ public class Whiteboard {
 
                     counter.set(0);
                 }).then(
-            serviceReferences(
-                CxfJaxrsServiceRegistrator.class,
-                applicationSelectProperty.toString()).
+            applicationMatching(applicationSelectProperty.toString()).
             effects(
                 __ -> {
                     if (counter.getAndIncrement() == 0) {
