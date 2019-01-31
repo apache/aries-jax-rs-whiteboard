@@ -73,6 +73,7 @@ import java.util.stream.Stream;
 
 import static java.lang.String.format;
 import static java.util.stream.Collectors.toMap;
+import static org.apache.aries.component.dsl.OSGi.effect;
 import static org.apache.aries.jax.rs.whiteboard.internal.AriesJaxrsServiceRuntime.getServiceName;
 import static org.apache.aries.jax.rs.whiteboard.internal.utils.LogUtils.ifDebugEnabled;
 import static org.apache.aries.jax.rs.whiteboard.internal.utils.LogUtils.ifErrorEnabled;
@@ -957,6 +958,44 @@ public class Whiteboard {
                     _log.debug(
                         "Application {} has a dependency on {}",
                         reference, extensionDependency);
+                }
+
+                try {
+                    Filter extensionFilter = _bundleContext.createFilter(
+                        extensionDependency);
+
+                    if (extensionFilter.match(_runtimeReference)) {
+                        if(_log.isDebugEnabled()) {
+                            _log.debug(
+                                "Application dependency {} provided by " +
+                                    "whiteboard {}",
+                                extensionDependency, _runtimeReference);
+                        }
+
+                        continue;
+                    }
+                }
+                catch (InvalidSyntaxException e) {
+                    return program.
+                        effects(
+                            ifErrorEnabled(
+                                _log,
+                                () -> String.format(
+                                    "Application %s has invalid dependency %s",
+                                    reference, extensionDependency)),
+                            ifErrorEnabled(
+                                _log,
+                                () -> String.format(
+                                    "Application %s with invalid dependency " +
+                                        "has left",
+                                    reference))
+                        ).
+                        effects(
+                            _runtime::addErroredApplication,
+                            _runtime::removeErroredApplication
+                        ).then(
+                            nothing()
+                        );
                 }
 
                 program =
