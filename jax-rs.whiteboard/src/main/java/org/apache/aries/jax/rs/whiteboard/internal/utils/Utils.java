@@ -87,15 +87,6 @@ public class Utils {
         return address;
     }
 
-    public static String getString(Object string) {
-        if (string == null) {
-            return "";
-        }
-        else {
-            return String.valueOf(string);
-        }
-    }
-
     public static String generateApplicationName(
         PropertyHolder propertyHolder) {
 
@@ -135,6 +126,15 @@ public class Utils {
 
         return new ServiceReferenceResourceProvider(
             serviceReference, serviceObjects);
+    }
+
+    public static String getString(Object string) {
+        if (string == null) {
+            return "";
+        }
+        else {
+            return String.valueOf(string);
+        }
     }
 
     public static <K, T extends Comparable<? super T>> OSGi<T> highestPer(
