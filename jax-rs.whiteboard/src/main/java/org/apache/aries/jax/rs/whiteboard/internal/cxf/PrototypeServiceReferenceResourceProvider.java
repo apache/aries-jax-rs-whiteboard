@@ -15,24 +15,22 @@
  * limitations under the License.
  */
 
-package org.apache.aries.jax.rs.whiteboard.internal.utils;
+package org.apache.aries.jax.rs.whiteboard.internal.cxf;
 
 import org.apache.aries.component.dsl.CachingServiceReference;
+import org.apache.aries.jax.rs.whiteboard.internal.utils.Utils;
 import org.apache.cxf.jaxrs.lifecycle.ResourceProvider;
 import org.apache.cxf.message.Message;
 import org.osgi.framework.ServiceObjects;
 
-public class ServiceReferenceResourceProvider
-    implements ResourceProvider {
+public class PrototypeServiceReferenceResourceProvider
+    implements ResourceProvider, ServiceReferenceResourceProvider {
 
-    private final ServiceObjects<?> _serviceObjects;
-    private CachingServiceReference<?> _serviceReference;
-
-    ServiceReferenceResourceProvider(
+    public PrototypeServiceReferenceResourceProvider(
         CachingServiceReference<?> serviceReference,
         ServiceObjects<?> serviceObjects) {
-        _serviceReference = serviceReference;
 
+        _serviceReference = serviceReference;
         _serviceObjects = serviceObjects;
     }
 
@@ -70,10 +68,7 @@ public class ServiceReferenceResourceProvider
 
     @Override
     public boolean isSingleton() {
-        String scope =
-            _serviceReference.getProperty("service.scope").toString();
-
-        return !scope.equals("prototype");
+        return false;
     }
 
     public CachingServiceReference<?> getImmutableServiceReference() {
@@ -83,5 +78,8 @@ public class ServiceReferenceResourceProvider
     public boolean isAvailable() {
         return Utils.isAvailable(_serviceObjects.getServiceReference());
     }
+
+    private final ServiceObjects<?> _serviceObjects;
+    private CachingServiceReference<?> _serviceReference;
 
 }

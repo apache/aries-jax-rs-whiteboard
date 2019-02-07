@@ -18,7 +18,6 @@
 package org.apache.aries.jax.rs.whiteboard.internal.cxf;
 
 import org.apache.aries.component.dsl.CachingServiceReference;
-import org.apache.aries.jax.rs.whiteboard.internal.utils.ServiceReferenceResourceProvider;
 import org.apache.cxf.jaxrs.ext.ResourceComparator;
 import org.apache.cxf.jaxrs.lifecycle.ResourceProvider;
 import org.apache.cxf.jaxrs.model.ClassResourceInfo;

@@ -825,9 +825,9 @@ public class Whiteboard {
                 ).
                 then(nothing())
             ).flatMap(st ->
-                just(st.getServiceObjects()).
-                    map(
-                        Utils::getResourceProvider
+                just(st).
+                map(
+                    Utils::getResourceProvider
                 ).effects(
                     rp -> _runtime.addApplicationEndpoint(
                         registratorProperties, st.getCachingServiceReference(),
