@@ -104,7 +104,7 @@
         <dependency>
             <groupId>org.apache.aries.jax.rs</groupId>
             <artifactId>org.apache.aries.jax.rs.itests-fragment</artifactId>
-            <version>${aries.jaxrs.version}</version>
+            <version>1.0.4</version>
         </dependency>
         <dependency>
             <groupId>org.apache.aries.jax.rs</groupId>
