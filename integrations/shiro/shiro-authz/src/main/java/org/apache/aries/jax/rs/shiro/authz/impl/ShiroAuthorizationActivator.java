@@ -32,14 +32,16 @@ import java.util.Map;
 import javax.ws.rs.core.Feature;
 
 import org.apache.aries.component.dsl.OSGiResult;
+import org.osgi.annotation.bundle.Header;
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@Header(name = Constants.BUNDLE_ACTIVATOR, value = "${@class}")
 public class ShiroAuthorizationActivator implements BundleActivator {
-    
+
     private static final Logger _LOG = LoggerFactory.getLogger(
             ShiroAuthorizationActivator.class);
 
@@ -47,15 +49,15 @@ public class ShiroAuthorizationActivator implements BundleActivator {
 
     @Override
     public void start(BundleContext context) throws Exception {
-        
+
         _LOG.debug("Starting the Shiro JAX-RS Authorization Feature");
-        
+
         _registration = coalesce(
                 configuration("org.apache.aries.jax.rs.shiro.authorization"),
                 just(() -> {
-                    
+
                     _LOG.debug("Using the default configuration for the Shiro JAX-RS Authorization Feature");
-                    
+
                     Dictionary<String, Object> properties =
                         new Hashtable<>();
 
@@ -72,7 +74,7 @@ public class ShiroAuthorizationActivator implements BundleActivator {
 
     Map<String, Object> filter(Dictionary<String, ?> props) {
         Map<String, Object> serviceProps = new Hashtable<>();
-        
+
         Enumeration<String> keys = props.keys();
         while(keys.hasMoreElements()) {
             String key = keys.nextElement();
@@ -80,14 +82,14 @@ public class ShiroAuthorizationActivator implements BundleActivator {
                 serviceProps.put(key, props.get(key));
             }
         }
-        
+
         serviceProps.put(JAX_RS_EXTENSION, TRUE);
         serviceProps.putIfAbsent(JAX_RS_NAME, "aries.shiro.authz");
 
         _LOG.debug("Shiro JAX-RS Authorization Feature service properties are: {}", serviceProps);
         return serviceProps;
     }
-    
+
     @Override
     public void stop(BundleContext context) throws Exception {
         _LOG.debug("Stopping the Shiro JAX-RS Authorization Feature");

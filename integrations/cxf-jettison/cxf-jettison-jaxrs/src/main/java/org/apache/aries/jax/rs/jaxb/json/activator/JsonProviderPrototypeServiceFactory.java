@@ -20,9 +20,12 @@ package org.apache.aries.jax.rs.jaxb.json.activator;
 import org.apache.cxf.jaxrs.provider.json.JSONProvider;
 import org.apache.cxf.jaxrs.utils.schemas.SchemaHandler;
 import org.codehaus.jettison.mapped.TypeConverter;
+import org.osgi.annotation.bundle.Capability;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.PrototypeServiceFactory;
 import org.osgi.framework.ServiceRegistration;
+import org.osgi.namespace.service.ServiceNamespace;
+import org.osgi.service.jaxrs.whiteboard.annotations.RequireJaxrsWhiteboard;
 
 import javax.xml.bind.Marshaller;
 import javax.xml.bind.Unmarshaller;
@@ -30,6 +33,15 @@ import java.util.Arrays;
 import java.util.Dictionary;
 import java.util.Optional;
 
+@Capability(
+    attribute = {
+        "objectClass:List<String>='javax.ws.rs.ext.MessageBodyReader,javax.ws.rs.ext.MessageBodyWriter'",
+        "osgi.jaxrs.media.type=application/json",
+        "osgi.jaxrs.name=cxf.jettison"
+    },
+    namespace = ServiceNamespace.SERVICE_NAMESPACE
+)
+@RequireJaxrsWhiteboard
 public class JsonProviderPrototypeServiceFactory
     implements PrototypeServiceFactory<JSONProvider<?>> {
 

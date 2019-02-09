@@ -21,6 +21,7 @@ import org.apache.aries.component.dsl.OSGi;
 import org.apache.aries.component.dsl.OSGiResult;
 import org.apache.cxf.jaxrs.utils.schemas.SchemaHandler;
 import org.codehaus.jettison.mapped.TypeConverter;
+import org.osgi.annotation.bundle.Header;
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.Constants;
@@ -48,6 +49,7 @@ import static org.apache.aries.component.dsl.OSGi.service;
 import static org.apache.aries.component.dsl.OSGi.serviceReferences;
 import static org.apache.aries.component.dsl.Utils.highest;
 
+@Header(name = Constants.BUNDLE_ACTIVATOR, value = "${@class}")
 public class JaxbJsonBundleActivator implements BundleActivator {
 
     public static final String CONFIG_PID = "org.apache.aries.jax.rs.jaxb.json";

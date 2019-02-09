@@ -31,30 +31,39 @@
 
     <dependencies>
         <dependency>
-            <groupId>org.osgi</groupId>
-            <artifactId>org.osgi.core</artifactId>
-            <version>6.0.0</version>
-        </dependency>
-        <dependency>
             <groupId>org.apache.aries.component-dsl</groupId>
             <artifactId>org.apache.aries.component-dsl.component-dsl</artifactId>
-            <version>${dsl.version}</version>
-            <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>org.apache.aries.spec</groupId>
-            <artifactId>org.apache.aries.javax.jax.rs-api</artifactId>
-            <version>1.0.0</version>
+            <groupId>org.apache.geronimo.specs</groupId>
+            <artifactId>geronimo-jaxrs_2.1_spec</artifactId>
         </dependency>
         <dependency>
             <groupId>org.apache.shiro</groupId>
             <artifactId>shiro-jaxrs</artifactId>
             <version>${shiro.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>javax.ws.rs</groupId>
+                    <artifactId>javax.ws.rs-api</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.osgi</groupId>
+            <artifactId>osgi.annotation</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.osgi</groupId>
+            <artifactId>osgi.core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.osgi</groupId>
+            <artifactId>org.osgi.namespace.service</artifactId>
         </dependency>
         <dependency>
             <groupId>org.osgi</groupId>
             <artifactId>org.osgi.service.jaxrs</artifactId>
-            <version>1.0.0</version>
         </dependency>
     </dependencies>
 

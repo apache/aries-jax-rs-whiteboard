@@ -39,14 +39,6 @@
         <plugins>
             <plugin>
                 <groupId>biz.aQute.bnd</groupId>
-                <artifactId>bnd-indexer-maven-plugin</artifactId>
-                <configuration>
-                    <includeJar>true</includeJar>
-                    <localURLs>REQUIRED</localURLs>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>biz.aQute.bnd</groupId>
                 <artifactId>bnd-maven-plugin</artifactId>
             </plugin>
             <plugin>
@@ -54,6 +46,7 @@
                 <artifactId>bnd-resolver-maven-plugin</artifactId>
                 <configuration>
                     <failOnChanges>false</failOnChanges>
+                    <includeDependencyManagement>true</includeDependencyManagement>
                     <bndruns>
                         <bndrun>itest.bndrun</bndrun>
                     </bndruns>
@@ -65,6 +58,7 @@
                 <configuration>
                     <failOnChanges>true</failOnChanges>
                     <resolve>false</resolve>
+                    <includeDependencyManagement>true</includeDependencyManagement>
                     <bndruns>
                         <bndrun>itest.bndrun</bndrun>
                     </bndruns>
@@ -73,40 +67,6 @@
         </plugins>
     </build>
     <dependencies>
-        <dependency>
-            <groupId>ch.qos.logback</groupId>
-            <artifactId>logback-classic</artifactId>
-            <version>1.2.3</version>
-            <scope>runtime</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.osgi</groupId>
-            <artifactId>osgi.core</artifactId>
-            <version>6.0.0</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.osgi</groupId>
-            <artifactId>osgi.annotation</artifactId>
-            <version>7.0.0</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.shiro</groupId>
-            <artifactId>shiro-core</artifactId>
-            <version>${shiro.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.aries.spec</groupId>
-            <artifactId>org.apache.aries.javax.jax.rs-api</artifactId>
-            <version>${aries.jaxrs.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.osgi</groupId>
-            <artifactId>org.osgi.service.cm</artifactId>
-            <version>1.5.0</version>
-            <scope>provided</scope>
-        </dependency>
         <dependency>
             <groupId>org.apache.aries.jax.rs</groupId>
             <artifactId>org.apache.aries.jax.rs.shiro.authc</artifactId>
@@ -120,95 +80,49 @@
             <scope>runtime</scope>
         </dependency>
         <dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-configuration2</artifactId>
-            <version>2.2</version>
-            <scope>runtime</scope>
-        </dependency>
-        <dependency>
             <groupId>org.apache.aries.jax.rs</groupId>
             <artifactId>org.apache.aries.jax.rs.whiteboard</artifactId>
             <version>${aries.jaxrs.version}</version>
             <scope>runtime</scope>
         </dependency>
         <dependency>
-            <groupId>org.apache.felix</groupId>
-            <artifactId>org.apache.felix.configadmin</artifactId>
-            <version>1.8.14</version>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-configuration2</artifactId>
+            <version>2.2</version>
             <scope>runtime</scope>
         </dependency>
         <dependency>
-            <groupId>org.apache.felix</groupId>
-            <artifactId>org.apache.felix.eventadmin</artifactId>
-            <version>1.4.8</version>
-            <scope>runtime</scope>
+            <groupId>org.apache.geronimo.specs</groupId>
+            <artifactId>geronimo-jaxrs_2.1_spec</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.apache.felix</groupId>
-            <artifactId>org.apache.felix.http.jetty</artifactId>
-            <version>3.4.0</version>
-            <scope>runtime</scope>
+            <groupId>org.apache.shiro</groupId>
+            <artifactId>shiro-core</artifactId>
+            <version>${shiro.version}</version>
         </dependency>
         <dependency>
-            <groupId>org.apache.felix</groupId>
-            <artifactId>org.apache.felix.scr</artifactId>
-            <version>2.1.0</version>
-            <scope>runtime</scope>
+            <groupId>org.osgi</groupId>
+            <artifactId>osgi.core</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.apache.felix</groupId>
-            <artifactId>org.apache.felix.framework</artifactId>
-            <version>6.0.0</version>
-            <scope>runtime</scope>
+            <groupId>org.osgi</groupId>
+            <artifactId>osgi.annotation</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.apache.felix</groupId>
-            <artifactId>org.apache.felix.log</artifactId>
-            <version>1.0.1</version>
-            <scope>runtime</scope>
+            <groupId>org.osgi</groupId>
+            <artifactId>org.osgi.service.cm</artifactId>
         </dependency>
         <dependency>
             <groupId>org.osgi</groupId>
             <artifactId>org.osgi.service.jaxrs</artifactId>
-            <version>1.0.0</version>
-        </dependency>
-        <dependency>
-            <groupId>org.osgi</groupId>
-            <artifactId>org.osgi.util.function</artifactId>
-            <version>1.1.0</version>
-        </dependency>
-        <dependency>
-            <groupId>org.osgi</groupId>
-            <artifactId>org.osgi.util.promise</artifactId>
-            <version>1.1.0</version>
         </dependency>
         <dependency>
             <groupId>org.osgi</groupId>
             <artifactId>osgi.enroute.junit.wrapper</artifactId>
-            <version>4.12.0</version>
         </dependency>
         <dependency>
             <groupId>org.osgi</groupId>
             <artifactId>osgi.enroute.hamcrest.wrapper</artifactId>
-            <version>1.3.0</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.felix</groupId>
-            <artifactId>org.apache.felix.gogo.runtime</artifactId>
-            <version>1.1.0</version>
-            <scope>runtime</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.felix</groupId>
-            <artifactId>org.apache.felix.gogo.shell</artifactId>
-            <version>1.1.0</version>
-            <scope>runtime</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.felix</groupId>
-            <artifactId>org.apache.felix.gogo.command</artifactId>
-            <version>1.0.2</version>
-            <scope>runtime</scope>
         </dependency>
     </dependencies>
 </project>

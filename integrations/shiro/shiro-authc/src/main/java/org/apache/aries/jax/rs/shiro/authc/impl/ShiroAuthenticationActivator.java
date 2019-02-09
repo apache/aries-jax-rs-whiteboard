@@ -38,29 +38,31 @@ import javax.ws.rs.core.Feature;
 import org.apache.aries.component.dsl.OSGi;
 import org.apache.aries.component.dsl.OSGiResult;
 import org.apache.shiro.realm.Realm;
+import org.osgi.annotation.bundle.Header;
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@Header(name = Constants.BUNDLE_ACTIVATOR, value = "${@class}")
 public class ShiroAuthenticationActivator implements BundleActivator {
 
     private static final Logger _LOG = LoggerFactory.getLogger(
             ShiroAuthenticationActivator.class);
-    
+
     private OSGiResult registration;
 
     @Override
     public void start(BundleContext context) throws Exception {
         _LOG.debug("Starting the Shiro JAX-RS Authentication Feature");
-        
+
         registration = coalesce(
                 configuration("org.apache.aries.jax.rs.shiro.authentication"),
                 just(() -> {
-                    
+
                     _LOG.debug("Using the default configuration for the Shiro JAX-RS Authentication Feature");
-                    
+
                     Dictionary<String, Object> properties =
                         new Hashtable<>();
 
@@ -77,7 +79,7 @@ public class ShiroAuthenticationActivator implements BundleActivator {
 
     Map<String, Object> filter(Dictionary<String, ?> props) {
         Map<String, Object> serviceProps = new Hashtable<>();
-        
+
         Enumeration<String> keys = props.keys();
         while(keys.hasMoreElements()) {
             String key = keys.nextElement();
@@ -85,19 +87,19 @@ public class ShiroAuthenticationActivator implements BundleActivator {
                 serviceProps.put(key, props.get(key));
             }
         }
-        
+
         serviceProps.put(JAX_RS_EXTENSION, TRUE);
         serviceProps.putIfAbsent(JAX_RS_NAME, "aries.shiro.authc");
-        
+
         _LOG.debug("Shiro JAX-RS Authentication Feature service properties are: {}", serviceProps);
-        
+
         return serviceProps;
     }
-    
+
     OSGi<?> setupRealms(Map<String, Object> properties) {
-        
+
         Object filter = properties.get("realms.target");
-        
+
         OSGi<List<Realm>> realms;
         if(filter == null) {
             _LOG.debug("The Shiro JAX-RS Authentication Feature is accepting all realms");
@@ -106,12 +108,12 @@ public class ShiroAuthenticationActivator implements BundleActivator {
             _LOG.debug("The Shiro JAX-RS Authentication Feature is filtering realms using the filter {}", filter);
             realms = accumulate(service(serviceReferences(Realm.class, String.valueOf(filter))));
         }
-        
+
         return realms.map(ShiroAuthenticationFeatureProvider::new)
                 .flatMap(f -> register(Feature.class, f,  properties)
                         .effects(x -> {}, x -> f.close()));
     }
-    
+
     @Override
     public void stop(BundleContext context) throws Exception {
         _LOG.debug("Stopping the Shiro JAX-RS Authentication Feature");

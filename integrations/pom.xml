@@ -21,7 +21,6 @@
 
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>org.apache.aries.jax.rs</groupId>
     <artifactId>integration</artifactId>
     <name>Apache Aries JAX-RS Integration Projects Reactor</name>
     <version>1.0.3-SNAPSHOT</version>
@@ -30,12 +29,12 @@
     <parent>
         <groupId>org.apache.aries.jax.rs</groupId>
         <artifactId>org.apache.aries.jax.rs</artifactId>
-        <version>1.0.3</version>
+        <version>1.0.5-SNAPSHOT</version>
         <relativePath>..</relativePath>
     </parent>
 
     <properties>
-        <aries.jaxrs.version>1.0.3</aries.jaxrs.version>
+        <aries.jaxrs.version>1.0.5-SNAPSHOT</aries.jaxrs.version>
         <dsl.version>1.2.1</dsl.version>
     </properties>
 

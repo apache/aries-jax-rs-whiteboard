@@ -26,8 +26,17 @@ import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.authz.annotation.RequiresAuthentication;
 import org.apache.shiro.authz.annotation.RequiresGuest;
 import org.apache.shiro.authz.annotation.RequiresRoles;
+import org.osgi.annotation.bundle.Requirement;
 
 @Path("/test")
+@Requirement(
+    filter = "(osgi.jaxrs.name=aries.shiro.authc)",
+    namespace = "osgi.service"
+)
+@Requirement(
+    filter = "(osgi.jaxrs.name=aries.shiro.authz)",
+    namespace = "osgi.service"
+)
 public class TestShiroAnnotations {
 
     @GET
@@ -37,7 +46,7 @@ public class TestShiroAnnotations {
     public String guest() {
         return "Welcome Guest";
     }
-    
+
     @GET
     @Produces(MediaType.TEXT_PLAIN)
     @Path("/authenticated")
@@ -45,7 +54,7 @@ public class TestShiroAnnotations {
     public String authenticated() {
         return "Welcome " + SecurityUtils.getSubject().getPrincipal().toString();
     }
-    
+
 
     @GET
     @Produces(MediaType.TEXT_PLAIN)
@@ -54,5 +63,5 @@ public class TestShiroAnnotations {
     public String admin() {
         return "Welcome Admin";
     }
-    
+
 }

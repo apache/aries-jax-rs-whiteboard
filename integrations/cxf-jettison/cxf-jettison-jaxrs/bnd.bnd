@@ -15,14 +15,14 @@
 #    specific language governing permissions and limitations
 #    under the License.
 
-Bundle-Activator: org.apache.aries.jax.rs.jaxb.json.activator.JaxbJsonBundleActivator
-
 Import-Package:\
     !com.sun.*,\
     !javax.cache.*,\
     !javax.imageio.*,\
+    !javax.json.*,\
     !javax.jws.*,\
     !javax.security.*,\
+    !javax.servlet.*,\
     !javax.tools.*,\
     !javax.validation.*,\
     !javax.wsdl.*,\

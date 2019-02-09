@@ -31,32 +31,33 @@
 
     <dependencies>
         <dependency>
+            <groupId>org.apache.geronimo.specs</groupId>
+            <artifactId>geronimo-jaxrs_2.1_spec</artifactId>
+        </dependency>
+        <dependency>
             <groupId>com.fasterxml.jackson.jaxrs</groupId>
             <artifactId>jackson-jaxrs-json-provider</artifactId>
             <version>${jackson.version}</version>
         </dependency>
-
+        <dependency>
+            <groupId>org.apache.aries.component-dsl</groupId>
+            <artifactId>org.apache.aries.component-dsl.component-dsl</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.osgi</groupId>
+            <artifactId>osgi.annotation</artifactId>
+        </dependency>
         <dependency>
             <groupId>org.osgi</groupId>
             <artifactId>osgi.core</artifactId>
-            <version>6.0.0</version>
-            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.osgi</groupId>
+            <artifactId>org.osgi.namespace.service</artifactId>
         </dependency>
         <dependency>
             <groupId>org.osgi</groupId>
             <artifactId>org.osgi.service.jaxrs</artifactId>
-            <version>1.0.0</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.aries.spec</groupId>
-            <artifactId>org.apache.aries.javax.jax.rs-api</artifactId>
-            <version>${aries.jaxrs.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.aries.component-dsl</groupId>
-            <artifactId>org.apache.aries.component-dsl.component-dsl</artifactId>
-            <version>${dsl.version}</version>
-            <scope>provided</scope>
         </dependency>
     </dependencies>
 

@@ -15,41 +15,6 @@
 #    specific language governing permissions and limitations
 #    under the License.
 
-Bundle-Activator: org.apache.aries.jax.rs.whiteboard.activator.CxfJaxrsBundleActivator
-Provide-Capability: \
-    osgi.implementation; \
-        osgi.implementation='aries.jax-rs'; \
-        version:Version='${Bundle-Version}',\
-    osgi.implementation; \
-        osgi.implementation='osgi.jaxrs'; \
-        version:Version='1.0.0'; \
-        uses:="javax.ws.rs,javax.ws.rs.core,javax.ws.rs.ext,javax.ws.rs.client,javax.ws.rs.container,javax.ws.rs.sse,org.osgi.service.jaxrs.whiteboard", \
-    osgi.service; \
-        objectClass:List<String>="org.osgi.service.jaxrs.runtime.JaxrsServiceRuntime"; \
-        uses:="org.osgi.service.jaxrs.runtime,org.osgi.service.jaxrs.runtime.dto", \
-    osgi.service; \
-        objectClass:List<String>="javax.ws.rs.client.ClientBuilder"; \
-        uses:="javax.ws.rs.client,org.osgi.service.jaxrs.client", \
-    osgi.service; \
-        objectClass:List<String>="org.osgi.service.jaxrs.client.SseEventSourceFactory"; \
-        uses:="javax.ws.rs.client,org.osgi.service.jaxrs.client", \
-    osgi.serviceloader; \
-        osgi.serviceloader=javax.ws.rs.client.ClientBuilder; \
-        uses:="javax.ws.rs.client,org.osgi.service.jaxrs.client", \
-    osgi.serviceloader; \
-        osgi.serviceloader=javax.ws.rs.ext.RuntimeDelegate; \
-        uses:="javax.ws.rs.core,javax.ws.rs.ext", \
-    osgi.serviceloader; \
-        osgi.serviceloader=javax.ws.rs.sse.SseEventSource.Builder; \
-        uses:="javax.ws.rs.client,javax.ws.rs.sse"
-
-Require-Capability: \
-    osgi.implementation; \
-        filter:='(&(osgi.implementation=osgi.http)(version>=1)(!(version>=2)))',\
-    osgi.extender;\
-        filter:="(osgi.extender=osgi.serviceloader.registrar)";\
-        resolution:='optional'
-
 Import-Package:\
     !com.sun.*,\
     !javax.cache.*,\
@@ -62,6 +27,7 @@ Import-Package:\
     !net.sf.cglib.proxy.*,\
     !org.apache.abdera.*,\
     !org.apache.aries.*,\
+    !org.apache.commons.logging,\
     !org.apache.cxf.*,\
     !org.apache.log4j.*,\
     !org.apache.neethi.*,\
@@ -81,11 +47,8 @@ Import-Package:\
     !org.relaxng.datatype.*,\
     !org.slf4j.spi.*,\
     !org.springframework.*,\
+    !sun.misc,\
     *
-
--contract: *
-
--exportcontents: org.apache.aries.jax.rs.whiteboard
 
 -includeresource:\
     lib/component-dsl.jar=org.apache.aries.component-dsl.component-dsl-*.jar;lib:=true,\

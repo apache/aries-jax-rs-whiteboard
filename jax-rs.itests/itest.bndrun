@@ -16,26 +16,25 @@
 #    under the License.
 
 -standalone: true
-
--runrequires: \
-	osgi.identity;filter:='(osgi.identity=org.apache.aries.jax.rs.itests)',\
-	osgi.identity;filter:='(osgi.identity=org.apache.aries.jax.rs.whiteboard)'
 -runpath: \
-	ch.qos.logback.classic;version='[1.2.3,1.2.4)',\
-	ch.qos.logback.core;version='[1.2.3,1.2.4)',\
-	org.apache.felix.logback;version='[1.0.0,1.0.1)',\
-	slf4j.api;version='[1.7.25,1.7.26)'
+	ch.qos.logback.classic,\
+	ch.qos.logback.core,\
+	org.apache.felix.logback,\
+	slf4j.api
 -runsystempackages: \
 	org.slf4j;version=1.7.25,\
 	org.slf4j.event;version=1.7.25,\
 	org.slf4j.helpers;version=1.7.25,\
 	org.slf4j.spi;version=1.7.25
--runfw: org.eclipse.osgi;version=3.13.0
+-runfw: org.eclipse.osgi
 
 #-runtrace: true
 
 -runee: JavaSE-1.8
 -resolve.effective: resolve, active
+
+-runrequires: \
+	osgi.identity;filter:='(osgi.identity=org.apache.aries.jax.rs.itests)'
 
 -runsystemcapabilities: ${native_capability}
 -runproperties: \
@@ -44,23 +43,21 @@
 	osgi.console=, \
 	org.apache.felix.http.host=localhost,\
 	org.osgi.service.http.port=*
--runblacklist:\
-	osgi.identity;filter:='(osgi.identity=org.osgi.compendium)',\
-	osgi.identity;filter:='(osgi.identity=osgi.cmpn)'
+
 -runbundles: \
-	org.apache.aries.javax.jax.rs-api;version='[1.0.5,1.0.6)',\
-	org.apache.aries.jax.rs.itests-fragment;version='[1.0.5,1.0.6)',\
+	org.apache.aries.jax.rs.itests-fragment;version='[1.0.4,1.0.5)',\
 	org.apache.aries.jax.rs.itests;version='[1.0.5,1.0.6)',\
 	org.apache.aries.jax.rs.whiteboard;version='[1.0.5,1.0.6)',\
 	org.apache.felix.configadmin;version='[1.8.14,1.8.15)',\
-	org.apache.felix.eventadmin;version='[1.4.8,1.4.9)',\
-	org.apache.felix.http.jetty;version='[3.4.0,3.4.1)',\
 	org.apache.felix.http.servlet-api;version='[1.1.2,1.1.3)',\
-	org.apache.servicemix.specs.annotation-api-1.3;version='[1.3.0,1.3.1)',\
+	org.apache.geronimo.specs.geronimo-annotation_1.3_spec;version='[1.1.0,1.1.1)',\
+	org.apache.geronimo.specs.geronimo-jaxrs_2.1_spec;version='[1.1.0,1.1.1)',\
 	org.osgi.service.jaxrs;version='[1.0.0,1.0.1)',\
 	org.osgi.util.function;version='[1.1.0,1.1.1)',\
 	org.osgi.util.promise;version='[1.1.0,1.1.1)',\
 	osgi.enroute.hamcrest.wrapper;version='[1.3.0,1.3.1)',\
-	osgi.enroute.junit.wrapper;version='[4.12.0,4.12.1)'
+	osgi.enroute.junit.wrapper;version='[4.12.0,4.12.1)',\
+	org.apache.aries.spifly.dynamic.framework.extension;version='[1.2.1,1.2.2)',\
+	org.apache.felix.http.jetty;version='[4.0.8,4.0.9)'
 
 -include: -personal.bnd

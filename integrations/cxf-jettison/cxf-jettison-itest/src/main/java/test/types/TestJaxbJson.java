@@ -22,6 +22,9 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
+import org.osgi.annotation.bundle.Requirement;
+
+@Requirement(filter = "(osgi.jaxrs.name=cxf.jettison)", namespace = "osgi.service")
 public class TestJaxbJson {
 
     @GET

@@ -20,10 +20,4 @@
 
 Export-Package: org.apache.shiro.web.jaxrs;version=${shiro.version}
 
-Conditional-Package: org.apache.aries.component.dsl.*
-
--contract: *
-
-Bundle-Activator: org.apache.aries.jax.rs.shiro.authz.impl.ShiroAuthorizationActivator
-
-Provide-Capability: osgi.service;objectClass:List<String>="javax.ws.rs.core.Feature";osgi.jaxrs.name=aries.shiro.authz
+-conditionalpackage: org.apache.aries.component.dsl.*

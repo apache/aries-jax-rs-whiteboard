@@ -33,41 +33,52 @@ import org.apache.shiro.web.jaxrs.ExceptionMapper;
 import org.apache.shiro.web.jaxrs.ShiroAnnotationFilterFeature;
 import org.apache.shiro.web.jaxrs.ShiroFeature;
 import org.apache.shiro.web.jaxrs.SubjectPrincipalRequestFilter;
+import org.osgi.annotation.bundle.Capability;
+import org.osgi.namespace.service.ServiceNamespace;
+import org.osgi.service.jaxrs.whiteboard.annotations.RequireJaxrsWhiteboard;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
  * This type mirrors {@link ShiroFeature}, by registering an {@link ExceptionMapper},
  * {@link SubjectPrincipalRequestFilter} and {@link ShiroAnnotationFilterFeature}.
- * 
- * <p>We cannot use the {@link ShiroFeature} directly because several of the extension 
- * types it registers are also used to enable authentication, and it is not allowed to 
+ *
+ * <p>We cannot use the {@link ShiroFeature} directly because several of the extension
+ * types it registers are also used to enable authentication, and it is not allowed to
  * register the same extension twice. Also the ShiroFeature does not make correct use
  * of priorities when registering. This Feature therefore:
- * 
+ *
  * <ul>
  *   <li>Avoids duplicate registrations with extension types that are also used in authentication.</li>
  *   <li>Uses priorities to indicate that these are authorization extensions</li>
  * </ul>
  *
  */
+@Capability(
+    attribute = {
+        "objectClass:List<String>='javax.ws.rs.core.Feature'",
+        "osgi.jaxrs.name=aries.shiro.authz"
+    },
+    namespace = ServiceNamespace.SERVICE_NAMESPACE
+)
+@RequireJaxrsWhiteboard
 public class ShiroAuthorizationFeature implements Feature {
 
     private static final Logger _LOG = LoggerFactory.getLogger(
             ShiroAuthorizationFeature.class);
-    
+
     @Override
     public boolean configure(FeatureContext fc) {
 
         Configuration configuration = fc.getConfiguration();
-        
+
         if(_LOG.isInfoEnabled()) {
             @SuppressWarnings("unchecked")
             Map<String, Object> applicationProps = (Map<String, Object>) configuration.getProperty(JAX_RS_APPLICATION_SERVICE_PROPERTIES);
-            _LOG.info("Registering the Shiro Authorization feature with application {}", 
+            _LOG.info("Registering the Shiro Authorization feature with application {}",
                     applicationProps.getOrDefault(JAX_RS_NAME, "<No Name found in application configuration>"));
         }
-        
+
         Map<Class<?>, Integer> contracts = configuration.getContracts(ExceptionMapper.class);
         if(contracts.isEmpty()) {
             _LOG.debug("Registering the Shiro ExceptionMapper");
@@ -93,7 +104,7 @@ public class ShiroAuthorizationFeature implements Feature {
             // Update the priority if it's registered too low
             contracts.put(ContainerRequestFilter.class, AUTHORIZATION);
         }
-        
+
         _LOG.debug("Registering the Shiro ShiroAnnotationFilterFeature");
         fc.register(ShiroAnnotationFilterFeature.class, Priorities.AUTHORIZATION);
         return true;

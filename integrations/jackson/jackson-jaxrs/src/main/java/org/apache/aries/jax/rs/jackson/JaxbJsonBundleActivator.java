@@ -36,11 +36,13 @@ import javax.ws.rs.ext.MessageBodyWriter;
 
 import org.apache.aries.component.dsl.OSGi;
 import org.apache.aries.component.dsl.OSGiResult;
+import org.osgi.annotation.bundle.Header;
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.Constants;
 import org.osgi.service.jaxrs.whiteboard.JaxrsWhiteboardConstants;
 
+@Header(name = Constants.BUNDLE_ACTIVATOR, value = "${@class}")
 public class JaxbJsonBundleActivator implements BundleActivator {
 
     public static final String CONFIG_PID = "org.apache.aries.jax.rs.jackson";

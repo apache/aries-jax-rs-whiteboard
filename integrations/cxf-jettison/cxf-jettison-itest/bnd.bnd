@@ -18,7 +18,6 @@
 Bundle-Description: Integration Test bundle for the JSON-P Whiteboard support
 
 Test-Cases: \
-	${classes;CONCRETE;EXTENDS;junit.framework.TestCase},\
 	${classes;CONCRETE;ANNOTATED;org.junit.Test}
 
 Require-Capability: osgi.service;filter:="(objectClass=org.osgi.service.cm.ConfigurationAdmin)"

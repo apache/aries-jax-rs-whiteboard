@@ -21,13 +21,25 @@ import java.util.ArrayList;
 import java.util.Dictionary;
 import java.util.List;
 
+import org.osgi.annotation.bundle.Capability;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.PrototypeServiceFactory;
 import org.osgi.framework.ServiceRegistration;
+import org.osgi.namespace.service.ServiceNamespace;
+import org.osgi.service.jaxrs.whiteboard.annotations.RequireJaxrsWhiteboard;
 
 import com.fasterxml.jackson.jaxrs.cfg.Annotations;
 import com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider;
 
+@Capability(
+    attribute = {
+        "objectClass:List<String>='javax.ws.rs.ext.MessageBodyReader,javax.ws.rs.ext.MessageBodyWriter'",
+        "osgi.jaxrs.media.type=application/json",
+        "osgi.jaxrs.name=jackson"
+    },
+    namespace = ServiceNamespace.SERVICE_NAMESPACE
+)
+@RequireJaxrsWhiteboard
 public class JsonProviderPrototypeServiceFactory
     implements PrototypeServiceFactory<JacksonJsonProvider> {
 
@@ -57,7 +69,7 @@ public class JsonProviderPrototypeServiceFactory
         Dictionary<String, ?> properties) {
 
         List<Annotations> list = new ArrayList<>();
-        
+
         if(getBooleanProperty(properties, "jackson.annotations.enabled", true)) {
             list.add(Annotations.JACKSON);
         }
@@ -69,7 +81,7 @@ public class JsonProviderPrototypeServiceFactory
         JacksonJsonProvider jsonProvider = new JacksonJsonProvider(list.toArray(new Annotations[list.size()]));
 
         // Do we want to enable any SerializationFeature, DeserializationFeature or JaxRSFeature?
-        
+
         return jsonProvider;
     }
 

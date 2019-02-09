@@ -24,20 +24,31 @@ import java.util.Set;
 import javax.ws.rs.core.Feature;
 
 import org.apache.shiro.realm.Realm;
+import org.osgi.annotation.bundle.Capability;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.PrototypeServiceFactory;
 import org.osgi.framework.ServiceRegistration;
+import org.osgi.namespace.service.ServiceNamespace;
+import org.osgi.service.jaxrs.whiteboard.annotations.RequireJaxrsWhiteboard;
 
+@Capability(
+    attribute = {
+        "objectClass:List<String>='javax.ws.rs.core.Feature'",
+        "osgi.jaxrs.name=aries.shiro.authc"
+    },
+    namespace = ServiceNamespace.SERVICE_NAMESPACE
+)
+@RequireJaxrsWhiteboard
 public class ShiroAuthenticationFeatureProvider implements PrototypeServiceFactory<Feature> {
 
     private final List<Realm> realms;
-    
+
     private final Set<ShiroAuthenticationFeature> features = Collections.synchronizedSet(new HashSet<>());
-    
+
     public ShiroAuthenticationFeatureProvider(List<Realm> realms) {
         this.realms = realms;
     }
-    
+
     @Override
     public ShiroAuthenticationFeature getService(Bundle bundle, ServiceRegistration<Feature> registration) {
         ShiroAuthenticationFeature authenticationFeature = new ShiroAuthenticationFeature(realms);

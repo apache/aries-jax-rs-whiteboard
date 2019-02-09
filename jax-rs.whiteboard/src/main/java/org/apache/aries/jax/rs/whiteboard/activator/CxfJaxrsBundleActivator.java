@@ -35,6 +35,7 @@ import org.apache.aries.component.dsl.OSGi;
 import org.apache.aries.component.dsl.OSGiResult;
 import org.apache.cxf.jaxrs.impl.RuntimeDelegateImpl;
 import org.apache.cxf.jaxrs.sse.client.SseEventSourceBuilderImpl;
+import org.osgi.annotation.bundle.Header;
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.Constants;
@@ -61,6 +62,7 @@ import static org.apache.aries.component.dsl.OSGi.serviceReferences;
 import static org.osgi.service.http.runtime.HttpServiceRuntimeConstants.HTTP_SERVICE_ENDPOINT;
 import static org.osgi.service.http.whiteboard.HttpWhiteboardConstants.HTTP_WHITEBOARD_TARGET;
 
+@Header(name = Constants.BUNDLE_ACTIVATOR, value = "${@class}")
 public class CxfJaxrsBundleActivator implements BundleActivator {
 
     private static final Logger _log = LoggerFactory.getLogger(
