@@ -732,7 +732,7 @@ public class Whiteboard {
     private OSGi<ServiceRegistration<Application>>
         registerDefaultApplication() {
 
-        return register(
+        return OSGi.register(
             Application.class,
             () -> new DefaultApplication() {
 
@@ -1277,7 +1277,7 @@ public class Whiteboard {
                 return contextProperties;
             };
 
-            program = register(
+            program = OSGi.register(
                 ServletContextHelper.class,
                 () -> new ServletContextHelper() {}, contextPropertiesSup);
         }
