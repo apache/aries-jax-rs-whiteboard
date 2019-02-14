@@ -151,10 +151,11 @@ public class Whiteboard {
     private final Map<String, ?> _configurationMap;
     private volatile BundleContext _bundleContext;
     private volatile ServiceRegistrationChangeCounter _counter;
-    private volatile ServiceReference<?> _runtimeReference;
+    private volatile ServiceReference<JaxrsServiceRuntime> _runtimeReference;
     private final OSGi<Void> _program;
     private final List<Object> _endpoints;
-    private volatile ServiceRegistration<?> _runtimeRegistration;
+    private volatile ServiceRegistration<JaxrsServiceRuntime>
+        _runtimeRegistration;
     private OSGiResult _osgiResult;
 
     private Whiteboard(Dictionary<String, ?> configuration) {
@@ -203,6 +204,10 @@ public class Whiteboard {
             updateProperty(
                 _runtimeRegistration, JAX_RS_SERVICE_ENDPOINT, _endpoints);
         }
+    }
+
+    public ServiceReference<JaxrsServiceRuntime> getServiceReference() {
+        return _runtimeReference;
     }
 
     private OSGi<?> applicationExtensions(
@@ -773,8 +778,8 @@ public class Whiteboard {
             });
     }
 
-    private ServiceRegistration<?> registerJaxRSServiceRuntime(
-        Map<String, Object> properties) {
+    private ServiceRegistration<JaxrsServiceRuntime>
+        registerJaxRSServiceRuntime(Map<String, Object> properties) {
 
         properties.putIfAbsent(Constants.SERVICE_RANKING, Integer.MIN_VALUE);
 

@@ -20,6 +20,7 @@ package test;
 import static javax.ws.rs.core.MediaType.TEXT_PLAIN_TYPE;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.osgi.service.http.whiteboard.HttpWhiteboardConstants.HTTP_WHITEBOARD_CONTEXT_NAME;
 import static org.osgi.service.http.whiteboard.HttpWhiteboardConstants.HTTP_WHITEBOARD_CONTEXT_PATH;
@@ -1915,6 +1916,13 @@ public class JaxrsTest extends TestHelper {
             "service.changecount");
 
         assertTrue(changeCount < newCount);
+    }
+
+    @Test
+    public void testServiceEndpointInRuntimeDTO() {
+        RuntimeDTO runtimeDTO = _runtime.getRuntimeDTO();
+
+        assertNotNull(runtimeDTO.serviceDTO);
     }
 
     @Test

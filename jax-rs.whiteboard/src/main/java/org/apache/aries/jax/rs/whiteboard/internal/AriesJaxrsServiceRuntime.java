@@ -46,9 +46,13 @@ import org.apache.aries.jax.rs.whiteboard.internal.cxf.CxfJaxrsServiceRegistrato
 import org.apache.aries.jax.rs.whiteboard.internal.utils.PropertyHolder;
 import org.apache.aries.jax.rs.whiteboard.internal.introspection.ClassIntrospector;
 import org.apache.aries.component.dsl.CachingServiceReference;
+import org.apache.aries.jax.rs.whiteboard.internal.utils.Utils;
 import org.apache.cxf.Bus;
 import org.apache.cxf.jaxrs.utils.AnnotationUtils;
 import org.apache.cxf.jaxrs.utils.JAXRSUtils;
+import org.osgi.framework.Bundle;
+import org.osgi.framework.ServiceReference;
+import org.osgi.framework.dto.ServiceReferenceDTO;
 import org.osgi.service.jaxrs.runtime.JaxrsServiceRuntime;
 import org.osgi.service.jaxrs.runtime.dto.ApplicationDTO;
 import org.osgi.service.jaxrs.runtime.dto.BaseDTO;
@@ -414,6 +418,21 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
             ).toArray(
                 FailedExtensionDTO[]::new
             );
+
+        ServiceReference<JaxrsServiceRuntime> serviceReference =
+            _whiteboard.getServiceReference();
+
+        ServiceReferenceDTO serviceDTO = new ServiceReferenceDTO();
+        serviceDTO.bundle = serviceReference.getBundle().getBundleId();
+        serviceDTO.id = (long)serviceReference.getProperty("service.id");
+        serviceDTO.usingBundles = Arrays.stream(
+            serviceReference.getUsingBundles()
+        ).mapToLong(
+            Bundle::getBundleId
+        ).toArray();
+        serviceDTO.properties = Utils.getProperties(serviceReference);
+
+        runtimeDTO.serviceDTO = serviceDTO;
 
         return runtimeDTO;
     }

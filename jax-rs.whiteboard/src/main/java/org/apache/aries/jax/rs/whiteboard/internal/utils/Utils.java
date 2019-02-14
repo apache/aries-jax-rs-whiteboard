@@ -120,6 +120,17 @@ public class Utils {
         return properties;
     }
 
+    public static Map<String, Object> getProperties(ServiceReference<?> sref) {
+        String[] propertyKeys = sref.getPropertyKeys();
+        Map<String, Object> properties = new HashMap<>(propertyKeys.length);
+
+        for (String key : propertyKeys) {
+            properties.put(key, sref.getProperty(key));
+        }
+
+        return properties;
+    }
+
     public static <T> ResourceProvider getResourceProvider(
         ServiceTuple<T> serviceTuple) {
 
