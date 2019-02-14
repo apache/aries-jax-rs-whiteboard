@@ -158,6 +158,10 @@ public class CxfJaxrsServiceRegistrator {
         ArrayList<Class<?>> classes = new ArrayList<>();
 
         for (ClassResourceInfo resourceInfo : classResourceInfo) {
+            if (resourceInfo == null) {
+                continue;
+            }
+
             ResourceProvider resourceProvider =
                 resourceInfo.getResourceProvider();
 
