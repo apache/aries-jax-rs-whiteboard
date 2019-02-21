@@ -24,7 +24,7 @@
     <groupId>org.apache.aries.jax.rs</groupId>
     <artifactId>integration</artifactId>
     <name>Apache Aries JAX-RS Integration Projects Reactor</name>
-    <version>1.0.2-SNAPSHOT</version>
+    <version>1.0.2</version>
     <packaging>pom</packaging>
 
     <parent>
@@ -43,7 +43,7 @@
         <connection>scm:git:http://gitbox.apache.org/repos/asf/aries-jax-rs-whiteboard.git</connection>
         <developerConnection>scm:git:https://gitbox.apache.org/repos/asf/aries-jax-rs-whiteboard.git</developerConnection>
         <url>https://gitbox.apache.org/repos/asf?p=aries-jax-rs-whiteboard.git</url>
-        <tag>HEAD</tag>
+        <tag>org.apache.aries.jax.rs.integration-1.0.2</tag>
     </scm>
 
     <modules>
