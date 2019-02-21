@@ -22,6 +22,7 @@ import java.util.Dictionary;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.WebTarget;
@@ -91,6 +92,8 @@ public class CxfJaxrsBundleActivator implements BundleActivator {
                         return properties;
                     })
             )
+        ).filter(
+            c -> !Objects.equals(c.get("enabled"), "false")
         ).
         effects(
             debugTracking(_log, () -> "whiteboard configuration")

@@ -28,6 +28,7 @@ import java.util.Dictionary;
 import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Map;
+import java.util.Objects;
 
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.ext.MessageBodyReader;
@@ -45,12 +46,13 @@ public class JaxbJsonBundleActivator implements BundleActivator {
     public static final String CONFIG_PID = "org.apache.aries.jax.rs.jackson";
 
     public static OSGi<Dictionary<String, ?>> CONFIGURATION =
-        coalesce(
-            all(
-                configurations(CONFIG_PID),
-                configuration(CONFIG_PID)
-            ),
-            just(Hashtable::new)
+        all(
+            configurations(CONFIG_PID),
+            coalesce(
+                configuration(CONFIG_PID),
+                just(Hashtable::new))
+        ).filter(
+            c -> !Objects.equals(c.get("enabled"), "false")
         );
 
     @Override
