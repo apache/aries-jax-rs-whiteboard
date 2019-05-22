@@ -159,6 +159,21 @@ public class ApplicationExtensionRegistry implements AutoCloseable {
         }
     }
 
+    public void unregisterApplication(String applicationName) {
+        synchronized (ApplicationExtensionRegistry.this) {
+            _applicationRegisteredExtensions.remove(applicationName);
+
+            Collection<FilteredPublisher> publishers =
+                _applicationPublishers.remove(applicationName);
+
+            if (publishers != null) {
+                for (FilteredPublisher publisher : new HashSet<>(publishers)) {
+                    publisher.close();
+                }
+            }
+        }
+    }
+
     private final HashMap
         <String, Collection<FilteredPublisher>>
             _applicationPublishers;

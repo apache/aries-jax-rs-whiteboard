@@ -73,7 +73,6 @@ import java.util.stream.Stream;
 
 import static java.lang.String.format;
 import static java.util.stream.Collectors.toMap;
-import static org.apache.aries.component.dsl.OSGi.effect;
 import static org.apache.aries.jax.rs.whiteboard.internal.AriesJaxrsServiceRuntime.getServiceName;
 import static org.apache.aries.jax.rs.whiteboard.internal.utils.LogUtils.ifDebugEnabled;
 import static org.apache.aries.jax.rs.whiteboard.internal.utils.LogUtils.ifErrorEnabled;
@@ -233,8 +232,12 @@ public class Whiteboard {
             service(registratorReference).flatMap(registrator ->
             waitForExtensionDependencies(
                     extensionReference, registratorReference,
-                    _runtime::addDependentExtension,
-                    _runtime::removeDependentExtension).
+                    er ->
+                        _runtime.addDependentExtensionInApplication(
+                            registratorReference, er),
+                    er ->
+                        _runtime.removeDependentExtensionFromApplication(
+                            registratorReference, er)).
                 then(
             safeRegisterExtension(
                 extensionReference, registratorReference::getProperty,
@@ -528,7 +531,10 @@ public class Whiteboard {
                         nothing()
                     )
                 ).
-                flatMap(at ->
+                effects(
+                    __ -> {},
+                    this::clearApplicationState
+            ).flatMap(at ->
             deployApplication(at, application.getContextReference()).foreach(
                 registrator ->
                     _runtime.setApplicationForPath(
@@ -598,6 +604,15 @@ public class Whiteboard {
         }
 
         return bus;
+    }
+
+    private void clearApplicationState(ServiceTuple<Application> tuple) {
+        CachingServiceReference<?>
+            cachingServiceReference = tuple.getCachingServiceReference();
+
+        _runtime.unregisterApplicationExtensions(cachingServiceReference);
+        _applicationExtensionRegistry.unregisterApplication(
+                getServiceName(cachingServiceReference::getProperty));
     }
 
     private OSGi<CachingServiceReference<CxfJaxrsServiceRegistrator>>

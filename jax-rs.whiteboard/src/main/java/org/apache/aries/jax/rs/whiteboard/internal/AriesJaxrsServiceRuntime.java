@@ -206,10 +206,13 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
         _dependentApplications.add(applicationReference);
     }
 
-    public void addDependentExtension(
+    public void addDependentExtensionInApplication(
+        CachingServiceReference applicationReference,
         CachingServiceReference<?> cachingServiceReference) {
 
-        _dependentExtensions.add(cachingServiceReference);
+        _dependentExtensions.compute(
+            getServiceName(applicationReference::getProperty),
+            merger(cachingServiceReference));
     }
 
     public void addDependentService(
@@ -450,6 +453,13 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
         }
     }
 
+    public void unregisterApplicationExtensions(
+        CachingServiceReference<?> applicationReference) {
+
+        _dependentExtensions.remove(
+            getServiceName(applicationReference::getProperty));
+    }
+
     private ConcurrentHashMap<String, CachingServiceReference<?>>
         _servicesForName = new ConcurrentHashMap<>();
     private Whiteboard _whiteboard;
@@ -573,10 +583,13 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
         _dependentApplications.remove(applicationReference);
     }
 
-    public void removeDependentExtension(
+    public void removeDependentExtensionFromApplication(
+        CachingServiceReference applicationReference,
         CachingServiceReference<?> cachingServiceReference) {
 
-        _dependentExtensions.remove(cachingServiceReference);
+        _dependentExtensions.compute(
+            getServiceName(applicationReference::getProperty),
+            remover(cachingServiceReference));
     }
 
     public void removeDependentService(
@@ -759,8 +772,8 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
         _defaultApplicationProperties;
     private Set<CachingServiceReference<Application>> _dependentApplications =
         ConcurrentHashMap.newKeySet();
-    private Set<CachingServiceReference<?>> _dependentExtensions =
-        ConcurrentHashMap.newKeySet();
+    private ConcurrentHashMap<String, Collection<CachingServiceReference<?>>>
+        _dependentExtensions = new ConcurrentHashMap<>();
     private Set<CachingServiceReference<?>> _dependentServices =
         ConcurrentHashMap.newKeySet();
     private Collection<CachingServiceReference<Application>>
@@ -1087,7 +1100,8 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
     }
 
     private Stream<FailedExtensionDTO> dependentExtensionsStreamDTO() {
-        return _dependentExtensions.stream().map(
+        return _dependentExtensions.values().
+            stream().flatMap(Collection::stream).map(
             sr -> buildFailedExtensionDTO(
                 DTOConstants.FAILURE_REASON_REQUIRED_EXTENSIONS_UNAVAILABLE,
                 sr));
