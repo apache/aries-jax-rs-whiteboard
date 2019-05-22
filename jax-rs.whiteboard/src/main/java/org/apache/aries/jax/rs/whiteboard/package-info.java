@@ -36,27 +36,47 @@
 )
 @Capability(
     attribute = "objectClass:List<String>='javax.ws.rs.client.ClientBuilder'",
-    namespace = ServiceNamespace.SERVICE_NAMESPACE
+    namespace = ServiceNamespace.SERVICE_NAMESPACE,
+    uses = {
+        javax.ws.rs.client.ClientBuilder.class,
+        org.osgi.service.jaxrs.client.SseEventSourceFactory.class
+    }
 )
 @Capability(
     attribute = "objectClass:List<String>='org.osgi.service.jaxrs.client.SseEventSourceFactory'",
-    namespace = ServiceNamespace.SERVICE_NAMESPACE
+    namespace = ServiceNamespace.SERVICE_NAMESPACE,
+    uses = {
+        org.osgi.service.jaxrs.client.SseEventSourceFactory.class
+    }
 )
 @Capability(
     attribute = "objectClass:List<String>='org.osgi.service.jaxrs.runtime.JaxrsServiceRuntime'",
-    namespace = ServiceNamespace.SERVICE_NAMESPACE
+    namespace = ServiceNamespace.SERVICE_NAMESPACE,
+    uses = {
+        org.osgi.service.jaxrs.runtime.JaxrsServiceRuntime.class,
+        org.osgi.service.jaxrs.runtime.dto.BaseDTO.class
+    }
 )
 @Capability(
     name = "javax.ws.rs.client.ClientBuilder",
-    namespace = "osgi.serviceloader"
+    namespace = "osgi.serviceloader",
+    attribute = {
+        "service.scope=prototype"
+    }
 )
 @Capability(
     name = "javax.ws.rs.ext.RuntimeDelegate",
-    namespace = "osgi.serviceloader"
+    namespace = "osgi.serviceloader",
+    attribute = {
+        "service.scope=prototype"
+    }
 )
 @Capability(
     name = "javax.ws.rs.sse.SseEventSource.Builder",
-    namespace = "osgi.serviceloader"
+    namespace = "osgi.serviceloader",
+    attribute = {
+        "service.scope=prototype"
+    }
 )
 @Export
 @Version("1.0.0")
