@@ -127,6 +127,8 @@ public class CxfJaxrsBundleActivator implements BundleActivator {
         if (_log.isDebugEnabled()) {
             _log.debug("Stopped whiteboard factory");
         }
+
+        RuntimeDelegate.setInstance(null);
     }
     private OSGiResult _defaultOSGiResult;
 
