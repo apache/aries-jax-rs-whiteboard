@@ -680,6 +680,52 @@ public class JaxrsTest extends TestHelper {
     }
 
     @Test
+    public void testApplicationWithDependentExtensions() {
+        assertEquals(0, getRuntimeDTO().applicationDTOs.length);
+        assertEquals(0, getRuntimeDTO().failedApplicationDTOs.length);
+
+        registerExtension(
+            "Filter1",
+            JAX_RS_APPLICATION_SELECT,
+            String.format("(%s=%s)", "extension.test", "true"),
+            JAX_RS_EXTENSION_SELECT,
+            new String[]{
+                String.format("(%s=%s)", JAX_RS_NAME, "Filter2"),
+                String.format("(%s=%s)", JAX_RS_NAME, "Filter3")
+            });
+
+        assertEquals(1, getRuntimeDTO().failedExtensionDTOs.length);
+
+        registerApplication(new TestApplication(), "extension.test", "true");
+
+        assertEquals(1, getRuntimeDTO().failedExtensionDTOs.length);
+
+        registerExtension(
+            "Filter2", JAX_RS_APPLICATION_SELECT, "(extension.test=true)");
+
+        assertEquals(1, getRuntimeDTO().failedExtensionDTOs.length);
+
+        registerExtension(
+            "Filter3",
+            JAX_RS_APPLICATION_SELECT,
+            "(&(extension.test=true)(!(excluded=true)))");
+
+        assertEquals(0, getRuntimeDTO().failedExtensionDTOs.length);
+
+        ServiceRegistration<Application> applicationServiceRegistration =
+            registerApplication(
+                new TestApplication(),
+                JAX_RS_APPLICATION_BASE, "/test-application2",
+                "extension.test", "true", "excluded", "true");
+
+        assertEquals(1, getRuntimeDTO().failedExtensionDTOs.length);
+
+        applicationServiceRegistration.unregister();
+
+        assertEquals(0, getRuntimeDTO().failedExtensionDTOs.length);
+    }
+
+    @Test
     public void testApplicationWithError() throws InterruptedException {
         RuntimeDTO runtimeDTO = getRuntimeDTO();
 
