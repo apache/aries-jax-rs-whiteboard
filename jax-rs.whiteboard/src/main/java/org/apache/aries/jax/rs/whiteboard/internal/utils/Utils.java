@@ -142,7 +142,9 @@ public class Utils {
 
         if (scope.equals("prototype")) {
             return new PrototypeServiceReferenceResourceProvider(
-                cachingServiceReference, serviceTuple.getServiceObjects());
+                cachingServiceReference,
+                serviceTuple.getService().getClass(),
+                serviceTuple.getServiceObjects());
         }
         else {
             return new SingletonServiceReferenceResourceProvider(

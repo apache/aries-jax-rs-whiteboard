@@ -28,16 +28,29 @@ public class PrototypeServiceReferenceResourceProvider
 
     public PrototypeServiceReferenceResourceProvider(
         CachingServiceReference<?> serviceReference,
-        ServiceObjects<?> serviceObjects) {
+        Class<?> serviceClass, ServiceObjects<?> serviceObjects) {
 
         _serviceReference = serviceReference;
+        _serviceClass = serviceClass;
         _serviceObjects = serviceObjects;
+
+        _messageKey = _MESSAGE_INSTANCE_KEY_PREFIX + _serviceClass;
     }
 
     @Override
     public Object getInstance(Message m) {
+        Object object = m.get(_messageKey);
+
+        if (object != null) {
+            return object;
+        }
+
         if (isAvailable()) {
-            return _serviceObjects.getService();
+            Object service = _serviceObjects.getService();
+
+            m.put(_messageKey, service);
+
+            return service;
         }
         else {
             return null;
@@ -48,22 +61,14 @@ public class PrototypeServiceReferenceResourceProvider
     @SuppressWarnings({ "unchecked", "rawtypes" })
     public void releaseInstance(Message m, Object o) {
         ((ServiceObjects)_serviceObjects).ungetService(o);
+
+        m.remove(_messageKey);
     }
 
     @SuppressWarnings({ "rawtypes", "unchecked" })
     @Override
     public Class<?> getResourceClass() {
-        if (!isAvailable()) {
-            return null;
-        }
-        Object service = _serviceObjects.getService();
-
-        try {
-            return service.getClass();
-        }
-        finally {
-            ((ServiceObjects)_serviceObjects).ungetService(service);
-        }
+        return _serviceClass;
     }
 
     @Override
@@ -79,6 +84,12 @@ public class PrototypeServiceReferenceResourceProvider
         return Utils.isAvailable(_serviceObjects.getServiceReference());
     }
 
+    private static final String _MESSAGE_INSTANCE_KEY_PREFIX =
+        "org.apache.aries.jax.rs.whiteboard.internal.cxf." +
+            "PrototypeServiceReferenceResourceProvider.";
+
+    private final String _messageKey;
+    private Class<?> _serviceClass;
     private final ServiceObjects<?> _serviceObjects;
     private CachingServiceReference<?> _serviceReference;
 

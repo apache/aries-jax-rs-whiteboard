@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
 
 import javax.ws.rs.RuntimeType;
 import javax.ws.rs.container.DynamicFeature;
@@ -44,10 +45,13 @@ import org.apache.aries.component.dsl.CachingServiceReference;
 import org.apache.aries.jax.rs.whiteboard.internal.utils.ServiceTuple;
 import org.apache.cxf.Bus;
 import org.apache.cxf.common.util.ClassHelper;
+import org.apache.cxf.endpoint.Endpoint;
 import org.apache.cxf.endpoint.Server;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.JAXRSServiceFactoryBean;
+import org.apache.cxf.jaxrs.ext.ResourceContextProvider;
 import org.apache.cxf.jaxrs.impl.ConfigurableImpl;
+import org.apache.cxf.jaxrs.impl.ResourceContextImpl;
 import org.apache.cxf.jaxrs.lifecycle.ResourceProvider;
 import org.apache.cxf.jaxrs.model.ApplicationInfo;
 import org.apache.cxf.jaxrs.model.ClassResourceInfo;
@@ -325,8 +329,11 @@ public class CxfJaxrsServiceRegistrator {
             return;
         }
 
+        ComparableResourceComparator comparableResourceComparator =
+            new ComparableResourceComparator();
+
         _jaxRsServerFactoryBean.setResourceComparator(
-            new ComparableResourceComparator());
+            comparableResourceComparator);
 
         ProviderInfoClassComparator providerInfoClassComparator =
             new ProviderInfoClassComparator(Object.class);
@@ -338,14 +345,46 @@ public class CxfJaxrsServiceRegistrator {
 
         _server = _jaxRsServerFactoryBean.create();
 
-        ApplicationInfo applicationInfo = (ApplicationInfo)
-            _server.getEndpoint().get(Application.class.getName());
+        Endpoint endpoint = _server.getEndpoint();
+
+        ApplicationInfo applicationInfo = (ApplicationInfo)endpoint.get(
+            Application.class.getName());
 
         applicationInfo.setOverridingProps(new HashMap<String, Object>() {{
             put("osgi.jaxrs.application.serviceProperties", _properties);
         }});
 
+        endpoint.put(
+            "org.apache.cxf.jaxrs.resource.context.provider",
+            createResourceContextProvider(
+                _jaxRsServerFactoryBean.getServiceFactory()));
+
         _server.start();
+    }
+
+    private ResourceContextProvider createResourceContextProvider(
+        JAXRSServiceFactoryBean jaxrsServiceFactoryBean) {
+
+        ComparableResourceComparator comparableResourceComparator =
+            new ComparableResourceComparator();
+
+        List<ClassResourceInfo> classResourceInfos =
+            jaxrsServiceFactoryBean.getClassResourceInfo().stream().sorted(
+                (cri1, cri2) -> comparableResourceComparator.compare(
+                    cri1, cri2, null)
+            ).collect(
+                Collectors.toList()
+            );
+
+        HashMap<Class, ResourceProvider> map = new HashMap<>();
+
+        for (ClassResourceInfo classResourceInfo : classResourceInfos) {
+            map.put(
+                classResourceInfo.getResourceClass(),
+                classResourceInfo.getResourceProvider());
+        }
+
+        return map::get;
     }
 
     private final ServiceTuple<Application> _applicationTuple;
