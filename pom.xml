@@ -52,6 +52,7 @@
         <module>jax-rs.itests-fragment</module>
         <module>jax-rs.itests</module>
         <module>jax-rs.features</module>
+        <module>org.apache.aries.jax.rs.cxf.repackage</module>
     </modules>
 
     <dependencyManagement>
