@@ -52,13 +52,7 @@ Import-Package:\
     *
 
 -includeresource:\
-    lib/component-dsl.jar=org.apache.aries.component-dsl.component-dsl-*.jar;lib:=true,\
-    lib/cxf-core.jar=cxf-core-*.jar;lib:=true,\
-    lib/cxf-rt-frontend-jaxrs.jar=cxf-rt-frontend-jaxrs-*.jar;lib:=true,\
-    lib/cxf-rt-rs-client.jar=cxf-rt-rs-client-*.jar;lib:=true,\
-    lib/cxf-rt-rs-sse.jar=cxf-rt-rs-sse-*.jar;lib:=true,\
-    lib/cxf-rt-transports-http.jar=cxf-rt-transports-http-*.jar;lib:=true,\
-    lib/cxf-tools-common.jar=cxf-tools-common-*.jar;lib:=true,\
+    @org.apache.aries.jax.rs.cxf.repackage-*.jar,\
     lib/stax2-api.jar=stax2-api-*.jar;lib:=true,\
     lib/woodstox-core.jar=woodstox-core-*.jar;lib:=true,\
     lib/xmlschema-core.jar=xmlschema-core-*.jar;lib:=true
