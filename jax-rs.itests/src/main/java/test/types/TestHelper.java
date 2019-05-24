@@ -53,6 +53,7 @@ import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 
 public class TestHelper {
 
@@ -239,6 +240,45 @@ public class TestHelper {
 
         ServiceRegistration<Object> serviceRegistration =
             bundleContext.registerService(Object.class, instance, properties);
+
+        _registrations.add(serviceRegistration);
+
+        return serviceRegistration;
+    }
+
+    protected ServiceRegistration<?> registerAddonPrototype(
+        Supplier<?> supplier, Object... keyValues) {
+
+        Dictionary<String, Object> properties = new Hashtable<>();
+
+        properties.put(JAX_RS_RESOURCE, "true");
+
+        for (int i = 0; i < keyValues.length; i = i + 2) {
+            properties.put(keyValues[i].toString(), keyValues[i + 1]);
+        }
+
+        PrototypeServiceFactory<Object> prototypeServiceFactory =
+            new PrototypeServiceFactory<Object>() {
+                @Override
+                public Object getService(
+                    Bundle bundle,
+                    ServiceRegistration<Object> registration) {
+
+                    return supplier.get();
+                }
+
+                @Override
+                public void ungetService(
+                    Bundle bundle, ServiceRegistration<Object> registration,
+                    Object service) {
+
+                }
+            };
+
+        ServiceRegistration<?> serviceRegistration =
+            bundleContext.registerService(
+                Object.class, (ServiceFactory<?>) prototypeServiceFactory,
+                properties);
 
         _registrations.add(serviceRegistration);
 

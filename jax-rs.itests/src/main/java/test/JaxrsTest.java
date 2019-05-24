@@ -75,6 +75,8 @@ import test.types.ConfigurationAwareResource;
 import test.types.CxfExtensionTestAddon;
 import test.types.ExtensionA;
 import test.types.ExtensionB;
+import test.types.PerRequestTestFilter;
+import test.types.PerRequestTestResource;
 import test.types.SSEResource;
 import test.types.TestAddon;
 import test.types.TestAddonConflict;
@@ -96,6 +98,7 @@ import javax.ws.rs.HttpMethod;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.InvocationCallback;
 import javax.ws.rs.client.WebTarget;
+import javax.ws.rs.container.ContainerRequestFilter;
 import javax.ws.rs.container.ContainerResponseFilter;
 import javax.ws.rs.core.Application;
 import javax.ws.rs.core.Feature;
@@ -1906,6 +1909,34 @@ public class JaxrsTest extends TestHelper {
 
         assertEquals(0, getRuntimeDTO().applicationDTOs.length);
         assertEquals(0, getRuntimeDTO().failedApplicationDTOs.length);
+    }
+
+    @Test
+    public void testPerRequestLifecycleAddon() {
+        WebTarget webTarget = createDefaultTarget().path("state");
+
+        assertEquals(0, getRuntimeDTO().applicationDTOs.length);
+        assertEquals(0, getRuntimeDTO().failedApplicationDTOs.length);
+
+        ServiceRegistration<?> serviceRegistration = registerAddon(
+            new PerRequestTestResource());
+
+        assertEquals("original", webTarget.request().get(String.class));
+
+        registerExtension(
+            ContainerRequestFilter.class,
+            new PerRequestTestFilter(), "perrequestfilter");
+
+        assertEquals("original-changed", webTarget.request().get(String.class));
+        assertEquals(
+            "original-changed-changed", webTarget.request().get(String.class));
+
+        serviceRegistration.unregister();
+
+        registerAddonPrototype(PerRequestTestResource::new);
+
+        assertEquals("original-changed", webTarget.request().get(String.class));
+        assertEquals("original-changed", webTarget.request().get(String.class));
     }
 
     @Test
