@@ -45,6 +45,7 @@ Import-Package:\
     !org.osgi.service.blueprint.*,\
     !org.osgi.service.http,\
     !org.relaxng.datatype.*,\
+    !org.slf4j.impl.*,\
     !org.slf4j.spi.*,\
     !org.springframework.*,\
     !sun.misc,\
