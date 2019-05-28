@@ -21,7 +21,7 @@
     <parent>
         <groupId>org.apache.aries.jax.rs</groupId>
         <artifactId>org.apache.aries.jax.rs</artifactId>
-        <version>1.0.5</version>
+        <version>1.0.6-SNAPSHOT</version>
         <relativePath>..</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
@@ -35,7 +35,7 @@
      released independently) can refer to it consistently. This artifact is not
      released anyway so the version never needs to change.
      -->
-    <version>1.0.5</version>
+    <version>1.0.6-SNAPSHOT</version>
 
     <build>
         <plugins>
