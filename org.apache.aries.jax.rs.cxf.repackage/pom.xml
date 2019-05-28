@@ -3,7 +3,7 @@
     <parent>
       <groupId>org.apache.aries.jax.rs</groupId>
       <artifactId>org.apache.aries.jax.rs</artifactId>
-      <version>1.0.5-SNAPSHOT</version>
+      <version>1.0.5</version>
     </parent>
   
     <groupId>org.apache.aries.jax.rs.cxf.repackage</groupId>
@@ -89,14 +89,13 @@
                         </goals>
                         <configuration>
                             <target>
-                                <concat destfile="${project.build.outputDirectory}/META-INF/cxf/bus-extensions.txt"
-                                        fixlastline="true">
+                                <concat destfile="${project.build.outputDirectory}/META-INF/cxf/bus-extensions.txt" fixlastline="true">
                                     <fileset dir="${project.build.directory}/cxf-bus">
-                                        <include name="**/bus-extensions.txt"></include>
+                                        <include name="**/bus-extensions.txt" />
                                     </fileset>
                                     <filterchain>
-                                        <tokenfilter> <trim/> </tokenfilter>
-                                        <tokenfilter> <ignoreblank/> </tokenfilter>
+                                        <tokenfilter> <trim /> </tokenfilter>
+                                        <tokenfilter> <ignoreblank /> </tokenfilter>
                                     </filterchain>
                                 </concat>
                             </target>
