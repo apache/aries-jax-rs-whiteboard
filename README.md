@@ -1,5 +1,8 @@
 ## JAX-RS Whiteboard
 
+[![Build Status](https://builds.apache.org/buildStatus/icon?job=Aries-component-dsl-master)](https://builds.apache.org/job/Aries-JAX-RS-Whiteboard)
+[![Maven Central](https://img.shields.io/maven-central/v/org.apache.aries.jax.rs/org.apache.aries.jax.rs.whiteboard.svg?label=Maven%20Central)](https://search.maven.org/search?q=g:%22org.apache.aries.jax.rs%22%20AND%20a:%22org.apache.aries.jax.rs.whiteboard%22)
+
 Aries JAX-RS Whiteboard is the reference implementation of the [OSGi JAX-RS Services Whiteboard 1.0](https://osgi.org/specification/osgi.cmpn/7.0.0/service.jaxrs.html).
 
 ## Integrations
@@ -35,4 +38,4 @@ java -jar jax-rs.example-run/example.jar
   distributed under the License is distributed on an "AS IS" BASIS,
   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
   See the License for the specific language governing permissions and
-  limitations under the License. 
+  limitations under the License.
