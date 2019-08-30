@@ -51,7 +51,6 @@ import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.JAXRSServiceFactoryBean;
 import org.apache.cxf.jaxrs.ext.ResourceContextProvider;
 import org.apache.cxf.jaxrs.impl.ConfigurableImpl;
-import org.apache.cxf.jaxrs.impl.ResourceContextImpl;
 import org.apache.cxf.jaxrs.lifecycle.ResourceProvider;
 import org.apache.cxf.jaxrs.model.ApplicationInfo;
 import org.apache.cxf.jaxrs.model.ClassResourceInfo;
@@ -75,16 +74,9 @@ public class CxfJaxrsServiceRegistrator {
             ServiceTuple::getCachingServiceReference);
 
         _providers = new TreeSet<>(comparing);
-
-        rewire();
     }
 
     public synchronized void add(ResourceProvider resourceProvider) {
-
-        if (_closed) {
-            return;
-        }
-
         _services.add(resourceProvider);
 
         try {
@@ -98,10 +90,6 @@ public class CxfJaxrsServiceRegistrator {
     }
 
     public synchronized void addProvider(ServiceTuple<?> tuple) {
-        if (_closed) {
-            return;
-        }
-
         _providers.add(tuple);
 
         try {
@@ -115,12 +103,18 @@ public class CxfJaxrsServiceRegistrator {
 
     }
 
+    public void enable() {
+        _enabled = true;
+
+        rewire();
+    }
+
     public void close() {
-        if (_closed) {
+        if (!_enabled) {
             return;
         }
 
-        _closed = true;
+        _enabled = false;
 
         if (_server != null) {
             _server.destroy();
@@ -181,28 +175,23 @@ public class CxfJaxrsServiceRegistrator {
     }
 
     public synchronized void remove(ResourceProvider resourceProvider) {
-
-        if (_closed) {
-            return;
-        }
-
         _services.remove(resourceProvider);
 
         rewire();
     }
 
     public synchronized void removeProvider(ServiceTuple<?> tuple) {
-        if (_closed) {
-            return;
-        }
-
         _providers.remove(tuple);
 
         rewire();
     }
 
     @SuppressWarnings("serial")
-    protected synchronized void rewire() {
+    public synchronized void rewire() {
+        if (!_enabled) {
+            return;
+        }
+
         if (!_applicationTuple.isAvailable()) {
             _applicationTuple.dispose();
 
@@ -391,7 +380,7 @@ public class CxfJaxrsServiceRegistrator {
     private final Bus _bus;
     private final Collection<ServiceTuple<?>> _providers;
     private final Collection<ResourceProvider> _services = new ArrayList<>();
-    private volatile boolean _closed = false;
+    private volatile boolean _enabled = false;
     private JAXRSServerFactoryBean _jaxRsServerFactoryBean;
     private Map<String, Object> _properties;
     private Server _server;
