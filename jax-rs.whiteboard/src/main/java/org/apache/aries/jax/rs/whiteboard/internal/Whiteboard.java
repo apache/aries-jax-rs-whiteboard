@@ -493,11 +493,11 @@ public class Whiteboard {
 
         OSGi<CachingServiceReference<Application>> applicationsForWhiteboard =
             waitForApplicationDependencies(
-                onlyValid(
-                    applications,
-                    _runtime::addInvalidApplication,
-                    _runtime::removeInvalidApplication)
-                );
+                waitForReadyService(
+                    onlyValid(
+                        applications,
+                        _runtime::addInvalidApplication,
+                        _runtime::removeInvalidApplication)));
 
         OSGi<ApplicationReferenceWithContext> applicationsWithContext =
             waitForApplicationContext(
@@ -740,6 +740,24 @@ public class Whiteboard {
             serviceReferences(
                     Application.class, _applicationsFilter.toString()).
                 filter(this::matchesWhiteboard);
+    }
+
+    private String getApplicationReadyServiceFilter(
+        CachingServiceReference<Application> reference) {
+
+        Object applicationReadyServiceFilter =
+            _configurationMap.get("application.ready.service.filter");
+
+        if (applicationReadyServiceFilter == null) {
+            applicationReadyServiceFilter =
+                reference.getProperty("application.ready.service.filter");
+        }
+
+        if (applicationReadyServiceFilter != null) {
+            return String.valueOf(applicationReadyServiceFilter);
+        }
+
+        return null;
     }
 
     private OSGi<CachingServiceReference<Object>> getResourcesForWhiteboard() {
@@ -1083,6 +1101,45 @@ public class Whiteboard {
             );
 
             return program;
+        });
+    }
+
+    private OSGi<CachingServiceReference<Application>> waitForReadyService(
+        OSGi<CachingServiceReference<Application>> program) {
+
+        return program.flatMap(reference -> {
+            String applicationReadyServiceFilter =
+                getApplicationReadyServiceFilter(reference);
+
+            if (applicationReadyServiceFilter != null) {
+                return effects(
+                    () -> _runtime.addDependentApplication(reference),
+                    () -> _runtime.removeDependentApplication(reference)
+                ).then(
+                    once(serviceReferences(applicationReadyServiceFilter)).
+                        effects(
+                            ifDebugEnabled(
+                                _log,
+                                () ->
+                                    "Ready service for " + reference +
+                                        " has been tracked"),
+                            ifDebugEnabled(
+                                _log,
+                                () -> "Ready service for " + reference +
+                                    " is gone")
+                        ).
+                        then(just(reference).
+                            effects(
+                                __ -> {},
+                                __ -> _runtime.addDependentApplication(
+                                    reference)))
+                ).effects(
+                    _runtime::removeDependentApplication,
+                    __ -> {}
+                );
+            }
+
+            return just(reference);
         });
     }
 
