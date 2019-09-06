@@ -21,6 +21,7 @@ import static java.util.stream.Collectors.toMap;
 import static org.apache.aries.jax.rs.whiteboard.internal.Whiteboard.SUPPORTED_EXTENSION_INTERFACES;
 import static org.apache.aries.jax.rs.whiteboard.internal.utils.Utils.canonicalize;
 import static org.apache.cxf.jaxrs.provider.ProviderFactory.DEFAULT_FILTER_NAME_BINDING;
+import static org.osgi.service.jaxrs.whiteboard.JaxrsWhiteboardConstants.JAX_RS_NAME;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -42,6 +43,8 @@ import javax.ws.rs.core.FeatureContext;
 import javax.ws.rs.ext.RuntimeDelegate;
 
 import org.apache.aries.component.dsl.CachingServiceReference;
+import org.apache.aries.jax.rs.whiteboard.internal.ApplicationExtensionRegistry;
+import org.apache.aries.jax.rs.whiteboard.internal.AriesJaxrsServiceRuntime;
 import org.apache.aries.jax.rs.whiteboard.internal.utils.ServiceTuple;
 import org.apache.cxf.Bus;
 import org.apache.cxf.common.util.ClassHelper;
@@ -64,16 +67,24 @@ public class CxfJaxrsServiceRegistrator {
 
     public CxfJaxrsServiceRegistrator(
         Bus bus, ServiceTuple<Application> applicationTuple,
-        Map<String, ?> properties) {
+        Map<String, ?> properties,
+        ApplicationExtensionRegistry applicationExtensionRegistry,
+        AriesJaxrsServiceRuntime ariesJaxrsServiceRuntime) {
 
         _bus = bus;
         _applicationTuple = applicationTuple;
         _properties = Collections.unmodifiableMap(new HashMap<>(properties));
+        _ariesJaxrsServiceRuntime = ariesJaxrsServiceRuntime;
+        _applicationName = AriesJaxrsServiceRuntime.getServiceName(
+            _properties::get);
+        _applicationExtensionRegistry = applicationExtensionRegistry;
 
         Comparator<ServiceTuple<?>> comparing = Comparator.comparing(
             ServiceTuple::getCachingServiceReference);
 
         _providers = new TreeSet<>(comparing);
+        _erroredProviders = new ArrayList<>();
+        _erroredServices = new ArrayList<>();
     }
 
     public synchronized void add(ResourceProvider resourceProvider) {
@@ -106,7 +117,58 @@ public class CxfJaxrsServiceRegistrator {
     public void enable() {
         _enabled = true;
 
-        rewire();
+        try {
+            rewire();
+        }
+        catch (Exception e) {
+            ArrayList<ServiceTuple<?>> providers = new ArrayList<>();
+            ArrayList<ResourceProvider> services = new ArrayList<>();
+
+            for (ServiceTuple<?> provider : _providers) {
+                providers.add(provider);
+
+                try {
+                    doRewire(providers, services);
+                }
+                catch (Exception ex) {
+                    providers.remove(provider);
+                    _erroredProviders.add(provider);
+                }
+            }
+            for (ResourceProvider service : _services) {
+                services.add(service);
+
+                try {
+                    doRewire(providers, services);
+                }
+                catch (Exception ex) {
+                    services.remove(service);
+                    _erroredServices.add(service);
+                }
+            }
+
+            _enabled = false;
+
+            for (ServiceTuple<?> erroredProvider : _erroredProviders) {
+                CachingServiceReference<?> cachingServiceReference =
+                    erroredProvider.getCachingServiceReference();
+                _providers.remove(erroredProvider);
+                _ariesJaxrsServiceRuntime.addErroredExtension(
+                    cachingServiceReference);
+                _applicationExtensionRegistry.unregisterExtensionInApplication(
+                    _applicationName, cachingServiceReference);
+            }
+            for (ResourceProvider erroredService : _erroredServices) {
+                _services.remove(erroredService);
+                _ariesJaxrsServiceRuntime.addErroredEndpoint(
+                    ((ServiceReferenceResourceProvider)erroredService).
+                        getImmutableServiceReference());
+            }
+
+            _enabled = true;
+
+            rewire();
+        }
     }
 
     public void close() {
@@ -175,19 +237,41 @@ public class CxfJaxrsServiceRegistrator {
     }
 
     public synchronized void remove(ResourceProvider resourceProvider) {
+        if (_erroredServices.remove(resourceProvider)) {
+            _ariesJaxrsServiceRuntime.removeErroredEndpoint(
+                ((ServiceReferenceResourceProvider)resourceProvider).
+                    getImmutableServiceReference());
+        }
+
         _services.remove(resourceProvider);
 
         rewire();
     }
 
     public synchronized void removeProvider(ServiceTuple<?> tuple) {
+        if (_erroredProviders.remove(tuple)) {
+            _ariesJaxrsServiceRuntime.removeErroredExtension(
+                tuple.getCachingServiceReference());
+        }
+
         _providers.remove(tuple);
 
         rewire();
     }
 
-    @SuppressWarnings("serial")
     public synchronized void rewire() {
+        doRewire(_providers, _services);
+    }
+
+    private final String _applicationName;
+    private ArrayList<ServiceTuple<?>> _erroredProviders;
+    private ArrayList<ResourceProvider> _erroredServices;
+
+    @SuppressWarnings("serial")
+    private synchronized void doRewire(
+        Collection<ServiceTuple<?>> providers,
+        Collection<ResourceProvider> services) {
+
         if (!_enabled) {
             return;
         }
@@ -199,12 +283,11 @@ public class CxfJaxrsServiceRegistrator {
         }
 
         if (_server != null) {
-
             _server.destroy();
 
             _applicationTuple.refresh();
 
-            for (ServiceTuple<?> provider : _providers) {
+            for (ServiceTuple<?> provider : providers) {
                 provider.refresh();
             }
         }
@@ -244,7 +327,7 @@ public class CxfJaxrsServiceRegistrator {
 
         List<org.apache.cxf.feature.Feature> features = new ArrayList<>();
 
-        for (ServiceTuple<?> provider : _providers) {
+        for (ServiceTuple<?> provider : providers) {
             CachingServiceReference<?> cachingServiceReference =
                 provider.getCachingServiceReference();
 
@@ -302,10 +385,12 @@ public class CxfJaxrsServiceRegistrator {
             _jaxRsServerFactoryBean.setFeatures(features);
         }
 
-        for (ResourceProvider resourceProvider: _services) {
-            if (resourceProvider instanceof PrototypeServiceReferenceResourceProvider) {
+        for (ResourceProvider resourceProvider: services) {
+            if (resourceProvider instanceof
+                PrototypeServiceReferenceResourceProvider) {
+
                 PrototypeServiceReferenceResourceProvider provider =
-                    (PrototypeServiceReferenceResourceProvider) resourceProvider;
+                    (PrototypeServiceReferenceResourceProvider)resourceProvider;
                 if (!provider.isAvailable()) {
                     continue;
                 }
@@ -383,6 +468,8 @@ public class CxfJaxrsServiceRegistrator {
     private volatile boolean _enabled = false;
     private JAXRSServerFactoryBean _jaxRsServerFactoryBean;
     private Map<String, Object> _properties;
+    private AriesJaxrsServiceRuntime _ariesJaxrsServiceRuntime;
+    private ApplicationExtensionRegistry _applicationExtensionRegistry;
     private Server _server;
 
     private static Set<String> getFilterNameBindings(

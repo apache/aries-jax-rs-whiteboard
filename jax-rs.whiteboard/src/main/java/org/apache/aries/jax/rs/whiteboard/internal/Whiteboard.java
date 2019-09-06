@@ -717,7 +717,8 @@ public class Whiteboard {
 
         return
             just(() -> new CxfJaxrsServiceRegistrator(
-                    createBus(extensions), tuple, props.get())).
+                    createBus(extensions), tuple, props.get(),
+                _applicationExtensionRegistry, _runtime)).
             effects(
                 __ -> {},
                 CxfJaxrsServiceRegistrator::enable,
