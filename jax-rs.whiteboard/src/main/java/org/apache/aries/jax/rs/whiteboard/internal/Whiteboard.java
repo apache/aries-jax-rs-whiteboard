@@ -83,7 +83,6 @@ import static org.apache.aries.jax.rs.whiteboard.internal.utils.Utils.getString;
 import static org.apache.aries.jax.rs.whiteboard.internal.utils.Utils.highestPer;
 import static org.apache.aries.jax.rs.whiteboard.internal.utils.Utils.mergePropertyMaps;
 import static org.apache.aries.jax.rs.whiteboard.internal.utils.Utils.onlyGettables;
-import static org.apache.aries.jax.rs.whiteboard.internal.utils.Utils.service;
 import static org.apache.aries.jax.rs.whiteboard.internal.utils.Utils.updateProperty;
 import static org.apache.aries.component.dsl.OSGi.NOOP;
 import static org.apache.aries.component.dsl.OSGi.all;
@@ -143,8 +142,8 @@ public class Whiteboard {
     private static final Logger _log = LoggerFactory.getLogger(
         Whiteboard.class);
     private final String _applicationBasePrefix;
-    private final ApplicationExtensionRegistry _applicationExtensionRegistry;
-    private final ExtensionRegistry _extensionRegistry;
+    private final Registry<CxfJaxrsServiceRegistrator> _applicationRegistry =
+        new Registry<>();
 
     private final AriesJaxrsServiceRuntime _runtime;
     private final Map<String, ?> _configurationMap;
@@ -152,7 +151,7 @@ public class Whiteboard {
     private volatile ServiceRegistrationChangeCounter _counter;
     private volatile ServiceReference<JaxrsServiceRuntime> _runtimeReference;
     private final OSGi<Void> _program;
-    private final List<Object> _endpoints;
+    private final List<Object> _endpoints = new ArrayList<>();
     private volatile ServiceRegistration<JaxrsServiceRuntime>
         _runtimeRegistration;
     private OSGiResult _osgiResult;
@@ -160,10 +159,7 @@ public class Whiteboard {
     private Whiteboard(Dictionary<String, ?> configuration) {
         _runtime = new AriesJaxrsServiceRuntime(this);
         _configurationMap = Maps.from(configuration);
-        _endpoints = new ArrayList<>();
 
-        _applicationExtensionRegistry = new ApplicationExtensionRegistry();
-        _extensionRegistry = new ExtensionRegistry();
         _applicationBasePrefix = canonicalizeAddress(
             getString(_configurationMap.get("application.base.prefix")));
 
@@ -192,8 +188,7 @@ public class Whiteboard {
     public void stop() {
         _osgiResult.close();
         _runtimeRegistration.unregister();
-        _applicationExtensionRegistry.close();
-        _extensionRegistry.close();
+        _applicationRegistry.close();
     }
 
     public void addHttpEndpoints(List<String> endpoints) {
@@ -220,29 +215,24 @@ public class Whiteboard {
                         _runtime::removeInvalidExtension),
                     _runtime::addInvalidExtension,
                     _runtime::removeInvalidExtension).
-                effects(
-                    _extensionRegistry::registerExtension,
-                    _extensionRegistry::unregisterExtension).
                 flatMap(extensionReference ->
             chooseApplication(
                     extensionReference,
                     _runtime::addApplicationDependentExtension,
                     _runtime::removeApplicationDependentExtension).
-                flatMap(registratorReference ->
-            service(registratorReference).flatMap(registrator ->
+                flatMap(registrator ->
             waitForExtensionDependencies(
-                    extensionReference, registratorReference,
+                    extensionReference,
+                    registrator,
                     er ->
                         _runtime.addDependentExtensionInApplication(
-                            registratorReference, er),
+                            registrator.getProperties(), er),
                     er ->
                         _runtime.removeDependentExtensionFromApplication(
-                            registratorReference, er)).
+                            registrator.getProperties(), er)).
                 then(
-            safeRegisterExtension(
-                extensionReference, registratorReference::getProperty,
-                registrator)
-        ))));
+            safeRegisterExtension(extensionReference, registrator)
+        )));
     }
 
     private OSGi<?> applicationResources(
@@ -257,17 +247,14 @@ public class Whiteboard {
                     resourceReference,
                     _runtime::addApplicationDependentResource,
                     _runtime::removeApplicationDependentResource).
-                flatMap(registratorReference ->
-            service(registratorReference).flatMap(registrator ->
+                flatMap(registrator ->
             waitForExtensionDependencies(
-                    resourceReference, registratorReference,
+                    resourceReference, registrator,
                     _runtime::addDependentService,
                     _runtime::removeDependentService).
             then(
-                safeRegisterEndpoint(
-                    resourceReference, registratorReference::getProperty,
-                    registrator)
-            ))));
+                safeRegisterEndpoint(resourceReference, registrator)
+            )));
     }
 
     @SuppressWarnings({ "rawtypes", "unchecked" })
@@ -515,9 +502,8 @@ public class Whiteboard {
 
         return highestRankedPerPath.flatMap(application ->
             onlyGettables(
-                    waitForReadyService(
-                    waitForApplicationDependencies(
-                        just(application.getApplicationReference()))),
+                waitForReadyService(
+                    just(application.getApplicationReference())),
                 _runtime::addNotGettableApplication,
                 _runtime::removeNotGettableApplication, _log).
             recoverWith(
@@ -611,56 +597,42 @@ public class Whiteboard {
             cachingServiceReference = tuple.getCachingServiceReference();
 
         _runtime.unregisterApplicationExtensions(cachingServiceReference);
-        _applicationExtensionRegistry.unregisterApplication(
-                getServiceName(cachingServiceReference::getProperty));
     }
 
-    private OSGi<CachingServiceReference<CxfJaxrsServiceRegistrator>>
-        applicationMatching(String filter) {
+    private OSGi<CxfJaxrsServiceRegistrator> applicationMatching(
+        String filter) {
 
-        return serviceReferences(
-            CxfJaxrsServiceRegistrator.class, filter
-        ).filter(
-            this::matchesWhiteboard
-        );
+        return _applicationRegistry.waitForService(filter);
     }
 
     private OSGi<CxfJaxrsServiceRegistrator> deployApplication(
         ServiceTuple<Application> tuple,
         CachingServiceReference<ServletContextHelper> contextReference) {
 
-        Supplier<Map<String, ?>> properties = () -> {
-            CachingServiceReference<Application> serviceReference =
-                tuple.getCachingServiceReference();
+        CachingServiceReference<Application> serviceReference =
+            tuple.getCachingServiceReference();
 
-            Map<String, Object> props = getApplicationProperties(
-                serviceReference);
-
-            props.put(
-                "original.service.id",
-                serviceReference.getProperty("service.id"));
-
-            props.put(
-                "original.service.bundleid",
-                serviceReference.getProperty("service.bundleid"));
-
-            return props;
-        };
+        Map<String, Object> properties = getApplicationProperties(
+            serviceReference);
 
         return
             getCxfExtensions(tuple.getCachingServiceReference()).
                 flatMap(extensions ->
             createRegistrator(extensions, tuple, properties).
                 flatMap(registrator ->
+            waitForApplicationDependencies(
+                tuple.getCachingServiceReference(),
+                _applicationRegistry.registerService(
+                    registrator, registrator.getProperties())).
+                then(
             registerCXFServletService(
                     registrator.getBus(), properties, contextReference).
                 then(
             register(
-                    CxfJaxrsServiceRegistrator.class,
-                    () -> registrator, properties).
+                    CxfJaxrsServiceRegistrator.class, registrator, properties).
                 then(
             just(registrator)
-        ))));
+        )))));
     }
 
     public OSGi<Map<String, ServiceTuple<Object>>> getCxfExtensions(
@@ -713,12 +685,11 @@ public class Whiteboard {
 
     private OSGi<CxfJaxrsServiceRegistrator> createRegistrator(
         Map<String, ServiceTuple<Object>> extensions,
-        ServiceTuple<Application> tuple, Supplier<Map<String, ?>> props) {
+        ServiceTuple<Application> tuple, Map<String, Object> props) {
 
         return
             just(() -> new CxfJaxrsServiceRegistrator(
-                    createBus(extensions), tuple, props.get(),
-                _applicationExtensionRegistry, _runtime)).
+                    createBus(extensions), tuple, props, _runtime)).
             effects(
                 __ -> {},
                 CxfJaxrsServiceRegistrator::enable,
@@ -834,11 +805,12 @@ public class Whiteboard {
 
     private <T> OSGi<?> safeRegisterEndpoint(
         CachingServiceReference<T> serviceReference,
-        PropertyHolder registratorProperties,
         CxfJaxrsServiceRegistrator registrator) {
 
+        Map registratorProperties = registrator.getProperties();
+
         Bundle originalBundle = _bundleContext.getBundle(
-            (long)registratorProperties.get("original.service.bundleid"));
+            (long)registratorProperties.get("service.bundleid"));
 
         return
             changeContext(
@@ -871,10 +843,12 @@ public class Whiteboard {
                     Utils::getResourceProvider
                 ).effects(
                     rp -> _runtime.addApplicationEndpoint(
-                        registratorProperties, st.getCachingServiceReference(),
+                        registratorProperties::get,
+                        st.getCachingServiceReference(),
                         registrator.getBus(), st.getService().getClass()),
                     rp -> _runtime.removeApplicationEndpoint(
-                        registratorProperties, st.getCachingServiceReference())
+                        registratorProperties::get,
+                        st.getCachingServiceReference())
                 ).effects(
                     registrator::add,
                     registrator::remove
@@ -884,14 +858,14 @@ public class Whiteboard {
                         () -> "Registered endpoint " +
                             st.getCachingServiceReference().
                                 getServiceReference() + " into application " +
-                                getServiceName(registratorProperties)
+                                getServiceName(registratorProperties::get)
                     ),
                     ifDebugEnabled(
                         _log,
                         () -> "Unregistered endpoint " +
                             st.getCachingServiceReference().
                                 getServiceReference() + " from application " +
-                                getServiceName(registratorProperties)
+                                getServiceName(registratorProperties::get)
                     )
 
                 )
@@ -900,14 +874,15 @@ public class Whiteboard {
 
     private OSGi<?> safeRegisterExtension(
         CachingServiceReference<?> serviceReference,
-        PropertyHolder registratorProperties,
         CxfJaxrsServiceRegistrator registrator) {
 
+        Map properties = registrator.getProperties();
+
         Bundle originalBundle = _bundleContext.getBundle(
-            (long)registratorProperties.get("original.service.bundleid"));
+            (long)properties.get("service.bundleid"));
 
         return
-            just(() -> getServiceName(registratorProperties)).
+            just(() -> getServiceName(properties::get)).
                 flatMap(applicationName ->
             changeContext(
                 originalBundle.getBundleContext(),
@@ -941,10 +916,10 @@ public class Whiteboard {
                 registrator::removeProvider
             ).effects(
                 t -> _runtime.addApplicationExtension(
-                    registratorProperties, serviceReference,
+                    properties::get, serviceReference,
                     t.getService().getClass()),
                 __ -> _runtime.removeApplicationExtension(
-                    registratorProperties, serviceReference)
+                    properties::get, serviceReference)
             ).
             effects(
                 ifDebugEnabled(
@@ -953,7 +928,7 @@ public class Whiteboard {
                         "Registered extension " +
                             serviceReference.getServiceReference() +
                                 " into application " +
-                            getServiceName(registratorProperties)
+                            getServiceName(properties::get)
                 ),
                 ifDebugEnabled(
                     _log,
@@ -961,34 +936,30 @@ public class Whiteboard {
                         "Unregistered extension  " +
                             serviceReference.getServiceReference() +
                             " from application " +
-                            getServiceName(registratorProperties)
+                            getServiceName(properties::get)
                 )
 
             ).
             effects(
-                __ ->
-                    _applicationExtensionRegistry.
-                        registerExtensionInApplication(
-                            applicationName, serviceReference),
-                __ ->
-                    _applicationExtensionRegistry.
-                        unregisterExtensionInApplication(
-                            applicationName, serviceReference)
+                __ -> registrator.registerExtension(
+                    serviceReference),
+                __ -> registrator.unregisterExtension(
+                    serviceReference)
             ));
     }
 
 
 
-    private OSGi<CachingServiceReference<Application>>
+    private OSGi<CxfJaxrsServiceRegistrator>
         waitForApplicationDependencies(
-            OSGi<CachingServiceReference<Application>> references) {
+            CachingServiceReference<Application> applicationReference,
+            OSGi<CxfJaxrsServiceRegistrator> registrators) {
 
-        return references.flatMap(reference -> {
+        return registrators.flatMap(registrator -> {
             String[] extensionDependencies = canonicalize(
-                reference.getProperty(JAX_RS_EXTENSION_SELECT));
+                applicationReference.getProperty(JAX_RS_EXTENSION_SELECT));
 
-            OSGi<CachingServiceReference<Application>> program = just(
-                reference);
+            OSGi<CxfJaxrsServiceRegistrator> program = just(registrator);
 
             if (extensionDependencies.length == 0) {
                 return program;
@@ -998,7 +969,7 @@ public class Whiteboard {
                 if  (_log.isDebugEnabled()) {
                     _log.debug(
                         "Application {} has a dependency on {}",
-                        reference, extensionDependency);
+                        registrator, extensionDependency);
                 }
 
                 try {
@@ -1023,17 +994,19 @@ public class Whiteboard {
                                 _log,
                                 () -> String.format(
                                     "Application %s has invalid dependency %s",
-                                    reference, extensionDependency)),
+                                    registrator, extensionDependency)),
                             ifErrorEnabled(
                                 _log,
                                 () -> String.format(
                                     "Application %s with invalid dependency " +
                                         "has left",
-                                    reference))
+                                    registrator))
                         ).
                         effects(
-                            _runtime::addErroredApplication,
-                            _runtime::removeErroredApplication
+                            __ -> _runtime.addErroredApplication(
+                                applicationReference),
+                            __ -> _runtime.removeErroredApplication(
+                                applicationReference)
                         ).then(
                             nothing()
                         );
@@ -1041,15 +1014,14 @@ public class Whiteboard {
 
                 program =
                     once(
-                        _extensionRegistry.waitForExtension(
-                            extensionDependency).
+                        registrator.waitForExtension(extensionDependency).
                         flatMap(
                             sr -> {
                                 Object applicationSelectProperty =
                                     sr.getProperty(JAX_RS_APPLICATION_SELECT);
 
                                 if (applicationSelectProperty == null) {
-                                    return just(reference);
+                                    return just(registrator);
                                 }
 
                                 Filter filter;
@@ -1062,10 +1034,11 @@ public class Whiteboard {
                                     return nothing();
                                 }
 
-                                if (filter.matches(
-                                    getApplicationProperties(reference))) {
+                                if (filter.match(
+                                    applicationReference.
+                                        getServiceReference())) {
 
-                                    return just(reference);
+                                    return just(registrator);
                                 }
 
                                 return nothing();
@@ -1073,17 +1046,17 @@ public class Whiteboard {
                         )).effects(
                                 __ -> {},
                                 __ -> _runtime.addDependentApplication(
-                                    reference)
+                                    applicationReference)
                         ).
                         effects(
                             ifDebugEnabled(
                                 _log,
-                                () -> "Application "+ reference +
+                                () -> "Application "+ registrator +
                                     " dependency " + extensionDependency +
                                         " has been fullfiled"),
                             ifDebugEnabled(
                                 _log,
-                                () -> "Application "+ reference +
+                                () -> "Application "+ registrator +
                                     " dependency " + extensionDependency +
                                         " has gone")
                         ).
@@ -1091,12 +1064,12 @@ public class Whiteboard {
             }
 
             program = effects(
-                () -> _runtime.addDependentApplication(reference),
-                () -> _runtime.removeDependentApplication(reference)
+                () -> _runtime.addDependentApplication(applicationReference),
+                () -> _runtime.removeDependentApplication(applicationReference)
             ).then(program);
 
             program = program.effects(
-                __ -> _runtime.removeDependentApplication(reference),
+                __ -> _runtime.removeDependentApplication(applicationReference),
                 __ -> {}
             );
 
@@ -1145,13 +1118,12 @@ public class Whiteboard {
 
     private OSGi<?> waitForExtensionDependencies(
         CachingServiceReference<?> reference,
-        CachingServiceReference<CxfJaxrsServiceRegistrator>
-            applicationRegistratorReference,
+        CxfJaxrsServiceRegistrator cxfJaxrsServiceRegistrator,
         Consumer<CachingServiceReference<?>> onAddingDependent,
         Consumer<CachingServiceReference<?>> onRemovingDependent) {
 
-        String applicationName = getServiceName(
-            applicationRegistratorReference::getProperty);
+        Map<String, ?> applicationRegistratorProperties =
+            cxfJaxrsServiceRegistrator.getProperties();
 
         String[] extensionDependencies = canonicalize(
             reference.getProperty(JAX_RS_EXTENSION_SELECT));
@@ -1176,21 +1148,22 @@ public class Whiteboard {
                 Filter extensionFilter = _bundleContext.createFilter(
                     finalExtensionDependency);
 
-                if (
-                    extensionFilter.match(_runtimeReference) ||
-                    extensionFilter.match(
-                        applicationRegistratorReference.getServiceReference()))
+                if (extensionFilter.match(_runtimeReference) ||
+                    extensionFilter.matches(
+                        applicationRegistratorProperties))
                 {
                     continue;
                 }
 
                 program =
-                    once(_applicationExtensionRegistry.waitForApplicationExtension(
-                        applicationName, extensionDependency).effects(
-                        __ -> {},
-                        __ -> onAddingDependent.accept(reference)
-                    )).
-                    effects(
+                    once(
+                        cxfJaxrsServiceRegistrator.waitForExtension(
+                            extensionDependency).
+                        effects(
+                            __ -> {},
+                            __ -> onAddingDependent.accept(reference)
+                        )
+                    ).effects(
                         ifDebugEnabled(
                             _log,
                             () -> "Extension " + reference +
@@ -1227,7 +1200,7 @@ public class Whiteboard {
             properties.get(JAX_RS_APPLICATION_BASE));
     }
 
-    private OSGi<CachingServiceReference<CxfJaxrsServiceRegistrator>>
+    private OSGi<CxfJaxrsServiceRegistrator>
         chooseApplication(
             CachingServiceReference<?> serviceReference,
             Consumer<CachingServiceReference<?>> onWaiting,
@@ -1310,10 +1283,8 @@ public class Whiteboard {
     }
 
     private OSGi<ServiceRegistration<Servlet>> registerCXFServletService(
-        Bus bus, Supplier<Map<String, ?>> servicePropertiesSup,
+        Bus bus, Map<String, Object> serviceProperties,
         CachingServiceReference<ServletContextHelper> contextReference) {
-
-        Map<String, ?> serviceProperties = servicePropertiesSup.get();
 
         String address = canonicalizeAddress(
             getApplicationBase(serviceProperties::get));

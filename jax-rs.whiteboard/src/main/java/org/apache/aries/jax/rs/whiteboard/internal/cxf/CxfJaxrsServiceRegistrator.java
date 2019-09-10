@@ -21,7 +21,6 @@ import static java.util.stream.Collectors.toMap;
 import static org.apache.aries.jax.rs.whiteboard.internal.Whiteboard.SUPPORTED_EXTENSION_INTERFACES;
 import static org.apache.aries.jax.rs.whiteboard.internal.utils.Utils.canonicalize;
 import static org.apache.cxf.jaxrs.provider.ProviderFactory.DEFAULT_FILTER_NAME_BINDING;
-import static org.osgi.service.jaxrs.whiteboard.JaxrsWhiteboardConstants.JAX_RS_NAME;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -43,8 +42,9 @@ import javax.ws.rs.core.FeatureContext;
 import javax.ws.rs.ext.RuntimeDelegate;
 
 import org.apache.aries.component.dsl.CachingServiceReference;
-import org.apache.aries.jax.rs.whiteboard.internal.ApplicationExtensionRegistry;
+import org.apache.aries.component.dsl.OSGi;
 import org.apache.aries.jax.rs.whiteboard.internal.AriesJaxrsServiceRuntime;
+import org.apache.aries.jax.rs.whiteboard.internal.ServiceReferenceRegistry;
 import org.apache.aries.jax.rs.whiteboard.internal.utils.ServiceTuple;
 import org.apache.cxf.Bus;
 import org.apache.cxf.common.util.ClassHelper;
@@ -65,19 +65,19 @@ import org.apache.cxf.jaxrs.utils.AnnotationUtils;
 
 public class CxfJaxrsServiceRegistrator {
 
+    public Map<String, ?> getProperties() {
+        return _properties;
+    }
+
     public CxfJaxrsServiceRegistrator(
         Bus bus, ServiceTuple<Application> applicationTuple,
         Map<String, ?> properties,
-        ApplicationExtensionRegistry applicationExtensionRegistry,
         AriesJaxrsServiceRuntime ariesJaxrsServiceRuntime) {
 
         _bus = bus;
         _applicationTuple = applicationTuple;
         _properties = Collections.unmodifiableMap(new HashMap<>(properties));
         _ariesJaxrsServiceRuntime = ariesJaxrsServiceRuntime;
-        _applicationName = AriesJaxrsServiceRuntime.getServiceName(
-            _properties::get);
-        _applicationExtensionRegistry = applicationExtensionRegistry;
 
         Comparator<ServiceTuple<?>> comparing = Comparator.comparing(
             ServiceTuple::getCachingServiceReference);
@@ -85,6 +85,7 @@ public class CxfJaxrsServiceRegistrator {
         _providers = new TreeSet<>(comparing);
         _erroredProviders = new ArrayList<>();
         _erroredServices = new ArrayList<>();
+        _serviceReferenceRegistry = new ServiceReferenceRegistry();
     }
 
     public synchronized void add(ResourceProvider resourceProvider) {
@@ -155,8 +156,7 @@ public class CxfJaxrsServiceRegistrator {
                 _providers.remove(erroredProvider);
                 _ariesJaxrsServiceRuntime.addErroredExtension(
                     cachingServiceReference);
-                _applicationExtensionRegistry.unregisterExtensionInApplication(
-                    _applicationName, cachingServiceReference);
+                _serviceReferenceRegistry.unregister(cachingServiceReference);
             }
             for (ResourceProvider erroredService : _erroredServices) {
                 _services.remove(erroredService);
@@ -236,6 +236,12 @@ public class CxfJaxrsServiceRegistrator {
         return classes;
     }
 
+    public void registerExtension(
+        CachingServiceReference<?> serviceReference) {
+
+        _serviceReferenceRegistry.register(serviceReference);
+    }
+
     public synchronized void remove(ResourceProvider resourceProvider) {
         if (_erroredServices.remove(resourceProvider)) {
             _ariesJaxrsServiceRuntime.removeErroredEndpoint(
@@ -263,7 +269,18 @@ public class CxfJaxrsServiceRegistrator {
         doRewire(_providers, _services);
     }
 
-    private final String _applicationName;
+    public void unregisterExtension(
+        CachingServiceReference<?> serviceReference) {
+
+        _serviceReferenceRegistry.unregister(serviceReference);
+    }
+
+    public OSGi<CachingServiceReference<?>> waitForExtension(
+        String extensionDependency) {
+
+        return _serviceReferenceRegistry.waitFor(extensionDependency);
+    }
+
     private ArrayList<ServiceTuple<?>> _erroredProviders;
     private ArrayList<ResourceProvider> _erroredServices;
 
@@ -469,7 +486,7 @@ public class CxfJaxrsServiceRegistrator {
     private JAXRSServerFactoryBean _jaxRsServerFactoryBean;
     private Map<String, Object> _properties;
     private AriesJaxrsServiceRuntime _ariesJaxrsServiceRuntime;
-    private ApplicationExtensionRegistry _applicationExtensionRegistry;
+    private ServiceReferenceRegistry _serviceReferenceRegistry;
     private Server _server;
 
     private static Set<String> getFilterNameBindings(

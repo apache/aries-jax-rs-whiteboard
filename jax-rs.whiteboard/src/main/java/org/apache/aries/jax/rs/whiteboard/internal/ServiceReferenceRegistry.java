@@ -19,6 +19,7 @@ package org.apache.aries.jax.rs.whiteboard.internal;
 
 import org.apache.aries.component.dsl.CachingServiceReference;
 import org.apache.aries.component.dsl.OSGi;
+import org.apache.aries.component.dsl.OSGiResult;
 import org.osgi.framework.Filter;
 import org.osgi.framework.FrameworkUtil;
 import org.osgi.framework.InvalidSyntaxException;
@@ -27,37 +28,36 @@ import java.util.HashSet;
 
 import static org.apache.aries.component.dsl.OSGi.fromOsgiRunnable;
 
-public class ExtensionRegistry implements AutoCloseable {
+public class ServiceReferenceRegistry implements AutoCloseable {
 
-    public ExtensionRegistry() {
+    public ServiceReferenceRegistry() {
         _extensionPublishers = new HashSet<>();
         _registeredExtensions = new HashSet<>();
     }
 
     @Override
     public void close() {
-        for (FilteredPublisher extensionPublisher :
+        for (ServiceReferenceFilteredPublisher extensionPublisher :
             new HashSet<>(_extensionPublishers)) {
 
             extensionPublisher.close();
         }
     }
 
-    public OSGi<CachingServiceReference<?>> waitForExtension(
-        String extensionFilter) {
-
+    public OSGi<CachingServiceReference<?>> waitFor(String filterString) {
         Filter filter;
 
         try {
-            filter = FrameworkUtil.createFilter(extensionFilter);
+            filter = FrameworkUtil.createFilter(filterString);
         }
         catch (InvalidSyntaxException e) {
             throw new RuntimeException();
         }
 
         return fromOsgiRunnable((bc, p) -> {
-            synchronized (ExtensionRegistry.this) {
-                FilteredPublisher ep = new FilteredPublisher(p, filter);
+            synchronized (ServiceReferenceRegistry.this) {
+                ServiceReferenceFilteredPublisher ep =
+                    new ServiceReferenceFilteredPublisher(p, filter);
 
                 _extensionPublishers.add(ep);
 
@@ -68,7 +68,7 @@ public class ExtensionRegistry implements AutoCloseable {
                 }
 
                 return () -> {
-                    synchronized (ExtensionRegistry.this) {
+                    synchronized (ServiceReferenceRegistry.this) {
                         _extensionPublishers.remove(ep);
 
                         for (CachingServiceReference<?> extension :
@@ -83,35 +83,32 @@ public class ExtensionRegistry implements AutoCloseable {
         });
     }
 
-    public void registerExtension(
-        CachingServiceReference<?> extension) {
-
-        synchronized (ExtensionRegistry.this) {
-            for (FilteredPublisher publisher :
+    public void register(CachingServiceReference<?> serviceReference) {
+        synchronized (ServiceReferenceRegistry.this) {
+            for (ServiceReferenceFilteredPublisher publisher :
                 new HashSet<>(_extensionPublishers)) {
 
-                publisher.publishIfMatched(extension);
+                publisher.publishIfMatched(serviceReference);
             }
 
-            _registeredExtensions.add(extension);
+            _registeredExtensions.add(serviceReference);
         }
     }
 
-    public void unregisterExtension(
-        CachingServiceReference<?> extension) {
-
-        synchronized (ExtensionRegistry.this) {
-            for (FilteredPublisher publisher :
+    public void unregister(CachingServiceReference<?> serviceReference) {
+        synchronized (ServiceReferenceRegistry.this) {
+            for (ServiceReferenceFilteredPublisher publisher :
                 new HashSet<>(_extensionPublishers)) {
 
-                publisher.retractIfMatched(extension);
+                publisher.retractIfMatched(serviceReference);
             }
 
-            _registeredExtensions.remove(extension);
+            _registeredExtensions.remove(serviceReference);
         }
     }
 
-    private final HashSet<FilteredPublisher> _extensionPublishers;
+    private final HashSet<ServiceReferenceFilteredPublisher>
+        _extensionPublishers;
     private final HashSet<CachingServiceReference<?>> _registeredExtensions;
 
 }

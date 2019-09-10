@@ -207,11 +207,11 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
     }
 
     public void addDependentExtensionInApplication(
-        CachingServiceReference applicationReference,
+        Map<String, ?> applicationReference,
         CachingServiceReference<?> cachingServiceReference) {
 
         _dependentExtensions.compute(
-            getServiceName(applicationReference::getProperty),
+            getServiceName(applicationReference::get),
             merger(cachingServiceReference));
     }
 
@@ -584,11 +584,11 @@ public class AriesJaxrsServiceRuntime implements JaxrsServiceRuntime {
     }
 
     public void removeDependentExtensionFromApplication(
-        CachingServiceReference applicationReference,
+        Map<String, ?> properties,
         CachingServiceReference<?> cachingServiceReference) {
 
         _dependentExtensions.compute(
-            getServiceName(applicationReference::getProperty),
+            getServiceName(properties::get),
             remover(cachingServiceReference));
     }
 

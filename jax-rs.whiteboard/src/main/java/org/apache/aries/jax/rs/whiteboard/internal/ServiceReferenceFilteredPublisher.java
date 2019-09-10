@@ -17,17 +17,21 @@
 
 package org.apache.aries.jax.rs.whiteboard.internal;
 
+import org.apache.aries.component.dsl.CachingServiceReference;
 import org.apache.aries.component.dsl.OSGiResult;
 import org.apache.aries.component.dsl.Publisher;
 import org.osgi.framework.Filter;
 
-import java.util.IdentityHashMap;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class FilteredPublisher<T> implements AutoCloseable {
+public class ServiceReferenceFilteredPublisher implements AutoCloseable {
 
-    public FilteredPublisher(Publisher<? super T> publisher, Filter filter) {
+    public ServiceReferenceFilteredPublisher(
+        Publisher<? super CachingServiceReference<?>> publisher,
+        Filter filter) {
+
         _publisher = publisher;
         _filter = filter;
     }
@@ -40,15 +44,15 @@ public class FilteredPublisher<T> implements AutoCloseable {
         }
     }
 
-    public void publishIfMatched(T t, Map<String, ?> properties) {
+    public void publishIfMatched(CachingServiceReference<?> serviceReference) {
         if (_closed.get()) {
             return;
         }
 
-        if (_filter.matches(properties)) {
-            OSGiResult result = _publisher.publish(t);
+        if (_filter.match(serviceReference.getServiceReference())) {
+            OSGiResult result = _publisher.publish(serviceReference);
 
-            OSGiResult old = _results.put(t, result);
+            OSGiResult old = _results.put(serviceReference, result);
 
             if (old != null) {
                 old.close();
@@ -60,21 +64,24 @@ public class FilteredPublisher<T> implements AutoCloseable {
         }
     }
 
-    public void retract(T t) {
+    public void retractIfMatched(CachingServiceReference<?> serviceReference) {
         if (_closed.get()) {
             return;
         }
 
-        OSGiResult result = _results.remove(t);
+        if (_filter.match(serviceReference.getServiceReference())) {
+            OSGiResult result = _results.remove(serviceReference);
 
-        if (result != null) {
-            result.close();
+            if (result != null) {
+                result.close();
+            }
         }
     }
 
-    private Publisher<? super T> _publisher;
+    private Publisher<? super CachingServiceReference<?>> _publisher;
     private Filter _filter;
     private AtomicBoolean _closed = new AtomicBoolean(false);
-    private IdentityHashMap<T, OSGiResult> _results = new IdentityHashMap<>();
+    private Map<CachingServiceReference<?>, OSGiResult> _results =
+        new HashMap<>();
 
 }
