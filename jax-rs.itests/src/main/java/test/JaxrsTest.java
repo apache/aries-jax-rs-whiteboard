@@ -729,6 +729,34 @@ public class JaxrsTest extends TestHelper {
     }
 
     @Test
+    public void testApplicationWithDependentExtensionsShadowsApplication() {
+        assertEquals(0, getRuntimeDTO().applicationDTOs.length);
+        assertEquals(0, getRuntimeDTO().failedApplicationDTOs.length);
+
+        //Depends on extension
+        registerApplication(
+            new TestApplication(), "extension.test", "true",
+            JAX_RS_EXTENSION_SELECT, "(osgi.jaxrs.name=Filter1)",
+            "service.ranking", 10);
+
+        assertEquals(0, getRuntimeDTO().applicationDTOs.length);
+        assertEquals(1, getRuntimeDTO().failedApplicationDTOs.length);
+
+        //Shadowed by the other application, even though it is not ready
+        registerApplication(new TestApplication());
+
+        assertEquals(0, getRuntimeDTO().applicationDTOs.length);
+        assertEquals(2, getRuntimeDTO().failedApplicationDTOs.length);
+
+        registerExtension(
+            "Filter1", JAX_RS_APPLICATION_SELECT, String.format("(%s=%s)",
+            "extension.test", "true"));
+
+        assertEquals(1, getRuntimeDTO().applicationDTOs.length);
+        assertEquals(1, getRuntimeDTO().failedApplicationDTOs.length);
+    }
+
+    @Test
     public void testApplicationWithError() throws InterruptedException {
         RuntimeDTO runtimeDTO = getRuntimeDTO();
 

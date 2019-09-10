@@ -491,17 +491,15 @@ public class Whiteboard {
     private OSGi<?> applications(
         OSGi<CachingServiceReference<Application>> applications) {
 
-        OSGi<CachingServiceReference<Application>> applicationsForWhiteboard =
-            waitForApplicationDependencies(
-                waitForReadyService(
-                    onlyValid(
-                        applications,
-                        _runtime::addInvalidApplication,
-                        _runtime::removeInvalidApplication)));
+        OSGi<CachingServiceReference<Application>> validApplications =
+            onlyValid(
+                applications,
+                _runtime::addInvalidApplication,
+                _runtime::removeInvalidApplication);
 
         OSGi<ApplicationReferenceWithContext> applicationsWithContext =
             waitForApplicationContext(
-                applicationsForWhiteboard,
+                validApplications,
                 _runtime::addContextDependentApplication,
                 _runtime::removeContextDependentApplication);
 
@@ -517,7 +515,9 @@ public class Whiteboard {
 
         return highestRankedPerPath.flatMap(application ->
             onlyGettables(
-                just(application.getApplicationReference()),
+                    waitForReadyService(
+                    waitForApplicationDependencies(
+                        just(application.getApplicationReference()))),
                 _runtime::addNotGettableApplication,
                 _runtime::removeNotGettableApplication, _log).
             recoverWith(
