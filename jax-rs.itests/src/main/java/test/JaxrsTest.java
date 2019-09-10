@@ -484,7 +484,9 @@ public class JaxrsTest extends TestHelper {
                 put(JAX_RS_APPLICATION_BASE, "/test-application-rebased-again");
             }});
 
-        webTarget = createDefaultTarget().path("/test-application-rebased-again");
+        webTarget =
+            createDefaultTarget().
+                path("/test-application-rebased-again");
 
         response = webTarget.request().get();
 
@@ -831,10 +833,12 @@ public class JaxrsTest extends TestHelper {
             assertEquals(1, runtimeDTO.applicationDTOs.length);
             assertEquals(0, runtimeDTO.failedApplicationDTOs.length);
 
-            WebTarget webTarget = createDefaultTarget().path("/test-application");
+            WebTarget webTarget = createDefaultTarget().
+                path("/test-application");
 
             assertEquals(200, webTarget.request().get().getStatus());
-            assertEquals("Hello application", webTarget.request().get(String.class));
+            assertEquals(
+                "Hello application", webTarget.request().get(String.class));
         } finally {
             applicationRegistration.unregister();
         }
@@ -947,7 +951,11 @@ public class JaxrsTest extends TestHelper {
         assertTrue(Boolean.parseBoolean(response.getHeaderString("Filtered")));
         assertEquals("Hello application", response.readEntity(String.class));
 
-        response = createDefaultTarget().path("/test-application-2").request().get();
+        response =
+            createDefaultTarget().
+                path("/test-application-2").
+                request().
+                get();
 
         assertNull(response.getHeaderString("Filtered"));
         assertEquals("Hello application", response.readEntity(String.class));
@@ -1173,7 +1181,10 @@ public class JaxrsTest extends TestHelper {
         throws ExecutionException, InterruptedException {
 
         WebTarget webTarget =
-            createDefaultTarget().path("whiteboard").path("async").path("suspended").
+            createDefaultTarget().
+                path("whiteboard").
+                path("async").
+                path("suspended").
                 path("HelloAsync");
 
         AtomicBoolean pre = new AtomicBoolean();
@@ -1217,7 +1228,10 @@ public class JaxrsTest extends TestHelper {
             throws ExecutionException, InterruptedException {
 
         WebTarget webTarget =
-                createDefaultTarget().path("whiteboard").path("async").path("completionstage").
+            createDefaultTarget().
+                path("whiteboard").
+                path("async").
+                path("completionstage").
                 path("HelloAsync");
 
         AtomicBoolean pre = new AtomicBoolean();
@@ -1261,8 +1275,11 @@ public class JaxrsTest extends TestHelper {
             throws ExecutionException, InterruptedException {
 
         WebTarget webTarget =
-                createDefaultTarget().path("whiteboard").path("async").path("promise").
-                path("HelloAsync");
+                createDefaultTarget().
+                    path("whiteboard").
+                    path("async").
+                    path("promise").
+                    path("HelloAsync");
 
         AtomicBoolean pre = new AtomicBoolean();
         AtomicBoolean post = new AtomicBoolean();
@@ -1306,7 +1323,10 @@ public class JaxrsTest extends TestHelper {
         InvocationTargetException {
 
         WebTarget webTarget =
-            createDefaultTarget().path("whiteboard").path("async").path("promise").
+            createDefaultTarget().
+                path("whiteboard").
+                path("async").
+                path("promise").
                 path("HelloAsync");
 
         AtomicBoolean pre = new AtomicBoolean();
@@ -2126,8 +2146,11 @@ public class JaxrsTest extends TestHelper {
                             @SuppressWarnings("unchecked")
                             Map<String, Object> properties =
                                 (Map<String, Object>)
-                                    featureContext.getConfiguration().getProperty(
-                                        "osgi.jaxrs.application.serviceProperties");
+                                    featureContext.
+                                        getConfiguration().
+                                        getProperty(
+                                        "osgi.jaxrs.application." +
+                                            "serviceProperties");
                             propertyvalue.set(properties.get("property"));
 
                             return false;
@@ -2576,8 +2599,15 @@ public class JaxrsTest extends TestHelper {
     @Test
     public void testVoidResource() {
         registerAddon(new TestVoidResource());
-        Response response = createDefaultTarget().path("returntype/void").request(TEXT_PLAIN_TYPE).head();
-        assertEquals(Response.Status.NO_CONTENT.getStatusCode(), response.getStatus());
+
+        Response response =
+            createDefaultTarget().
+                path("returntype/void").
+                request(TEXT_PLAIN_TYPE).
+                head();
+
+        assertEquals(
+            Response.Status.NO_CONTENT.getStatusCode(), response.getStatus());
     }
 
     @Test
