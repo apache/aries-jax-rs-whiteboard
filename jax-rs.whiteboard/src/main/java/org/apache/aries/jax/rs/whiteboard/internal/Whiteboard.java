@@ -628,11 +628,8 @@ public class Whiteboard {
             registerCXFServletService(
                     registrator.getBus(), properties, contextReference).
                 then(
-            register(
-                    CxfJaxrsServiceRegistrator.class, registrator, properties).
-                then(
             just(registrator)
-        )))));
+        ))));
     }
 
     public OSGi<Map<String, ServiceTuple<Object>>> getCxfExtensions(

@@ -1402,39 +1402,33 @@ public class JaxrsTest extends TestHelper {
 
             properties.put("default.web", "false");
 
-            CountDownLatch countDownLatch = new CountDownLatch(3);
+            CountDownLatch countDownLatch = new CountDownLatch(6);
 
-            ServiceTracker<Object, Object> tracker =
+            ServiceTracker<?, ?> tracker =
                 new ServiceTracker<>(
                     bundleContext,
-                    bundleContext.createFilter(
-                        "(&(osgi.jaxrs.name=.default)" +
-                            "(objectClass=org.apache.aries.jax.rs.whiteboard." +
-                                "internal.cxf.CxfJaxrsServiceRegistrator))"),
-                    new ServiceTrackerCustomizer<Object, Object>() {
-
+                    JaxrsServiceRuntime.class,
+                    new ServiceTrackerCustomizer<JaxrsServiceRuntime, Object>() {
                         @Override
                         public Object addingService(
-                            ServiceReference<Object> serviceReference) {
+                            ServiceReference<JaxrsServiceRuntime> reference) {
 
-                            countDownLatch.countDown();
-
-                            return serviceReference;
+                            return reference;
                         }
 
                         @Override
                         public void modifiedService(
-                            ServiceReference<Object> serviceReference,
-                            Object o) {
+                            ServiceReference<JaxrsServiceRuntime> reference,
+                            Object service) {
 
+                            countDownLatch.countDown();
                         }
 
                         @Override
                         public void removedService(
-                            ServiceReference<Object> serviceReference,
-                            Object o) {
+                            ServiceReference<JaxrsServiceRuntime> reference,
+                            Object service) {
 
-                            countDownLatch.countDown();
                         }
                     });
 
@@ -1444,44 +1438,40 @@ public class JaxrsTest extends TestHelper {
 
             countDownLatch.await(1, TimeUnit.MINUTES);
 
+            tracker.close();
+
             assertTrue(
                 defaultTarget.request().get(String.class).
                     contains("No services have been found"));
         }
         finally {
-            CountDownLatch countDownLatch = new CountDownLatch(3);
+            CountDownLatch countDownLatch = new CountDownLatch(6);
 
-            ServiceTracker<Object, Object> tracker =
+            ServiceTracker<?, ?> tracker =
                 new ServiceTracker<>(
                     bundleContext,
-                    bundleContext.createFilter(
-                        "(&(osgi.jaxrs.name=.default)" +
-                            "(objectClass=org.apache.aries.jax.rs.whiteboard." +
-                                "internal.cxf.CxfJaxrsServiceRegistrator))"),
-                    new ServiceTrackerCustomizer<Object, Object>() {
-
+                    JaxrsServiceRuntime.class,
+                    new ServiceTrackerCustomizer<JaxrsServiceRuntime, Object>() {
                         @Override
                         public Object addingService(
-                            ServiceReference<Object> serviceReference) {
+                            ServiceReference<JaxrsServiceRuntime> reference) {
 
-                            countDownLatch.countDown();
-
-                            return serviceReference;
+                            return reference;
                         }
 
                         @Override
                         public void modifiedService(
-                            ServiceReference<Object> serviceReference,
-                            Object o) {
+                            ServiceReference<JaxrsServiceRuntime> reference,
+                            Object service) {
 
+                            countDownLatch.countDown();
                         }
 
                         @Override
                         public void removedService(
-                            ServiceReference<Object> serviceReference,
-                            Object o) {
+                            ServiceReference<JaxrsServiceRuntime> reference,
+                            Object service) {
 
-                            countDownLatch.countDown();
                         }
                     });
 
@@ -1490,6 +1480,8 @@ public class JaxrsTest extends TestHelper {
             configuration.delete();
 
             countDownLatch.await(1, TimeUnit.MINUTES);
+
+            tracker.close();
         }
 
         assertFalse(
@@ -1524,39 +1516,38 @@ public class JaxrsTest extends TestHelper {
 
             properties.put("default.application.base", "defaultpath");
 
-            CountDownLatch countDownLatch = new CountDownLatch(3);
+            CountDownLatch countDownLatch = new CountDownLatch(6);
 
-            ServiceTracker<Object, Object> tracker =
+            ServiceTracker<?, ?> tracker =
                 new ServiceTracker<>(
                     bundleContext,
-                    bundleContext.createFilter(
-                        "(&(osgi.jaxrs.name=.default)" +
-                            "(objectClass=org.apache.aries.jax.rs.whiteboard." +
-                            "internal.cxf.CxfJaxrsServiceRegistrator))"),
-                    new ServiceTrackerCustomizer<Object, Object>() {
+                    JaxrsServiceRuntime.class,
+                    new ServiceTrackerCustomizer<
+                        JaxrsServiceRuntime, Object>() {
 
                         @Override
                         public Object addingService(
-                            ServiceReference<Object> serviceReference) {
-
-                            countDownLatch.countDown();
+                            ServiceReference<JaxrsServiceRuntime>
+                                serviceReference) {
 
                             return serviceReference;
                         }
 
                         @Override
                         public void modifiedService(
-                            ServiceReference<Object> serviceReference,
+                            ServiceReference<JaxrsServiceRuntime>
+                                serviceReference,
                             Object o) {
 
+                            countDownLatch.countDown();
                         }
 
                         @Override
                         public void removedService(
-                            ServiceReference<Object> serviceReference,
+                            ServiceReference<JaxrsServiceRuntime>
+                                serviceReference,
                             Object o) {
 
-                            countDownLatch.countDown();
                         }
                     });
 
@@ -1577,37 +1568,36 @@ public class JaxrsTest extends TestHelper {
         finally {
             CountDownLatch countDownLatch = new CountDownLatch(3);
 
-            ServiceTracker<Object, Object> tracker =
+            ServiceTracker<?, ?> tracker =
                 new ServiceTracker<>(
                     bundleContext,
-                    bundleContext.createFilter(
-                        "(&(osgi.jaxrs.name=.default)" +
-                            "(objectClass=org.apache.aries.jax.rs.whiteboard." +
-                            "internal.cxf.CxfJaxrsServiceRegistrator))"),
-                    new ServiceTrackerCustomizer<Object, Object>() {
+                    JaxrsServiceRuntime.class,
+                    new ServiceTrackerCustomizer<
+                        JaxrsServiceRuntime, Object>() {
 
                         @Override
                         public Object addingService(
-                            ServiceReference<Object> serviceReference) {
-
-                            countDownLatch.countDown();
+                            ServiceReference<JaxrsServiceRuntime>
+                                serviceReference) {
 
                             return serviceReference;
                         }
 
                         @Override
                         public void modifiedService(
-                            ServiceReference<Object> serviceReference,
+                            ServiceReference<JaxrsServiceRuntime>
+                                serviceReference,
                             Object o) {
 
+                            countDownLatch.countDown();
                         }
 
                         @Override
                         public void removedService(
-                            ServiceReference<Object> serviceReference,
+                            ServiceReference<JaxrsServiceRuntime>
+                                serviceReference,
                             Object o) {
 
-                            countDownLatch.countDown();
                         }
                     });
 
