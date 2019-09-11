@@ -615,6 +615,14 @@ public class Whiteboard {
         Map<String, Object> properties = getApplicationProperties(
             serviceReference);
 
+        properties.put(
+            "original.service.id",
+            serviceReference.getProperty("service.id"));
+
+        properties.put(
+            "original.service.bundleid",
+            serviceReference.getProperty("service.bundleid"));
+
         return
             getCxfExtensions(tuple.getCachingServiceReference()).
                 flatMap(extensions ->
