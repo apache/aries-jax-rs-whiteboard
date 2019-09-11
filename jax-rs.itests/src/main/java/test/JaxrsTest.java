@@ -685,6 +685,54 @@ public class JaxrsTest extends TestHelper {
     }
 
     @Test
+    public void testApplicationWithDedicatedErroredExtension()
+        throws InterruptedException {
+
+        assertEquals(0, getRuntimeDTO().applicationDTOs.length);
+        assertEquals(0, getRuntimeDTO().failedApplicationDTOs.length);
+
+        registerExtension(
+            Feature.class,
+            context -> {
+                throw new RuntimeException();
+            },
+            "ErrorFeature",
+            JAX_RS_APPLICATION_SELECT,
+            "(" + JAX_RS_APPLICATION_BASE + "=/test-application)");
+
+        registerApplication(
+            new TestApplication(),
+            JAX_RS_EXTENSION_SELECT,
+            String.format("(%s=%s)", JAX_RS_NAME, "ErrorFeature"));
+
+        assertEquals(1, getRuntimeDTO().failedExtensionDTOs.length);
+        assertEquals(1, getRuntimeDTO().failedApplicationDTOs.length);
+        assertEquals(0, getRuntimeDTO().applicationDTOs.length);
+
+        WebTarget webTarget = createDefaultTarget().path("/test-application");
+
+        Response response = webTarget.request().get();
+
+        assertEquals(404, response.getStatus());
+
+        registerExtension(
+            "ErrorFeature",
+            JAX_RS_APPLICATION_SELECT,
+            "(" + JAX_RS_APPLICATION_BASE + "=/test-application)",
+            "service.ranking", 10);
+
+        assertEquals(1, getRuntimeDTO().failedExtensionDTOs.length);
+        assertEquals(0, getRuntimeDTO().failedApplicationDTOs.length);
+        assertEquals(1, getRuntimeDTO().applicationDTOs.length);
+
+        webTarget = createDefaultTarget().path("/test-application");
+
+        response = webTarget.request().get();
+
+        assertEquals(200, response.getStatus());
+    }
+
+    @Test
     public void testApplicationWithDependentExtensions() {
         assertEquals(0, getRuntimeDTO().applicationDTOs.length);
         assertEquals(0, getRuntimeDTO().failedApplicationDTOs.length);
