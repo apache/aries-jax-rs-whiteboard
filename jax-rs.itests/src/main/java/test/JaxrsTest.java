@@ -897,11 +897,11 @@ public class JaxrsTest extends TestHelper {
 
         ServiceRegistration<?> filterRegistration = registerExtension("Filter");
 
-        assertEquals(1, getRuntimeDTO().applicationDTOs.length);
+        assertEquals(0, getRuntimeDTO().applicationDTOs.length);
 
         response = webTarget.request().get();
 
-        assertEquals("Hello application", response.readEntity(String.class));
+        assertEquals(404, response.getStatus());
 
         filterRegistration.unregister();
 
