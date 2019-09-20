@@ -31,7 +31,7 @@
     <groupId>org.apache.aries.jax.rs</groupId>
     <artifactId>org.apache.aries.jax.rs</artifactId>
     <name>JAX-RS Integration Project</name>
-    <version>1.0.6</version>
+    <version>1.0.7-SNAPSHOT</version>
     <packaging>pom</packaging>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -44,7 +44,7 @@
         <connection>scm:git:http://gitbox.apache.org/repos/asf/aries-jax-rs-whiteboard.git</connection>
         <developerConnection>scm:git:https://gitbox.apache.org/repos/asf/aries-jax-rs-whiteboard.git</developerConnection>
         <url>https://gitbox.apache.org/repos/asf?p=aries-jax-rs-whiteboard.git</url>
-        <tag>org.apache.aries.jax.rs-1.0.6</tag>
+        <tag>HEAD</tag>
     </scm>
 
     <modules>
