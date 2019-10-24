@@ -1,0 +1,1 @@
+A Nested Static Resource
