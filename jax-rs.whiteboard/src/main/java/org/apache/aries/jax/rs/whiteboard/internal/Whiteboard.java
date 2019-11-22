@@ -1331,8 +1331,12 @@ public class Whiteboard {
             if (!"".equals(address)) {
                 program = OSGi.register(
                     ServletContextHelper.class,
-                    () -> new ServletContextHelper() {},
-                    contextPropertiesSup);
+                    () -> new ServletContextHelper(
+                        _bundleContext.getBundle(
+                            (long)serviceProperties.get(
+                                "original.service.bundleid"))) {
+                        },
+                contextPropertiesSup);
             }
         }
         else {
