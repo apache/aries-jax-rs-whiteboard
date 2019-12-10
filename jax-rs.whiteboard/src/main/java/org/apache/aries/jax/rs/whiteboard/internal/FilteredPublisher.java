@@ -21,7 +21,9 @@ import org.apache.aries.component.dsl.OSGiResult;
 import org.apache.aries.component.dsl.Publisher;
 import org.osgi.framework.Filter;
 
+import java.util.ArrayList;
 import java.util.IdentityHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -34,7 +36,7 @@ public class FilteredPublisher<T> implements AutoCloseable {
 
     public void close() {
         if (_closed.compareAndSet(false, true)) {
-            _results.forEach((__, result) -> result.close());
+            _results.forEach((__, result) -> result.forEach(OSGiResult::close));
 
             _results.clear();
         }
@@ -48,11 +50,17 @@ public class FilteredPublisher<T> implements AutoCloseable {
         if (_filter.matches(properties)) {
             OSGiResult result = _publisher.publish(t);
 
-            OSGiResult old = _results.put(t, result);
+            _results.compute(
+                    t,
+                    (__, results) -> {
+                        if (results == null) {
+                            results = new ArrayList<>();
+                        }
 
-            if (old != null) {
-                old.close();
-            }
+                        results.add(result);
+
+                        return results;
+                    });
 
             if (_closed.get()) {
                 result.close();
@@ -65,16 +73,16 @@ public class FilteredPublisher<T> implements AutoCloseable {
             return;
         }
 
-        OSGiResult result = _results.remove(t);
+        List<OSGiResult> resultList = _results.remove(t);
 
-        if (result != null) {
-            result.close();
+        if (resultList != null) {
+            resultList.forEach(OSGiResult::close);
         }
     }
 
     private Publisher<? super T> _publisher;
     private Filter _filter;
     private AtomicBoolean _closed = new AtomicBoolean(false);
-    private IdentityHashMap<T, OSGiResult> _results = new IdentityHashMap<>();
+    private IdentityHashMap<T, List<OSGiResult>> _results = new IdentityHashMap<>();
 
 }

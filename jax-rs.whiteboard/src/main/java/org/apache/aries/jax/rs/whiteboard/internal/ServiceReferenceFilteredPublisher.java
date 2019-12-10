@@ -22,7 +22,9 @@ import org.apache.aries.component.dsl.OSGiResult;
 import org.apache.aries.component.dsl.Publisher;
 import org.osgi.framework.Filter;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -38,7 +40,7 @@ public class ServiceReferenceFilteredPublisher implements AutoCloseable {
 
     public void close() {
         if (_closed.compareAndSet(false, true)) {
-            _results.forEach((__, result) -> result.close());
+            _results.forEach((__, resultList) -> resultList.forEach(OSGiResult::close));
 
             _results.clear();
         }
@@ -52,11 +54,17 @@ public class ServiceReferenceFilteredPublisher implements AutoCloseable {
         if (_filter.match(serviceReference.getServiceReference())) {
             OSGiResult result = _publisher.publish(serviceReference);
 
-            OSGiResult old = _results.put(serviceReference, result);
+            _results.compute(
+                    serviceReference,
+                    (__, results) -> {
+                        if (results == null) {
+                             results = new ArrayList<>();
+                        }
 
-            if (old != null) {
-                old.close();
-            }
+                        results.add(result);
+
+                        return results;
+                    });
 
             if (_closed.get()) {
                 result.close();
@@ -70,10 +78,10 @@ public class ServiceReferenceFilteredPublisher implements AutoCloseable {
         }
 
         if (_filter.match(serviceReference.getServiceReference())) {
-            OSGiResult result = _results.remove(serviceReference);
+            List<OSGiResult> resultList = _results.remove(serviceReference);
 
-            if (result != null) {
-                result.close();
+            if (resultList != null) {
+                resultList.forEach(OSGiResult::close);
             }
         }
     }
@@ -81,7 +89,7 @@ public class ServiceReferenceFilteredPublisher implements AutoCloseable {
     private Publisher<? super CachingServiceReference<?>> _publisher;
     private Filter _filter;
     private AtomicBoolean _closed = new AtomicBoolean(false);
-    private Map<CachingServiceReference<?>, OSGiResult> _results =
+    private Map<CachingServiceReference<?>, List<OSGiResult>> _results =
         new HashMap<>();
 
 }
