@@ -2379,6 +2379,78 @@ public class JaxrsTest extends TestHelper {
     }
 
     @Test
+    public void testStandaloneEndpointWithExtensionsDependenciesOnlyOneService()
+            throws InterruptedException {
+
+        WebTarget webTarget = createDefaultTarget().path("test");
+
+        JaxrsServiceRuntime runtime = getJaxrsServiceRuntime();
+
+        ServiceRegistration<?> serviceRegistration;
+        ServiceRegistration<?> extensionRegistration1;
+
+        serviceRegistration = registerAddon(
+                new TestAddon(),
+                JAX_RS_EXTENSION_SELECT, new String[]{
+                        "(property one=one)",
+                        "(property two=two)",
+                });
+
+        RuntimeDTO runtimeDTO = runtime.getRuntimeDTO();
+
+        assertEquals(1, runtimeDTO.failedResourceDTOs.length);
+        assertEquals(
+                (long)serviceRegistration.getReference().getProperty(
+                        "service.id"),
+                runtimeDTO.failedResourceDTOs[0].serviceId);
+
+        assertEquals(404, webTarget.request().get().getStatus());
+
+        extensionRegistration1 = registerExtension(
+                "aExtension", "property one", "one", "property two", "two");
+
+        runtimeDTO = runtime.getRuntimeDTO();
+
+        assertEquals(0, runtimeDTO.failedResourceDTOs.length);
+
+        Response response = webTarget.request().get();
+
+        assertEquals(
+                "This should say hello", "Hello test",
+                response.readEntity(String.class));
+
+        extensionRegistration1.unregister();
+
+        runtimeDTO = runtime.getRuntimeDTO();
+        assertEquals(1, runtimeDTO.failedResourceDTOs.length);
+        assertEquals(
+                (long)serviceRegistration.getReference().getProperty(
+                        "service.id"),
+                runtimeDTO.failedResourceDTOs[0].serviceId);
+
+        assertEquals(404, webTarget.request().get().getStatus());
+
+        extensionRegistration1 = registerExtension(
+                "aExtension", "property one", "one", "property two", "two");
+
+        runtimeDTO = runtime.getRuntimeDTO();
+        assertEquals(0, runtimeDTO.failedResourceDTOs.length);
+
+        assertEquals(
+                "This should say hello", "Hello test",
+                response.readEntity(String.class));
+
+        extensionRegistration1.unregister();
+
+        runtimeDTO = runtime.getRuntimeDTO();
+        assertEquals(1, runtimeDTO.failedResourceDTOs.length);
+        assertEquals(
+                (long)serviceRegistration.getReference().getProperty(
+                        "service.id"),
+                runtimeDTO.failedResourceDTOs[0].serviceId);
+    }
+
+    @Test
     public void testStandaloneFilter() throws InterruptedException {
         WebTarget webTarget = createDefaultTarget().path("test");
 

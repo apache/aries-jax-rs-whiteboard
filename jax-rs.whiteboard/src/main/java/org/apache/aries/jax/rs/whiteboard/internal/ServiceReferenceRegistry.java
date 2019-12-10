@@ -85,13 +85,13 @@ public class ServiceReferenceRegistry implements AutoCloseable {
 
     public void register(CachingServiceReference<?> serviceReference) {
         synchronized (ServiceReferenceRegistry.this) {
+            _registeredExtensions.add(serviceReference);
+
             for (ServiceReferenceFilteredPublisher publisher :
                 new HashSet<>(_extensionPublishers)) {
 
                 publisher.publishIfMatched(serviceReference);
             }
-
-            _registeredExtensions.add(serviceReference);
         }
     }
 
