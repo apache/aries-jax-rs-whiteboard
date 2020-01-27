@@ -745,25 +745,7 @@ public class Whiteboard {
         registerDefaultApplication() {
 
         return OSGi.register(
-            Application.class,
-            () -> new DefaultApplication() {
-
-                @Override
-                public Set<Object> getSingletons() {
-                    Object defaultApplication = _configurationMap.get(
-                        "default.web");
-
-                    if (defaultApplication == null ||
-                        Boolean.parseBoolean(defaultApplication.toString())) {
-
-                        return Collections.singleton(new DefaultWeb());
-                    }
-                    else {
-                        return Collections.emptySet();
-                    }
-                }
-
-            },
+            Application.class, DefaultApplication::new,
             () -> {
                 Object defaultApplicationBase = _configurationMap.get(
                     "default.application.base");
