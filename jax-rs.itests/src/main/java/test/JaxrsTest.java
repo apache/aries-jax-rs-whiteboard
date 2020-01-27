@@ -2600,6 +2600,19 @@ public class JaxrsTest extends TestHelper {
     }
 
     @Test
+    public void testCXFServiceListPage() {
+        registerApplication(new TestApplication());
+
+        WebTarget path = createDefaultTarget().
+            path("/test-application").
+            path("/services");
+
+        Response response = path.request().get();
+
+        assertEquals(404, response.getStatus());
+    }
+
+    @Test
     public void testVoidResource() {
         registerAddon(new TestVoidResource());
 

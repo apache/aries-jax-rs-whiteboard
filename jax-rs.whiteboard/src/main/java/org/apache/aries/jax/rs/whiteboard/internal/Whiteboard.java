@@ -1340,15 +1340,16 @@ public class Whiteboard {
 
             Utils.mergePropertyMaps(servletProperties, _configurationMap);
 
-            servletProperties.putIfAbsent(
-                HTTP_WHITEBOARD_TARGET, "(osgi.http.endpoint=*)");
-
             Map<String, ?> contextProperties = contextPropertiesSup.get();
 
             servletProperties.put(
                 HTTP_WHITEBOARD_CONTEXT_SELECT,
                 format("(%s=%s)", HTTP_WHITEBOARD_CONTEXT_NAME,
                     contextProperties.get(HTTP_WHITEBOARD_CONTEXT_NAME)));
+            servletProperties.putIfAbsent(
+                HTTP_WHITEBOARD_TARGET, "(osgi.http.endpoint=*)");
+            servletProperties.putIfAbsent(
+                "servlet.init.hide-service-list-page", "true");
 
             if (contextReference == null) {
                 servletProperties.put(HTTP_WHITEBOARD_SERVLET_PATTERN, "/*");
