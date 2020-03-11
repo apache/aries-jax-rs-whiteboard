@@ -2496,8 +2496,8 @@ public class JaxrsTest extends TestHelper {
         source1.open();
         source2.open();
 
-        //The filter IS invoked on the subscribe method
-        assertEquals(2, atomicInteger.get());
+        //The filter IS NOT invoked on the subscribe method
+        assertEquals(0, atomicInteger.get());
 
         WebTarget broadcast = createDefaultTarget().path("/sse").path(
             "/broadcast");
@@ -2509,8 +2509,6 @@ public class JaxrsTest extends TestHelper {
 
         assertEquals(Arrays.asList("welcome", "message"), source1Events);
         assertEquals(Arrays.asList("welcome", "message"), source2Events);
-
-	atomicInteger.set(0);
 
         broadcast.request().post(
             Entity.entity("another message", MediaType.TEXT_PLAIN_TYPE));
