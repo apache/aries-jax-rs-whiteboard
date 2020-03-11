@@ -56,8 +56,8 @@
 	osgi.enroute.junit.wrapper;version='[4.12.0,4.12.1)',\
 	org.apache.aries.spifly.dynamic.framework.extension;version='[1.2.1,1.2.2)',\
 	org.apache.felix.http.jetty;version='[4.0.8,4.0.9)',\
-	org.apache.aries.jax.rs.itests;version='[1.0.7,1.0.8)',\
-	org.apache.aries.jax.rs.itests-fragment;version='[1.0.7,1.0.8)',\
-	org.apache.aries.jax.rs.whiteboard;version='[1.0.7,1.0.8)'
+	org.apache.aries.jax.rs.itests;version='[1.0.8,1.0.9)',\
+	org.apache.aries.jax.rs.itests-fragment;version='[1.0.8,1.0.9)',\
+	org.apache.aries.jax.rs.whiteboard;version='[1.0.8,1.0.9)'
 
 -include: -personal.bnd
