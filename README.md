@@ -5,6 +5,25 @@
 
 Aries JAX-RS Whiteboard is the reference implementation of the [OSGi JAX-RS Services Whiteboard 1.0](https://osgi.org/specification/osgi.cmpn/7.0.0/service.jaxrs.html).
 
+
+## Configuration
+
+The whiteboard is configured using configuration admin.
+
+PID                                        | Purpose
+-------------------------------------------| -------
+org.apache.aries.jax.rs.whiteboard.default | Default JAX-RS Whiteboard instance
+org.apache.aries.jax.rs.whiteboard         | Factory PID for creating additional JAX-RS Whiteboard instances
+
+Property                            | Default                | Description
+------------------------------------|------------------------|--------------------------------------------------------
+enabled                             | true                   | Enable or disable the whiteboard instance
+default.application.base            | /                      | Default path for applications
+application.base.prefix             | ""                     | Prefix for application base
+osgi.http.whiteboard.target         | (osgi.http.endpoint=*) | Select the http whiteboard service if there are several
+osgi.http.whiteboard.context.select |                        | Select the http whiteboard context to be used
+hide-service-list-page              | true                   | Hide the CXF service list 
+
 ## Integrations
 
 The `integrations` folder contains OSGi enabled integrations for a variety of useful libraries that you might want to use with JAX-RS. In many cases these are just adding OSGi lifecycle and configuration to existing JAX-RS enabled libraries.
