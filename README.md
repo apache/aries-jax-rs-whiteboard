@@ -15,14 +15,14 @@ PID                                        | Purpose
 org.apache.aries.jax.rs.whiteboard.default | Default JAX-RS Whiteboard instance
 org.apache.aries.jax.rs.whiteboard         | Factory PID for creating additional JAX-RS Whiteboard instances
 
-Property                            | Default                | Description
-------------------------------------|------------------------|--------------------------------------------------------
-enabled                             | true                   | Enable or disable the whiteboard instance
-default.application.base            | /                      | Default path for applications
-application.base.prefix             | ""                     | Prefix for application base
-osgi.http.whiteboard.target         | (osgi.http.endpoint=*) | Select the http whiteboard service if there are several
-osgi.http.whiteboard.context.select |                        | Select the http whiteboard context to be used
-hide-service-list-page              | true                   | Hide the CXF service list 
+Property                            | Default                       | Description
+------------------------------------|-------------------------------|--------------------------------------------------------
+enabled                             | true                          | Enable or disable the whiteboard instance
+default.application.base            | /                             | Default path for applications
+application.base.prefix             | ""                            | Prefix for application base
+osgi.http.whiteboard.target         | (osgi.http.endpoint=*)        | Select the http whiteboard service if there are several
+osgi.http.whiteboard.context.select | _new context per application_ | Select the http whiteboard context to be used
+hide-service-list-page              | true                          | Hide the CXF service list 
 
 ## Integrations
 
