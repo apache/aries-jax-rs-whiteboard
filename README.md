@@ -22,7 +22,7 @@ default.application.base            | /                             | Default pa
 application.base.prefix             | ""                            | Prefix for application base
 osgi.http.whiteboard.target         | (osgi.http.endpoint=*)        | Select the http whiteboard service if there are several
 osgi.http.whiteboard.context.select | _new context per application_ | Select the http whiteboard context to be used
-hide-service-list-page              | true                          | Hide the CXF service list 
+servlet.init.hide-service-list-page | true                          | Hide the CXF service list
 
 ## Integrations
 
