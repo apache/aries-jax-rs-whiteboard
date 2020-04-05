@@ -25,6 +25,8 @@ osgi.http.whiteboard.context.select | _new context per application_ | Select the
 servlet.init.hide-service-list-page | true                          | Hide the CXF service list
 application.ready.service.filter    |                               | A service that must be present in order for applications to get started
 
+properties existing in the application service, as those in the whiteboard configuration, are used when the servlet contexts and servlets are registered. 
+
 ## Integrations
 
 The `integrations` folder contains OSGi enabled integrations for a variety of useful libraries that you might want to use with JAX-RS. In many cases these are just adding OSGi lifecycle and configuration to existing JAX-RS enabled libraries.
