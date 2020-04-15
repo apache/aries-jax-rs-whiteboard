@@ -543,6 +543,8 @@ public class Whiteboard {
             BundleWiring.class);
 
         Map<String, Object> properties = new HashMap<>(_configurationMap);
+        properties.putIfAbsent(
+            "replace.loopback.address.with.localhost", "false");
 
         HashMap<Class<?>, Object> cxfExtensions = new HashMap<>();
 

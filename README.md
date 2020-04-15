@@ -15,15 +15,16 @@ PID                                        | Purpose
 org.apache.aries.jax.rs.whiteboard.default | Default JAX-RS Whiteboard instance
 org.apache.aries.jax.rs.whiteboard         | Factory PID for creating additional JAX-RS Whiteboard instances
 
-Property                            | Default                       | Description
-------------------------------------|-------------------------------|--------------------------------------------------------
-enabled                             | true                          | Enable or disable the whiteboard instance
-default.application.base            | /                             | Default path for applications
-application.base.prefix             | ""                            | Prefix for application base
-osgi.http.whiteboard.target         | (osgi.http.endpoint=*)        | Select the http whiteboard service if there are several
-osgi.http.whiteboard.context.select | _new context per application_ | Select the http whiteboard context to be used
-servlet.init.hide-service-list-page | true                          | Hide the CXF service list
-application.ready.service.filter    |                               | A service that must be present in order for applications to get started
+Property                                | Default                       | Description
+----------------------------------------|-------------------------------|--------------------------------------------------------
+enabled                                 | true                          | Enable or disable the whiteboard instance
+default.application.base                | /                             | Default path for applications
+application.base.prefix                 | ""                            | Prefix for application base
+osgi.http.whiteboard.target             | (osgi.http.endpoint=*)        | Select the http whiteboard service if there are several
+osgi.http.whiteboard.context.select     | _new context per application_ | Select the http whiteboard context to be used
+servlet.init.hide-service-list-page     | true                          | Hide the CXF service list
+replace.loopback.address.with.localhost | false                         | Replace loopback addresses by localhost (e.g. by UriBuilder)
+application.ready.service.filter        |                               | A service that must be present in order for applications to get started
 
 properties existing in the application service, as those in the whiteboard configuration, are used when the servlet contexts and servlets are registered. 
 
