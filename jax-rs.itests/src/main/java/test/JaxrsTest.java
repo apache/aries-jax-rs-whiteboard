@@ -2132,6 +2132,30 @@ public class JaxrsTest extends TestHelper {
     }
 
     @Test
+    public void testStandaloneEndPointApplicationScopedLifecycle() {
+        WebTarget webTarget =
+                createDefaultTarget().
+                        path("/test-addon-lifecycle");
+        WebTarget webTarget2 =
+                createDefaultTarget().
+                        path("/test-application/test-addon-lifecycle");
+
+        registerApplication(new TestApplication());
+
+        registerAddonLifecycle(
+            false, JAX_RS_RESOURCE, "true",
+            "org.apache.aries.jax.rs.whiteboard.application.scoped", true,
+            JAX_RS_APPLICATION_SELECT, "(osgi.jaxrs.name=*)");
+
+        String first = webTarget.request().get().readEntity(String.class);
+        String second = webTarget.request().get().readEntity(String.class);
+        String third = webTarget2.request().get().readEntity(String.class);
+
+        assertEquals("This should be equal", first, second);
+        assertNotEquals("This should be different", first, third);
+    }
+
+    @Test
     public void testStandaloneEndPointReadd() {
         WebTarget webTarget = createDefaultTarget().path("test");
 
@@ -2165,11 +2189,19 @@ public class JaxrsTest extends TestHelper {
             createDefaultTarget().
                 path("/test-addon-lifecycle");
 
-        registerAddonLifecycle(true, JAX_RS_RESOURCE, "true");
+        WebTarget webTarget2 =
+            createDefaultTarget().
+                path("/test-application/test-addon-lifecycle");
+
+        registerApplication(new TestApplication());
+
+        registerAddonLifecycle(
+                true,
+                JAX_RS_RESOURCE, "true",
+                JAX_RS_APPLICATION_SELECT, "(osgi.jaxrs.name=*)");
 
         String first = webTarget.request().get().readEntity(String.class);
-
-        String second = webTarget.request().get().readEntity(String.class);
+        String second = webTarget2.request().get().readEntity(String.class);
 
         assertEquals("This should be equal", first, second);
     }
