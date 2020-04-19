@@ -19,9 +19,6 @@ package org.apache.aries.jax.rs.whiteboard.internal.utils;
 
 import org.apache.aries.component.dsl.CachingServiceReference;
 import org.apache.aries.component.dsl.OSGi;
-import org.apache.aries.jax.rs.whiteboard.internal.cxf.PrototypeServiceReferenceResourceProvider;
-import org.apache.aries.jax.rs.whiteboard.internal.cxf.SingletonServiceReferenceResourceProvider;
-import org.apache.cxf.jaxrs.lifecycle.ResourceProvider;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.ServiceObjects;
 import org.osgi.framework.ServiceReference;
@@ -129,29 +126,6 @@ public class Utils {
         }
 
         return properties;
-    }
-
-    public static <T> ResourceProvider getResourceProvider(
-        ServiceTuple<T> serviceTuple) {
-
-        CachingServiceReference<T> cachingServiceReference =
-            serviceTuple.getCachingServiceReference();
-
-        String scope =
-            cachingServiceReference.getProperty("service.scope").toString();
-
-        if (scope.equals("prototype")) {
-            return new PrototypeServiceReferenceResourceProvider(
-                cachingServiceReference,
-                serviceTuple.getService().getClass(),
-                serviceTuple.getServiceObjects());
-        }
-        else {
-            return new SingletonServiceReferenceResourceProvider(
-                serviceTuple.getCachingServiceReference(),
-                serviceTuple.getService()
-            );
-        }
     }
 
     public static String getString(Object string) {

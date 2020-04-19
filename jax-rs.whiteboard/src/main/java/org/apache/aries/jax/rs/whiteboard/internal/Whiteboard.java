@@ -18,6 +18,8 @@
 package org.apache.aries.jax.rs.whiteboard.internal;
 
 import org.apache.aries.jax.rs.whiteboard.internal.cxf.CxfJaxrsServiceRegistrator;
+import org.apache.aries.jax.rs.whiteboard.internal.cxf.PrototypeServiceReferenceResourceProvider;
+import org.apache.aries.jax.rs.whiteboard.internal.cxf.SingletonServiceReferenceResourceProvider;
 import org.apache.aries.jax.rs.whiteboard.internal.utils.Utils;
 import org.apache.aries.jax.rs.whiteboard.internal.utils.PropertyHolder;
 import org.apache.aries.jax.rs.whiteboard.internal.utils.ServiceTuple;
@@ -26,6 +28,7 @@ import org.apache.aries.component.dsl.OSGi;
 import org.apache.aries.component.dsl.OSGiResult;
 import org.apache.cxf.Bus;
 import org.apache.cxf.bus.extension.ExtensionManagerBus;
+import org.apache.cxf.jaxrs.lifecycle.ResourceProvider;
 import org.apache.cxf.transport.servlet.CXFNonSpringServlet;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
@@ -63,7 +66,6 @@ import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
@@ -343,6 +345,29 @@ public class Whiteboard {
         }
         if (isResource(sr)) {
             _runtime.removeClashingResource(sr);
+        }
+    }
+
+    private static <T> ResourceProvider getResourceProvider(
+            ServiceTuple<T> serviceTuple) {
+
+        CachingServiceReference<T> cachingServiceReference =
+                serviceTuple.getCachingServiceReference();
+
+        String scope =
+                cachingServiceReference.getProperty("service.scope").toString();
+
+        if (scope.equals("prototype")) {
+            return new PrototypeServiceReferenceResourceProvider(
+                    cachingServiceReference,
+                    serviceTuple.getService().getClass(),
+                    serviceTuple.getServiceObjects());
+        }
+        else {
+            return new SingletonServiceReferenceResourceProvider(
+                    serviceTuple.getCachingServiceReference(),
+                    serviceTuple.getService()
+            );
         }
     }
 
@@ -829,7 +854,7 @@ public class Whiteboard {
             ).flatMap(st ->
                 just(st).
                 map(
-                    Utils::getResourceProvider
+                    Whiteboard::getResourceProvider
                 ).effects(
                     rp -> _runtime.addApplicationEndpoint(
                         registratorProperties::get,
