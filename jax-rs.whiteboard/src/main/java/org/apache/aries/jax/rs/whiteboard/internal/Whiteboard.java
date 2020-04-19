@@ -348,7 +348,7 @@ public class Whiteboard {
         }
     }
 
-    private static <T> ResourceProvider getResourceProvider(
+    private static <T> OSGi<ResourceProvider> getResourceProvider(
             ServiceTuple<T> serviceTuple) {
 
         CachingServiceReference<T> cachingServiceReference =
@@ -358,16 +358,18 @@ public class Whiteboard {
                 cachingServiceReference.getProperty("service.scope").toString();
 
         if (scope.equals("prototype")) {
-            return new PrototypeServiceReferenceResourceProvider(
-                    cachingServiceReference,
-                    serviceTuple.getService().getClass(),
-                    serviceTuple.getServiceObjects());
+            return just(
+                    new PrototypeServiceReferenceResourceProvider(
+                        cachingServiceReference,
+                        serviceTuple.getService().getClass(),
+                        serviceTuple.getServiceObjects()));
         }
         else {
-            return new SingletonServiceReferenceResourceProvider(
-                    serviceTuple.getCachingServiceReference(),
-                    serviceTuple.getService()
-            );
+            return just(
+                    new SingletonServiceReferenceResourceProvider(
+                        serviceTuple.getCachingServiceReference(),
+                        serviceTuple.getService()
+            ));
         }
     }
 
@@ -853,7 +855,7 @@ public class Whiteboard {
                 then(nothing())
             ).flatMap(st ->
                 just(st).
-                map(
+                flatMap(
                     Whiteboard::getResourceProvider
                 ).effects(
                     rp -> _runtime.addApplicationEndpoint(
