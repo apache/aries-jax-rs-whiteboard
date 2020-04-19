@@ -18,7 +18,7 @@ org.apache.aries.jax.rs.whiteboard         | Factory PID for creating additional
 Property                                | Default                       | Description
 ----------------------------------------|-------------------------------|--------------------------------------------------------
 enabled                                 | true                          | Enable or disable the whiteboard instance
-default.application.base                | /                             | Default path for applications
+default.application.base                | /                             | Base for default application
 application.base.prefix                 | ""                            | Prefix for application base
 osgi.http.whiteboard.target             | (osgi.http.endpoint=*)        | Select the http whiteboard service if there are several
 osgi.http.whiteboard.context.select     | _new context per application_ | Select the http whiteboard context to be used
