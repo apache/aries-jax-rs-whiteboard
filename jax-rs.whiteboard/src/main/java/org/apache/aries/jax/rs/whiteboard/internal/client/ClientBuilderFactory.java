@@ -38,6 +38,7 @@ public class ClientBuilderFactory
         Bundle bundle, ServiceRegistration<ClientBuilder> registration,
         ClientBuilder service) {
 
+        ((ClientBuilderImpl)service).close();
     }
 
 }

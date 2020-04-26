@@ -17,14 +17,32 @@
 
 package org.apache.aries.jax.rs.whiteboard.internal.client;
 
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+
+import javax.ws.rs.client.Client;
+
 import org.apache.cxf.jaxrs.client.PromiseRxInvokerProviderImpl;
 
 public class ClientBuilderImpl extends org.apache.cxf.jaxrs.client.spec.ClientBuilderImpl {
+
+    private final Set<Client> clients = ConcurrentHashMap.newKeySet();
 
     public ClientBuilderImpl() {
         super();
 
         register(new PromiseRxInvokerProviderImpl());
+    }
+
+    @Override
+    public Client build() {
+        final Client client = super.build();
+        clients.add(client);
+        return client;
+    }
+
+    void close() {
+        clients.removeIf(c -> {c.close(); return true;});
     }
 
 }
