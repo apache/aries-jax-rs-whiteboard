@@ -29,13 +29,13 @@
     <parent>
         <groupId>org.apache.aries.jax.rs</groupId>
         <artifactId>org.apache.aries.jax.rs</artifactId>
-        <version>1.0.6-SNAPSHOT</version>
+        <version>1.0.9-SNAPSHOT</version>
         <relativePath>..</relativePath>
     </parent>
 
     <properties>
-        <aries.jaxrs.version>1.0.6-SNAPSHOT</aries.jaxrs.version>
-        <dsl.version>1.2.1</dsl.version>
+        <aries.jaxrs.version>1.0.9-SNAPSHOT</aries.jaxrs.version>
+        <dsl.version>1.2.2</dsl.version>
     </properties>
 
     <scm>
@@ -49,6 +49,7 @@
         <module>shiro</module>
         <module>jackson</module>
         <module>cxf-jettison</module>
+        <module>openapi</module>
     </modules>
 
 </project>

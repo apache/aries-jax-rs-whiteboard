@@ -26,8 +26,8 @@
     </parent>
 
     <artifactId>org.apache.aries.jax.rs.openapi.resource</artifactId>
-    <description>Apache Aries JAX-RS OpenAPI Authentication Provider</description>
-    <name>Apache Aries JAX-RS OpenAPI Authentication</name>
+    <description>Apache Aries JAX-RS Open API Provider</description>
+    <name>Apache Aries JAX-RS Open API</name>
 
     <dependencies>
         <dependency>
@@ -35,9 +35,9 @@
             <artifactId>org.apache.aries.component-dsl.component-dsl</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.apache.cxf</groupId>
-            <artifactId>cxf-rt-rs-service-description-openapi-v3</artifactId>
-            <version>${cxf.version}</version>
+            <groupId>io.swagger.core.v3</groupId>
+            <artifactId>swagger-jaxrs2</artifactId>
+            <version>${openapi.version}</version>
         </dependency>
         <dependency>
             <groupId>org.osgi</groupId>

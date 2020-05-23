@@ -11,19 +11,16 @@
 
 package org.apache.aries.jax.rs.openapi;
 
+import io.swagger.v3.oas.models.OpenAPI;
+import org.apache.aries.component.dsl.CachingServiceReference;
 import org.apache.aries.component.dsl.OSGi;
 import org.apache.aries.component.dsl.OSGiResult;
-import org.apache.cxf.feature.Feature;
-import org.apache.cxf.jaxrs.openapi.OpenApiCustomizer;
 import org.osgi.annotation.bundle.Header;
-import org.osgi.framework.BundleActivator;
-import org.osgi.framework.BundleContext;
-import org.osgi.framework.Constants;
+import org.osgi.framework.*;
 
 import java.util.*;
 
 import static org.apache.aries.component.dsl.OSGi.*;
-import static org.apache.aries.component.dsl.Utils.highest;
 
 /**
  * @author Carlos Sierra Andrés
@@ -31,33 +28,22 @@ import static org.apache.aries.component.dsl.Utils.highest;
 @Header(name = Constants.BUNDLE_ACTIVATOR, value = "${@class}")
 public class OpenApiBundleActivator implements BundleActivator {
 
-    public static final String CONFIG_PID = "org.apache.aries.jax.rs.openapi";
-
-    public static OSGi<Dictionary<String, ?>> CONFIGURATION =
-            all(
-                configurations(CONFIG_PID),
-                coalesce(
-                    configuration(CONFIG_PID),
-                    just(Hashtable::new)
-                )
-            ).filter(
-                c -> !Objects.equals(c.get("enabled"), "false")
-            );
-
     private OSGiResult result;
 
     @Override
     public void start(BundleContext bundleContext) throws Exception {
         OSGi<?> program =
-            CONFIGURATION.flatMap(configuration ->
-            just(new OpenApiPrototypeServiceFactory(configuration)).flatMap(factory ->
-            processOpenApiCustomizer(configuration, factory).then(
-            processSecurityDefinitions(configuration, factory).then(
+            serviceReferences(OpenAPI.class).flatMap(sr ->
+            service(sr).flatMap(openAPI ->
+            just(
+                new OpenApiPrototypeServiceFactory(
+                    new PropertyWrapper(sr),
+                    openAPI))).flatMap(factory ->
             register(
-                Feature.class,
+                Object.class,
                 factory,
-                getProperties(configuration))
-            ))));
+                () -> getProperties(sr))
+            ));
 
         result = program.run(bundleContext);
     }
@@ -67,66 +53,17 @@ public class OpenApiBundleActivator implements BundleActivator {
         result.close();
     }
 
-    private OSGi<?> processOpenApiCustomizer(
-            Dictionary<String, ?> properties,
-            OpenApiPrototypeServiceFactory openApiPrototypeServiceFactory) {
+    private Map<String, Object> getProperties(
+        CachingServiceReference<OpenAPI> serviceReference) {
 
-        Object openApiCustomizerSelect = properties.get("open.api.customizer.select");
-
-        if (openApiCustomizerSelect instanceof String) {
-            return service(
-                    highest(
-                        serviceReferences(
-                            OpenApiCustomizer.class,
-                            openApiCustomizerSelect.toString()
-                        )
-                    )
-            ).effects(
-                openApiPrototypeServiceFactory::setOpenApiCustomizer,
-                __ -> openApiPrototypeServiceFactory.setOpenApiCustomizer(null)
-            );
-        }
-        else {
-            return just(0);
-        }
-    }
-
-    private OSGi<?> processSecurityDefinitions(
-            Dictionary<String, ?> properties,
-            OpenApiPrototypeServiceFactory openApiPrototypeServiceFactory) {
-
-        Object openApisecurityDefinitionsSelect = properties.get("open.api.security.definitions.select");
-
-        if (openApisecurityDefinitionsSelect instanceof String) {
-            return service(
-                    highest(
-                        serviceReferences(
-                            Map.class,
-                            openApisecurityDefinitionsSelect.toString()
-                        )
-                    )
-            ).effects(
-                openApiPrototypeServiceFactory::setSecurityDefinitions,
-                __ -> openApiPrototypeServiceFactory.setSecurityDefinitions(null)
-            );
-        }
-        else {
-            return just(0);
-        }
-    }
-
-    private Map<String, Object> getProperties(Dictionary<String, ?> configuration) {
         HashMap<String, Object> map = new HashMap<>();
 
-        Enumeration<String> keys = configuration.keys();
-
-        while (keys.hasMoreElements()) {
-            String key = keys.nextElement();
-
-            map.put(key, configuration.get(key));
+        for (String propertyKey : serviceReference.getPropertyKeys()) {
+            map.put(propertyKey, serviceReference.getProperty(propertyKey));
         }
 
-        map.put("osgi.jaxrs.extension", true);
+        map.put("org.apache.aries.jax.rs.whiteboard.application.scoped", true);
+        map.put("osgi.jaxrs.resource", true);
 
         return map;
     }

@@ -11,77 +11,56 @@
 
 package org.apache.aries.jax.rs.openapi;
 
-import io.swagger.v3.oas.models.security.SecurityScheme;
-import org.apache.cxf.feature.Feature;
-import org.apache.cxf.jaxrs.openapi.OpenApiCustomizer;
-import org.apache.cxf.jaxrs.openapi.OpenApiFeature;
+import io.swagger.v3.jaxrs2.integration.resources.OpenApiResource;
+import io.swagger.v3.oas.integration.SwaggerConfiguration;
+import io.swagger.v3.oas.models.OpenAPI;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.PrototypeServiceFactory;
 import org.osgi.framework.ServiceRegistration;
-
-import java.util.Dictionary;
-import java.util.Map;
 
 /**
  * @author Carlos Sierra Andrés
  */
 public class OpenApiPrototypeServiceFactory
-    implements PrototypeServiceFactory<Feature> {
+    implements PrototypeServiceFactory<Object> {
 
     private final PropertyWrapper propertyWrapper;
-    private OpenApiCustomizer openApiCustomizer;
-    private Map<String, SecurityScheme> securitySchemeMap;
+    private final OpenAPI openAPI;
 
-    public OpenApiPrototypeServiceFactory(Dictionary<String, ?> properties) {
-        propertyWrapper = new PropertyWrapper(properties);
-    }
+    public OpenApiPrototypeServiceFactory(
+        PropertyWrapper propertyWrapper, OpenAPI openAPI) {
 
-    public void setOpenApiCustomizer(OpenApiCustomizer openApiCustomizer) {
-        this.openApiCustomizer = openApiCustomizer;
-    }
-
-    public void setSecurityDefinitions(Map<String, SecurityScheme> securitySchemeMap) {
-        this.securitySchemeMap = securitySchemeMap;
+        this.propertyWrapper = propertyWrapper;
+        this.openAPI = openAPI;
     }
 
     @Override
-    public OpenApiFeature getService(
+    public Object getService(
         Bundle bundle,
-        ServiceRegistration<Feature> serviceRegistration) {
+        ServiceRegistration<Object> serviceRegistration) {
 
-        OpenApiFeature openApiFeature = new OpenApiFeature();
-        propertyWrapper.applyString("contact.email", openApiFeature::setContactEmail);
-        propertyWrapper.applyString("contact.name", openApiFeature::setContactName);
-        propertyWrapper.applyString("contact.url", openApiFeature::setContactUrl);
-        propertyWrapper.applyString("description", openApiFeature::setDescription);
-        propertyWrapper.applyStringCollection("ignored.routes", openApiFeature::setIgnoredRoutes);
-        propertyWrapper.applyString("license", openApiFeature::setLicense);
-        propertyWrapper.applyString("license.url", openApiFeature::setLicenseUrl);
-        propertyWrapper.applyBoolean("pretty.print", openApiFeature::setPrettyPrint);
-        propertyWrapper.applyBoolean("read.all.resources", openApiFeature::setReadAllResources);
-        propertyWrapper.applyStringSet("resource.classes", openApiFeature::setResourceClasses);
-        propertyWrapper.applyStringSet("resource.packages", openApiFeature::setResourcePackages);
-        propertyWrapper.applyBoolean("run.as.filter", openApiFeature::setRunAsFilter);
-        propertyWrapper.applyBoolean("scan", openApiFeature::setScan);
-        propertyWrapper.applyBoolean("scan.known.config.locations", openApiFeature::setScanKnownConfigLocations);
-        propertyWrapper.applyBoolean("support.swagger.ui", openApiFeature::setSupportSwaggerUi);
+        SwaggerConfiguration
+                swaggerConfiguration = new SwaggerConfiguration().
+                openAPI(openAPI);
 
+        propertyWrapper.applyLong("cache.ttl", swaggerConfiguration::setCacheTTL);
+        propertyWrapper.applyString("id", swaggerConfiguration::id);
+        propertyWrapper.applyStringCollection("ignored.routes", swaggerConfiguration::setIgnoredRoutes);
+        propertyWrapper.applyBoolean("pretty.print", swaggerConfiguration::setPrettyPrint);
+        propertyWrapper.applyBoolean("read.all.resources", swaggerConfiguration::setReadAllResources);
 
-        if (openApiCustomizer != null) {
-            openApiFeature.setCustomizer(openApiCustomizer);
-        }
-        if (securitySchemeMap != null) {
-            openApiFeature.setSecurityDefinitions(securitySchemeMap);
-        }
+        OpenApiResource openApiResource = new OpenApiResource();
 
-        return openApiFeature;
+        openApiResource.setOpenApiConfiguration(swaggerConfiguration);
+
+        return openApiResource;
     }
 
     @Override
     public void ungetService(
         Bundle bundle,
-        ServiceRegistration<Feature> serviceRegistration,
-        Feature feature) {
+        ServiceRegistration<Object> serviceRegistration,
+        Object object) {
 
     }
 }

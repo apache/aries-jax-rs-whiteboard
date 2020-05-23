@@ -17,21 +17,24 @@
 
 package org.apache.aries.jax.rs.openapi;
 
+import io.swagger.v3.oas.models.OpenAPI;
+import org.apache.aries.component.dsl.CachingServiceReference;
+
 import java.util.Collection;
-import java.util.Dictionary;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.function.Consumer;
 
 public class PropertyWrapper {
 
-    public PropertyWrapper(Dictionary<String, ?> properties) {
-        this._properties = properties;
+    private CachingServiceReference<OpenAPI> cachingServiceReference;
+
+    public PropertyWrapper(CachingServiceReference<OpenAPI> cachingServiceReference) {
+        this.cachingServiceReference = cachingServiceReference;
     }
 
     public void applyBoolean(String property, Consumer<Boolean> consumer) {
-
-        Object value = _properties.get(property);
+        Object value = cachingServiceReference.getProperty(property);
 
         if (value instanceof Boolean) {
             consumer.accept((Boolean) value);
@@ -42,8 +45,7 @@ public class PropertyWrapper {
     }
 
     public void applyString(String property, Consumer<String> consumer) {
-
-        Object value = _properties.get(property);
+        Object value = cachingServiceReference.getProperty(property);
 
         if ((value != null)) {
             consumer.accept(value.toString());
@@ -53,22 +55,21 @@ public class PropertyWrapper {
     public <T extends Collection<String>> void applyStringCollection(
         String property, Consumer<T> consumer) {
 
-        Object value = _properties.get(property);
+        Object value = cachingServiceReference.getProperty(property);
 
         if (value instanceof Collection) {
             consumer.accept((T)value);
         }
     }
 
-    public  void applyStringSet(
-            String property, Consumer<Set<String>> consumer) {
+    public void applyLong(String property, Consumer<Long> consumer) {
+        Object value = cachingServiceReference.getProperty(property);
 
-        Object value = _properties.get(property);
-
-        if (value instanceof Collection) {
-            consumer.accept(new HashSet<>((Collection<String>)value));
+        if (value instanceof Long) {
+            consumer.accept((Long) value);
+        }
+        if (value instanceof String) {
+            consumer.accept(Long.parseLong((String) value));
         }
     }
-
-    private Dictionary<String, ?> _properties;
 }

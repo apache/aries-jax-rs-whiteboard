@@ -44,6 +44,7 @@
 
     <modules>
         <module>openapi-resource</module>
+        <module>openapi-itest</module>
     </modules>
 
     <build>
