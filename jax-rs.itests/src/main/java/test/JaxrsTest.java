@@ -2551,12 +2551,13 @@ public class JaxrsTest extends TestHelper {
         broadcast.request().post(
             Entity.entity("another message", MediaType.TEXT_PLAIN_TYPE));
 
+        phaser.awaitAdvanceInterruptibly(2, 10, TimeUnit.SECONDS);
+
         assertEquals(
             Arrays.asList("welcome", "message", "another message"),
             source1Events);
         assertEquals(Arrays.asList("welcome", "message"), source2Events);
 
-        phaser.awaitAdvanceInterruptibly(2, 10, TimeUnit.SECONDS);
         source1.close();
 
         //The filter IS invoked when broadcasting events
