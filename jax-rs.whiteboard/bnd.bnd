@@ -51,8 +51,10 @@ Import-Package:\
     !sun.misc,\
     *
 
+Provide-Capability: osgi.implementation;osgi.implementation="aries.jax-rs";version:Version="${Bundle-Version}"
+
 -includeresource:\
-    @org.apache.aries.jax.rs.cxf.repackage-*.jar,\
+    @${.}/../org.apache.aries.jax.rs.cxf.repackage/target/org.apache.aries.jax.rs.cxf.repackage-${project.version}.jar,\
     lib/stax2-api.jar=stax2-api-*.jar;lib:=true,\
     lib/woodstox-core.jar=woodstox-core-*.jar;lib:=true,\
     lib/xmlschema-core.jar=xmlschema-core-*.jar;lib:=true

@@ -30,13 +30,13 @@
 
     <groupId>org.apache.aries.jax.rs</groupId>
     <artifactId>org.apache.aries.jax.rs</artifactId>
-    <name>JAX-RS Integration Project</name>
+    <name>Apache Aries JAX-RS Integration Project</name>
     <version>1.0.9-SNAPSHOT</version>
     <packaging>pom</packaging>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <cxf.version>3.2.13</cxf.version>
-        <bnd.version>4.2.0</bnd.version>
+        <bnd.version>5.0.1</bnd.version>
         <dsl.version>1.2.2</dsl.version>
     </properties>
 
@@ -48,11 +48,11 @@
     </scm>
 
     <modules>
+        <module>org.apache.aries.jax.rs.cxf.repackage</module>
         <module>jax-rs.whiteboard</module>
         <module>jax-rs.itests-fragment</module>
         <module>jax-rs.itests</module>
         <module>jax-rs.features</module>
-        <module>org.apache.aries.jax.rs.cxf.repackage</module>
     </modules>
 
     <dependencyManagement>

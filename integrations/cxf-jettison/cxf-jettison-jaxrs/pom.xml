@@ -24,8 +24,8 @@
     </parent>
 
     <artifactId>org.apache.aries.jax.rs.jaxb.json.cxf-jettison</artifactId>
-    <description>Apache Aries JAX-RS JAXB JSON</description>
-    <name>Apache Aries JAX-RS Jettison JAXB JSON</name>
+    <description>Apache Aries JAX-RS CXF Jettison JAXB-JSON</description>
+    <name>Apache Aries JAX-RS CXF Jettison JAXB-JSON</name>
 
     <dependencies>
         <dependency>

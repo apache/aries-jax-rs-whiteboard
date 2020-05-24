@@ -5,11 +5,11 @@
       <artifactId>org.apache.aries.jax.rs</artifactId>
       <version>1.0.9-SNAPSHOT</version>
     </parent>
-  
+
     <groupId>org.apache.aries.jax.rs.cxf.repackage</groupId>
     <artifactId>org.apache.aries.jax.rs.cxf.repackage</artifactId>
     <description>This project extracts and repackages CXF so that the whiteboard can be more easily built</description>
-    <name>Aries JAX-RS Whiteboard CXF dependency repackaging</name>
+    <name>Apache Aries JAX-RS Whiteboard CXF dependency repackaging</name>
 
     <dependencies>
         <dependency>
@@ -47,7 +47,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
-                
+
                 <executions>
                     <execution>
                         <id>extract-classes</id>
@@ -75,7 +75,7 @@
                     </execution>
                 </executions>
                 <configuration>
-                	<excludeTransitive>true</excludeTransitive>
+                    <excludeTransitive>true</excludeTransitive>
                 </configuration>
             </plugin>
             <plugin>

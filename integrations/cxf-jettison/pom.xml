@@ -27,8 +27,7 @@
     </parent>
 
     <artifactId>cxf-jettison-integration</artifactId>
-    <name>Apache Jettison JAX-RS Integration Project</name>
-    <version>1.0.3-SNAPSHOT</version>
+    <name>Apache Aries JAX-RS CXF Jettison JAXB-JSON Integration Project</name>
     <packaging>pom</packaging>
 
     <scm>

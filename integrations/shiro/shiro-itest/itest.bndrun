@@ -45,7 +45,7 @@
 	org.apache.aries.jax.rs.shiro.authc;version='[1.0.3,1.0.4)',\
 	org.apache.aries.jax.rs.shiro.authz;version='[1.0.3,1.0.4)',\
 	org.apache.aries.jax.rs.shiro.itest;version='[1.0.3,1.0.4)',\
-	org.apache.aries.jax.rs.whiteboard;version='[1.0.5,1.0.6)',\
+	org.apache.aries.jax.rs.whiteboard;version='[1.0.9,1.0.10)',\
 	org.apache.aries.spifly.dynamic.framework.extension;version='[1.2.1,1.2.2)',\
 	org.apache.commons.configuration;version='[2.2.0,2.2.1)',\
 	org.apache.commons.lang3;version='[3.6.0,3.6.1)',\
