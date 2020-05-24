@@ -30,13 +30,6 @@
     <description>Apache Aries JAX-RS Integration Tests Fragment</description>
     <name>Apache Aries JAX-RS Integration Tests Fragment</name>
 
-    <!--
-     DO NOT CHANGE! Keep this version fixed so that some submodules (which are
-     released independently) can refer to it consistently. This artifact is not
-     released anyway so the version never needs to change.
-     -->
-    <version>1.0.9-SNAPSHOT</version>
-
     <build>
         <plugins>
             <plugin>
