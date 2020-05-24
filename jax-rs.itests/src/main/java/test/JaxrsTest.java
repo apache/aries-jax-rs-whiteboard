@@ -38,10 +38,7 @@ import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -2494,7 +2491,7 @@ public class JaxrsTest extends TestHelper {
 
     @Test
     public void testSSEApplication() throws
-        InterruptedException, MalformedURLException {
+            InterruptedException, MalformedURLException, TimeoutException {
 
         AtomicInteger atomicInteger = new AtomicInteger();
 
@@ -2520,13 +2517,17 @@ public class JaxrsTest extends TestHelper {
         ArrayList<String> source1Events = new ArrayList<>();
         ArrayList<String> source2Events = new ArrayList<>();
 
+        Phaser phaser = new Phaser(2);
+
         source1.register(
-            event -> source1Events.add(event.readData(String.class)));
+            event -> {source1Events.add(event.readData(String.class));phaser.arrive(); });
         source2.register(
-            event -> source2Events.add(event.readData(String.class)));
+            event -> {source2Events.add(event.readData(String.class));phaser.arrive(); });
 
         source1.open();
         source2.open();
+
+        phaser.awaitAdvanceInterruptibly(0, 10, TimeUnit.SECONDS);
 
         //The filter IS invoked on the subscribe method
         assertEquals(2, atomicInteger.get());
@@ -2537,12 +2538,15 @@ public class JaxrsTest extends TestHelper {
         broadcast.request().post(
             Entity.entity("message", MediaType.TEXT_PLAIN_TYPE));
 
-        source2.close();
+        phaser.awaitAdvanceInterruptibly(1, 10, TimeUnit.SECONDS);
 
         assertEquals(Arrays.asList("welcome", "message"), source1Events);
         assertEquals(Arrays.asList("welcome", "message"), source2Events);
 
-	atomicInteger.set(0);
+        source2.close();
+        phaser.arrive();
+
+        atomicInteger.set(0);
 
         broadcast.request().post(
             Entity.entity("another message", MediaType.TEXT_PLAIN_TYPE));
@@ -2552,6 +2556,7 @@ public class JaxrsTest extends TestHelper {
             source1Events);
         assertEquals(Arrays.asList("welcome", "message"), source2Events);
 
+        phaser.awaitAdvanceInterruptibly(2, 10, TimeUnit.SECONDS);
         source1.close();
 
         //The filter IS invoked when broadcasting events
