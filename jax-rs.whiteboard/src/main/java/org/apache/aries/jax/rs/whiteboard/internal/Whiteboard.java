@@ -18,6 +18,8 @@
 package org.apache.aries.jax.rs.whiteboard.internal;
 
 import org.apache.aries.jax.rs.whiteboard.internal.cxf.CxfJaxrsServiceRegistrator;
+import org.apache.aries.jax.rs.whiteboard.internal.cxf.PrototypeServiceReferenceResourceProvider;
+import org.apache.aries.jax.rs.whiteboard.internal.cxf.SingletonServiceReferenceResourceProvider;
 import org.apache.aries.jax.rs.whiteboard.internal.utils.Utils;
 import org.apache.aries.jax.rs.whiteboard.internal.utils.PropertyHolder;
 import org.apache.aries.jax.rs.whiteboard.internal.utils.ServiceTuple;
@@ -26,16 +28,9 @@ import org.apache.aries.component.dsl.OSGi;
 import org.apache.aries.component.dsl.OSGiResult;
 import org.apache.cxf.Bus;
 import org.apache.cxf.bus.extension.ExtensionManagerBus;
+import org.apache.cxf.jaxrs.lifecycle.ResourceProvider;
 import org.apache.cxf.transport.servlet.CXFNonSpringServlet;
-import org.osgi.framework.Bundle;
-import org.osgi.framework.BundleContext;
-import org.osgi.framework.Constants;
-import org.osgi.framework.Filter;
-import org.osgi.framework.FrameworkUtil;
-import org.osgi.framework.InvalidSyntaxException;
-import org.osgi.framework.PrototypeServiceFactory;
-import org.osgi.framework.ServiceReference;
-import org.osgi.framework.ServiceRegistration;
+import org.osgi.framework.*;
 import org.osgi.framework.wiring.BundleWiring;
 import org.osgi.service.http.context.ServletContextHelper;
 import org.osgi.service.jaxrs.runtime.JaxrsServiceRuntime;
@@ -55,15 +50,7 @@ import javax.ws.rs.ext.MessageBodyWriter;
 import javax.ws.rs.ext.ParamConverterProvider;
 import javax.ws.rs.ext.ReaderInterceptor;
 import javax.ws.rs.ext.WriterInterceptor;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Dictionary;
-import java.util.HashMap;
-import java.util.Hashtable;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
@@ -343,6 +330,48 @@ public class Whiteboard {
         }
         if (isResource(sr)) {
             _runtime.removeClashingResource(sr);
+        }
+    }
+
+    private static <T> OSGi<ResourceProvider> getResourceProvider(
+            ServiceTuple<T> serviceTuple) {
+
+        CachingServiceReference<T> cachingServiceReference =
+                serviceTuple.getCachingServiceReference();
+
+        String scope = Utils.getString(cachingServiceReference.getProperty("service.scope"));
+
+        if (Objects.equals(scope, "prototype")) {
+            boolean applicationScoped =
+                    Boolean.parseBoolean(
+                            getString(
+                                    cachingServiceReference.getProperty(
+                                            "org.apache.aries.jax.rs.whiteboard.application.scoped")));
+            if (applicationScoped) {
+                ServiceObjects<T> serviceObjects = serviceTuple.getServiceObjects();
+
+                T service = serviceObjects.getService();
+
+                return OSGi.<ResourceProvider>just(
+                        new SingletonServiceReferenceResourceProvider(
+                                cachingServiceReference, service)
+                ).effects(
+                        __ -> {},
+                        __ -> serviceObjects.ungetService(service)
+                );
+            }
+            return just(
+                    new PrototypeServiceReferenceResourceProvider(
+                        cachingServiceReference,
+                        serviceTuple.getService().getClass(),
+                        serviceTuple.getServiceObjects()));
+        }
+        else {
+            return just(
+                    new SingletonServiceReferenceResourceProvider(
+                        serviceTuple.getCachingServiceReference(),
+                        serviceTuple.getService()
+            ));
         }
     }
 
@@ -828,8 +857,8 @@ public class Whiteboard {
                 then(nothing())
             ).flatMap(st ->
                 just(st).
-                map(
-                    Utils::getResourceProvider
+                flatMap(
+                    Whiteboard::getResourceProvider
                 ).effects(
                     rp -> _runtime.addApplicationEndpoint(
                         registratorProperties::get,

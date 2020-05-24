@@ -18,6 +18,7 @@
 package org.apache.aries.jax.rs.whiteboard.internal.cxf;
 
 import static java.util.stream.Collectors.toMap;
+import static java.util.stream.Collectors.toSet;
 import static org.apache.aries.jax.rs.whiteboard.internal.Whiteboard.SUPPORTED_EXTENSION_INTERFACES;
 import static org.apache.aries.jax.rs.whiteboard.internal.utils.Utils.canonicalize;
 import static org.apache.cxf.jaxrs.provider.ProviderFactory.DEFAULT_FILTER_NAME_BINDING;
@@ -28,11 +29,15 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import javax.ws.rs.RuntimeType;
 import javax.ws.rs.container.DynamicFeature;
@@ -43,6 +48,7 @@ import javax.ws.rs.ext.RuntimeDelegate;
 
 import org.apache.aries.component.dsl.CachingServiceReference;
 import org.apache.aries.component.dsl.OSGi;
+import org.apache.aries.jax.rs.whiteboard.ApplicationClasses;
 import org.apache.aries.jax.rs.whiteboard.internal.AriesJaxrsServiceRuntime;
 import org.apache.aries.jax.rs.whiteboard.internal.ServiceReferenceRegistry;
 import org.apache.aries.jax.rs.whiteboard.internal.utils.ServiceTuple;
@@ -52,6 +58,7 @@ import org.apache.cxf.endpoint.Endpoint;
 import org.apache.cxf.endpoint.Server;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.JAXRSServiceFactoryBean;
+import org.apache.cxf.jaxrs.ext.ContextProvider;
 import org.apache.cxf.jaxrs.ext.ResourceContextProvider;
 import org.apache.cxf.jaxrs.impl.ConfigurableImpl;
 import org.apache.cxf.jaxrs.lifecycle.ResourceProvider;
@@ -62,6 +69,7 @@ import org.apache.cxf.jaxrs.provider.ServerConfigurableFactory;
 import org.apache.cxf.jaxrs.sse.SseContextProvider;
 import org.apache.cxf.jaxrs.sse.SseEventSinkContextProvider;
 import org.apache.cxf.jaxrs.utils.AnnotationUtils;
+import org.apache.cxf.message.Message;
 
 public class CxfJaxrsServiceRegistrator {
 
@@ -195,6 +203,7 @@ public class CxfJaxrsServiceRegistrator {
         if (JAXRSServerFactoryBean.class.isAssignableFrom(endpointType)) {
             return endpointType.cast(bean);
         }
+        bean.setApplication(app);
         bean.setStart(false);
         Server server = bean.create();
         return endpointType.cast(server);
@@ -395,6 +404,17 @@ public class CxfJaxrsServiceRegistrator {
 
         _jaxRsServerFactoryBean.setProvider(new SseEventSinkContextProvider());
         _jaxRsServerFactoryBean.setProvider(new SseContextProvider());
+        _jaxRsServerFactoryBean.setProvider(new ContextProvider<ApplicationClasses>() {
+            @Override
+            public ApplicationClasses createContext(Message message) {
+                return () -> {
+                    return Stream.concat(
+                        StreamSupport.stream(getStaticResourceClasses().spliterator(), false),
+                        _services.stream().map(ResourceProvider::getResourceClass)
+                    ).collect(toSet());
+                };
+            }
+        });
 
         if (!features.isEmpty()) {
             features.addAll(_jaxRsServerFactoryBean.getFeatures());
