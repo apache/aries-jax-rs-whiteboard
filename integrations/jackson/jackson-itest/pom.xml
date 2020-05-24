@@ -28,8 +28,8 @@
     </parent>
 
     <artifactId>org.apache.aries.jax.rs.jackson.itest</artifactId>
-    <description>Apache Aries Jackson JAX-RS Integration Tests</description>
-    <name>Apache Aries Jackson JAX-RS Integration Tests</name>
+    <description>Apache Aries JAX-RS Jackson JAXB-JSON Integration Tests</description>
+    <name>Apache Aries JAX-RS Jackson JAXB-JSON Integration Tests</name>
 
     <properties>
         <maven.deploy.skip>true</maven.deploy.skip>

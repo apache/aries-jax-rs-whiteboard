@@ -25,8 +25,8 @@
     </parent>
 
     <artifactId>org.apache.aries.jax.rs.jaxb.json.cxf-jettison-itest</artifactId>
-    <description>Apache Aries JAX-RS Integration Tests</description>
-    <name>Apache Aries JAX-RS CXF Jettison Integration Tests</name>
+    <description>Apache Aries JAX-RS CXF Jettison JAXB-JSON Integration Tests</description>
+    <name>Apache Aries JAX-RS CXF Jettison JAXB-JSON Integration Tests</name>
 
     <properties>
         <maven.deploy.skip>true</maven.deploy.skip>

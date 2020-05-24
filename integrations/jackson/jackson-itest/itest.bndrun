@@ -50,7 +50,7 @@
 	com.fasterxml.jackson.module.jackson-module-jaxb-annotations;version='[2.9.6,2.9.7)',\
 	org.apache.aries.jax.rs.jackson.itest;version='[1.0.3,1.0.4)',\
 	org.apache.aries.jax.rs.jackson;version='[1.0.3,1.0.4)',\
-	org.apache.aries.jax.rs.whiteboard;version='[1.0.5,1.0.6)',\
+	org.apache.aries.jax.rs.whiteboard;version='[1.0.9,1.0.10)',\
 	org.apache.aries.spifly.dynamic.framework.extension;version='[1.2.1,1.2.2)',\
 	org.apache.felix.configadmin;version='[1.8.14,1.8.15)',\
 	org.apache.felix.http.jetty;version='[4.0.8,4.0.9)',\

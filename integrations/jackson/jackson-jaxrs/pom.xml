@@ -26,8 +26,8 @@
     </parent>
 
     <artifactId>org.apache.aries.jax.rs.jackson</artifactId>
-    <description>Apache Aries JAX-RS Jackson JSON Support</description>
-    <name>Apache Aries JAX-RS JAX-RS Jackson</name>
+    <description>Apache Aries JAX-RS Jackson JAXB-JSON Support</description>
+    <name>Apache Aries JAX-RS Jackson JAXB-JSON</name>
 
     <dependencies>
         <dependency>

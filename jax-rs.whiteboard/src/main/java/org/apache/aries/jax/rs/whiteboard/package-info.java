@@ -16,11 +16,6 @@
  */
 
 @Capability(
-    name = "aries.jax-rs",
-    namespace = ImplementationNamespace.IMPLEMENTATION_NAMESPACE,
-    version = "${Bundle-Version}"
-)
-@Capability(
     name = JAX_RS_WHITEBOARD_IMPLEMENTATION,
     namespace = ImplementationNamespace.IMPLEMENTATION_NAMESPACE,
     version = JAX_RS_WHITEBOARD_SPECIFICATION_VERSION,
