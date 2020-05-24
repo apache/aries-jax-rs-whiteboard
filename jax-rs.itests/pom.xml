@@ -28,8 +28,8 @@
     </parent>
 
     <artifactId>org.apache.aries.jax.rs.itests</artifactId>
-    <description>Apache Aries JAX-RS Integration Tests</description>
-    <name>Apache Aries JAX-RS Integration Tests</name>
+    <description>Apache Aries JAX-RS Whiteboard Integration Tests</description>
+    <name>Apache Aries JAX-RS Whiteboard Integration Tests</name>
 
     <properties>
         <maven.deploy.skip>true</maven.deploy.skip>

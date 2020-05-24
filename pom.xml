@@ -30,7 +30,7 @@
 
     <groupId>org.apache.aries.jax.rs</groupId>
     <artifactId>org.apache.aries.jax.rs</artifactId>
-    <name>Apache Aries JAX-RS Integration Project</name>
+    <name>Apache Aries JAX-RS Whiteboard Integration Project</name>
     <version>1.0.9-SNAPSHOT</version>
     <packaging>pom</packaging>
     <properties>
