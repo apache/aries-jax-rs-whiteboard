@@ -34,6 +34,10 @@
     <version>1.0.9-SNAPSHOT</version>
     <packaging>pom</packaging>
     <properties>
+        <java.build.version>1.8</java.build.version>
+        <!-- <maven.compiler.release>${java.build.version}</maven.compiler.release> -->
+        <maven.compiler.source>${java.build.version}</maven.compiler.source>
+        <maven.compiler.target>${java.build.version}</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <cxf.version>3.2.13</cxf.version>
         <bnd.version>5.0.1</bnd.version>
@@ -384,11 +388,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>
-                    <version>3.1</version>
-                    <configuration>
-                        <source>1.8</source>
-                        <target>1.8</target>
-                    </configuration>
+                    <version>3.8.1</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>

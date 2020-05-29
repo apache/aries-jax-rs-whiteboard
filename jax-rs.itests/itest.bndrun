@@ -30,7 +30,6 @@
 
 #-runtrace: true
 
--runee: JavaSE-1.8
 -resolve.effective: resolve, active
 
 -runrequires: \

@@ -27,7 +27,7 @@
 	org.slf4j.helpers;version=1.7.25,\
 	org.slf4j.spi;version=1.7.25
 -runfw: org.eclipse.osgi
--runee: JavaSE-1.8
+
 -resolve.effective: resolve, active
 
 -runrequires: \
