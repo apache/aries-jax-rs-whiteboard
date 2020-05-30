@@ -28,8 +28,8 @@
     </parent>
 
     <artifactId>org.apache.aries.jax.rs.features</artifactId>
-    <description>Apache Aries JAX-RS Karaf features repository</description>
-    <name>Apache Aries JAX-RS Karaf Features</name>
+    <description>Apache Aries JAX-RS Whiteboard Karaf features repository</description>
+    <name>Apache Aries JAX-RS Whiteboard Karaf Features</name>
     <packaging>pom</packaging>
 
     <build>

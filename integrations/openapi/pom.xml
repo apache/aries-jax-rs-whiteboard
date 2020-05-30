@@ -27,8 +27,7 @@
     </parent>
 
     <artifactId>openapi-integration</artifactId>
-    <name>Apache OpenAPI JAX-RS Integration Project</name>
-    <version>1.0.3-SNAPSHOT</version>
+    <name>Apache Aries JAX-RS Open API Integration Project</name>
     <packaging>pom</packaging>
 
     <properties>
