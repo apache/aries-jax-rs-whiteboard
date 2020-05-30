@@ -1,6 +1,7 @@
 ## JAX-RS Whiteboard
 
 [![Build Status](https://builds.apache.org/buildStatus/icon?job=Aries-component-dsl-master)](https://builds.apache.org/job/Aries-JAX-RS-Whiteboard)
+![CI Build](https://github.com/apache/aries-jax-rs-whiteboard/workflows/CI%20Build/badge.svg?branch=master)
 [![Maven Central](https://img.shields.io/maven-central/v/org.apache.aries.jax.rs/org.apache.aries.jax.rs.whiteboard.svg?label=Maven%20Central)](https://search.maven.org/search?q=g:%22org.apache.aries.jax.rs%22%20AND%20a:%22org.apache.aries.jax.rs.whiteboard%22)
 
 Aries JAX-RS Whiteboard is the reference implementation of the [OSGi JAX-RS Services Whiteboard 1.0](https://osgi.org/specification/osgi.cmpn/7.0.0/service.jaxrs.html).
