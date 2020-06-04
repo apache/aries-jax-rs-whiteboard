@@ -40,9 +40,50 @@
         <maven.compiler.target>${java.build.version}</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <cxf.version>3.2.13</cxf.version>
-        <bnd.version>5.0.1</bnd.version>
+        <bnd.version>5.1.0</bnd.version>
         <dsl.version>1.2.2</dsl.version>
         <jaxb.version>2.3.3</jaxb.version>
+        <bndjava15temorarysupplementalpackages><![CDATA[
+            javax.crypto,
+            javax.crypto.spec,
+            javax.imageio,
+            javax.imageio.stream,
+            javax.management,
+            javax.management.modelmbean,
+            javax.management.remote,
+            javax.naming,
+            javax.naming.directory,
+            javax.naming.ldap,
+            javax.net.ssl,
+            javax.rmi.ssl,
+            javax.security.auth,
+            javax.security.auth.callback,
+            javax.security.auth.login,
+            javax.security.auth.x500,
+            javax.sql,
+            javax.swing,
+            javax.swing.border,
+            javax.swing.tree,
+            javax.xml.datatype,
+            javax.xml.namespace,
+            javax.xml.parsers,
+            javax.xml.stream,
+            javax.xml.stream.events,
+            javax.xml.stream.util,
+            javax.xml.transform,
+            javax.xml.transform.dom,
+            javax.xml.transform.sax,
+            javax.xml.transform.stax,
+            javax.xml.transform.stream,
+            javax.xml.validation,
+            javax.xml.xpath,
+            org.w3c.dom,
+            org.w3c.dom.bootstrap,
+            org.w3c.dom.ls,
+            org.xml.sax,
+            org.xml.sax.ext,
+            org.xml.sax.helpers
+        ]]></bndjava15temorarysupplementalpackages>
     </properties>
 
     <scm>
