@@ -59,9 +59,7 @@
     </scm>
 
     <modules>
-        <module>org.apache.aries.jax.rs.cxf.repackage</module>
         <module>jax-rs.whiteboard</module>
-        <module>jax-rs.itests-fragment</module>
         <module>jax-rs.itests</module>
         <module>jax-rs.features</module>
         <module>jax-rs.example</module>
@@ -80,19 +78,16 @@
                 <groupId>org.apache.cxf</groupId>
                 <artifactId>cxf-core</artifactId>
                 <version>${cxf.version}</version>
-                <scope>provided</scope>
             </dependency>
             <dependency>
                 <groupId>org.apache.cxf</groupId>
                 <artifactId>cxf-tools-common</artifactId>
                 <version>${cxf.version}</version>
-                <scope>provided</scope>
             </dependency>
             <dependency>
                 <groupId>org.apache.cxf</groupId>
                 <artifactId>cxf-rt-databinding-jaxb</artifactId>
                 <version>${cxf.version}</version>
-                <scope>provided</scope>
                 <exclusions>
                     <exclusion>
                         <groupId>org.ow2.asm</groupId>
@@ -104,19 +99,22 @@
                 <groupId>org.apache.cxf</groupId>
                 <artifactId>cxf-rt-frontend-jaxrs</artifactId>
                 <version>${cxf.version}</version>
-                <scope>provided</scope>
+                <exclusions>
+                    <exclusion>
+                        <groupId>javax.ws.rs</groupId>
+                        <artifactId>javax.ws.rs-api</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.apache.cxf</groupId>
                 <artifactId>cxf-rt-transports-http</artifactId>
                 <version>${cxf.version}</version>
-                <scope>provided</scope>
             </dependency>
             <dependency>
                 <groupId>org.apache.cxf</groupId>
                 <artifactId>cxf-rt-rs-client</artifactId>
                 <version>${cxf.version}</version>
-                <scope>provided</scope>
                 <exclusions>
                     <exclusion>
                         <groupId>javax.annotation</groupId>
@@ -132,7 +130,6 @@
                 <groupId>org.apache.cxf</groupId>
                 <artifactId>cxf-rt-rs-extension-providers</artifactId>
                 <version>${cxf.version}</version>
-                <scope>provided</scope>
                 <exclusions>
                     <exclusion>
                         <groupId>javax.annotation</groupId>
@@ -148,13 +145,11 @@
                 <groupId>org.apache.cxf</groupId>
                 <artifactId>cxf-rt-rs-json-basic</artifactId>
                 <version>${cxf.version}</version>
-                <scope>provided</scope>
             </dependency>
             <dependency>
                 <groupId>org.apache.cxf</groupId>
                 <artifactId>cxf-rt-rs-sse</artifactId>
                 <version>${cxf.version}</version>
-                <scope>provided</scope>
             </dependency>
             <dependency>
                 <groupId>org.apache.aries.component-dsl</groupId>
