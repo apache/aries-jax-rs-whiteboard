@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.cxf.helpers;
+package org.apache.aries.jax.rs.whiteboard.cxf.helpers;
 
 import java.util.Arrays;
 import java.util.HashSet;

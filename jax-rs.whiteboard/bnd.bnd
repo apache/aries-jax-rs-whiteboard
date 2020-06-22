@@ -15,46 +15,7 @@
 #    specific language governing permissions and limitations
 #    under the License.
 
-Import-Package:\
-    !com.sun.*,\
-    !javax.cache.*,\
-    !javax.imageio.*,\
-    !javax.jws.*,\
-    !javax.security.*,\
-    !javax.tools.*,\
-    !javax.validation.*,\
-    !javax.wsdl.*,\
-    !net.sf.cglib.proxy.*,\
-    !org.apache.abdera.*,\
-    !org.apache.aries.*,\
-    !org.apache.commons.logging,\
-    !org.apache.cxf.*,\
-    !org.apache.log4j.*,\
-    !org.apache.neethi.*,\
-    !org.apache.velocity.*,\
-    !org.apache.xerces.*,\
-    !org.apache.xml.resolver.*,\
-    !org.apache.xmlbeans.*,\
-    !org.atmosphere.*,\
-    !org.dom4j.*,\
-    !org.junit.*,\
-    !org.jvnet.fastinfoset.*,\
-    !org.jvnet.staxex.*,\
-    !org.ietf.jgss.*,\
-    !org.objectweb.asm.*,\
-    !org.osgi.service.blueprint.*,\
-    !org.osgi.service.http,\
-    !org.relaxng.datatype.*,\
-    !org.slf4j.impl.*,\
-    !org.slf4j.spi.*,\
-    !org.springframework.*,\
-    !sun.misc,\
-    *
+Conditional-Package: org.apache.aries.component.dsl.*
+Import-Package: org.apache.cxf.jaxrs.client,*
 
 Provide-Capability: osgi.implementation;osgi.implementation="aries.jax-rs";version:Version="${Bundle-Version}"
-
--includeresource:\
-    @${.}/../org.apache.aries.jax.rs.cxf.repackage/target/org.apache.aries.jax.rs.cxf.repackage-${project.version}.jar!/!org/apache/cxf/helpers/JavaUtils*.class,\
-    lib/stax2-api.jar=stax2-api-*.jar;lib:=true,\
-    lib/woodstox-core.jar=woodstox-core-*.jar;lib:=true,\
-    lib/xmlschema-core.jar=xmlschema-core-*.jar;lib:=true
