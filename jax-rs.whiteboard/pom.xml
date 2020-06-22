@@ -103,11 +103,6 @@
             <artifactId>org.osgi.util.function</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.apache.aries.jax.rs.cxf.repackage</groupId>
-            <artifactId>org.apache.aries.jax.rs.cxf.repackage</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
             <version>${slf4j.version}</version>
