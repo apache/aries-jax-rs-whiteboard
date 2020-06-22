@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.cxf.jaxrs.client;
+package org.apache.aries.jax.rs.whiteboard.cxf.jaxrs.client;
 
 import javax.ws.rs.HttpMethod;
 import javax.ws.rs.client.Entity;
@@ -23,12 +23,19 @@ import javax.ws.rs.client.InvocationCallback;
 import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.Response;
 
+import org.apache.cxf.jaxrs.client.WebClient;
 import org.osgi.service.jaxrs.client.PromiseRxInvoker;
 import org.osgi.util.promise.Deferred;
 import org.osgi.util.promise.Promise;
 import org.osgi.util.promise.PromiseFactory;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.lang.reflect.Type;
+
 class PromiseRxInvokerImpl implements PromiseRxInvoker {
+
+    private final Method _doInvokeAsyncMethod;
 
     private static final class DeferredHandler<R> implements InvocationCallback<R> {
         private final Deferred<R> deferred;
@@ -50,6 +57,14 @@ class PromiseRxInvokerImpl implements PromiseRxInvoker {
     public PromiseRxInvokerImpl(
         WebClient webClient, PromiseFactory promiseFactory) {
         _webClient = webClient;
+        try {
+            _doInvokeAsyncMethod = WebClient.class.getDeclaredMethod(
+                "doInvokeAsync",
+                String.class, Object.class, Class.class, Type.class, Class.class, Type.class, InvocationCallback.class);
+        } catch (NoSuchMethodException nsme) {
+            throw new RuntimeException(nsme);
+        }
+        _doInvokeAsyncMethod.setAccessible(true);
         _promiseFactory = promiseFactory;
     }
 
@@ -90,35 +105,48 @@ class PromiseRxInvokerImpl implements PromiseRxInvoker {
 
     @Override
     public <R> Promise<R> method(String s, Class<R> responseType) {
-        
-            Deferred<R> deferred = _promiseFactory.deferred();
-        
-            _webClient.doInvokeAsync(s, null, null, null, responseType, responseType, 
-                    new DeferredHandler<R>(deferred));
-        
+        Deferred<R> deferred = _promiseFactory.deferred();
+
+        try {
+            _doInvokeAsyncMethod.invoke(
+                _webClient, s, null, null, null, responseType, responseType,
+                new DeferredHandler<R>(deferred));
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
         return deferred.getPromise();
     }
 
     @Override
     public <R> Promise<R> method(String s, Entity<?> entity, Class<R> responseType) {
-        
         Deferred<R> deferred = _promiseFactory.deferred();
-    
-        _webClient.doInvokeAsync(s, entity, null, null, responseType, responseType, 
+
+        try {
+            _doInvokeAsyncMethod.invoke(
+                _webClient, s, entity, null, null, responseType, responseType,
                 new DeferredHandler<R>(deferred));
-    
-    return deferred.getPromise();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+        return deferred.getPromise();
     }
 
     @Override
     public <R> Promise<R> method(
         String s, Entity<?> entity, GenericType<R> genericType) {
 
-            Deferred<R> deferred = _promiseFactory.deferred();
-        
-        _webClient.doInvokeAsync(s, entity, null, null, genericType.getRawType(), genericType.getType(), 
-                new DeferredHandler<R>(deferred));
-    
+        Deferred<R> deferred = _promiseFactory.deferred();
+
+        try {
+            _doInvokeAsyncMethod.invoke(
+                _webClient, s, entity, null, null, genericType.getRawType(),
+                genericType.getType(), new DeferredHandler<R>(deferred));
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
         return deferred.getPromise();
     }
 
@@ -130,10 +158,15 @@ class PromiseRxInvokerImpl implements PromiseRxInvoker {
     @Override
     public <R> Promise<R> method(String s, GenericType<R> genericType) {
         Deferred<R> deferred = _promiseFactory.deferred();
-        
-        _webClient.doInvokeAsync(s, null, null, null, genericType.getRawType(), genericType.getType(), 
-                new DeferredHandler<R>(deferred));
-    
+
+        try {
+            _doInvokeAsyncMethod.invoke(
+                _webClient, s, null, null, null, genericType.getRawType(),
+                genericType.getType(), new DeferredHandler<R>(deferred));
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
         return deferred.getPromise();
     }
 
