@@ -99,7 +99,7 @@
         <module>jax-rs.itests-fragment</module>
         <module>jax-rs.itests</module>
         <module>jax-rs.features</module>
-        <module>integrations</module>
+        <!--<module>integrations</module>-->
     </modules>
 
     <dependencyManagement>
