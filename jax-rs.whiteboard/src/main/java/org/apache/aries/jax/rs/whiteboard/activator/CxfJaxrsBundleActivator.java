@@ -74,6 +74,8 @@ public class CxfJaxrsBundleActivator implements BundleActivator {
 
     @Override
     public void start(BundleContext bundleContext) throws Exception {
+        RuntimeDelegate.setInstance(new RuntimeDelegateImpl());
+
         if (_log.isDebugEnabled()) {
             _log.debug("Starting the whiteboard factory");
         }
