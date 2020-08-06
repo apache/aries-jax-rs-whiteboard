@@ -99,6 +99,7 @@
         <module>jax-rs.itests-fragment</module>
         <module>jax-rs.itests</module>
         <module>jax-rs.features</module>
+        <module>jax-rs.example</module>
         <!--<module>integrations</module>-->
     </modules>
 
@@ -211,7 +212,7 @@
             <dependency>
                 <groupId>org.apache.felix</groupId>
                 <artifactId>org.apache.felix.configadmin</artifactId>
-                <version>1.8.14</version>
+                <version>1.9.18</version>
                 <scope>runtime</scope>
             </dependency>
             <dependency>

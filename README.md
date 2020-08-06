@@ -27,7 +27,7 @@ servlet.init.hide-service-list-page     | true                          | Hide t
 replace.loopback.address.with.localhost | false                         | Replace loopback addresses by localhost (e.g. by UriBuilder)
 application.ready.service.filter        |                               | A service that must be present in order for applications to get started
 
-properties existing in the application service, as those in the whiteboard configuration, are used when the servlet contexts and servlets are registered. 
+properties existing in the application service, as those in the whiteboard configuration, are used when the servlet contexts and servlets are registered.
 
 ## Integrations
 
@@ -39,13 +39,15 @@ Execute the maven tasks `mvn clean install`.
 
 ## Running the Example
 
-The file `jax-rs.example-run/example.jar` should have been created.
+The file `jax-rs.example/target/aries-jaxrs-whiteboard-example.jar` should have been created.
 
 Execute the following command:
 
 ```
-java -jar jax-rs.example-run/example.jar
+java -jar jax-rs.example/target/aries-jaxrs-whiteboard-example.jar
 ```
+
+then open a browser to `http://localhost:8080/{name}`
 
 ## License
 
