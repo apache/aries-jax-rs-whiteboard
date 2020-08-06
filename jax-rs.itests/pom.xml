@@ -49,7 +49,19 @@
                     <failOnChanges>false</failOnChanges>
                     <includeDependencyManagement>true</includeDependencyManagement>
                     <bndruns>
+                        <bndrun>aries-jaxrs-whiteboard.bndrun</bndrun>
                         <bndrun>itest.bndrun</bndrun>
+                    </bndruns>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>biz.aQute.bnd</groupId>
+                <artifactId>bnd-export-maven-plugin</artifactId>
+                <configuration>
+                    <failOnChanges>false</failOnChanges>
+                    <includeDependencyManagement>true</includeDependencyManagement>
+                    <bndruns>
+                        <bndrun>aries-jaxrs-whiteboard.bndrun</bndrun>
                     </bndruns>
                 </configuration>
             </plugin>

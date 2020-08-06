@@ -27,7 +27,7 @@ servlet.init.hide-service-list-page     | true                          | Hide t
 replace.loopback.address.with.localhost | false                         | Replace loopback addresses by localhost (e.g. by UriBuilder)
 application.ready.service.filter        |                               | A service that must be present in order for applications to get started
 
-properties existing in the application service, as those in the whiteboard configuration, are used when the servlet contexts and servlets are registered. 
+properties existing in the application service, as those in the whiteboard configuration, are used when the servlet contexts and servlets are registered.
 
 ## Integrations
 
@@ -39,12 +39,38 @@ Execute the maven tasks `mvn clean install`.
 
 ## Running the Example
 
-The file `jax-rs.example-run/example.jar` should have been created.
+The file `jax-rs.itests/target/aries-jaxrs-whiteboard.jar` should have been created.
 
 Execute the following command:
 
 ```
-java -jar jax-rs.example-run/example.jar
+java -jar jax-rs.itests/target/aries-jaxrs-whiteboard.jar
+```
+
+To enable logging create a logback file like so:
+
+```
+<configuration>
+  <contextListener class="ch.qos.logback.classic.jul.LevelChangePropagator">
+    <resetJUL>true</resetJUL>
+  </contextListener>
+
+  <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder>
+      <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+    </encoder>
+  </appender>
+
+  <root level="debug">
+    <appender-ref ref="STDOUT" />
+  </root>
+</configuration>
+```
+
+and pass it on the command line like so:
+
+```
+java -jar jax-rs.itests/target/aries-jaxrs-whiteboard.jar -Dlogback.configurationFile=file:/absolute/path/to/logback.xml
 ```
 
 ## License
