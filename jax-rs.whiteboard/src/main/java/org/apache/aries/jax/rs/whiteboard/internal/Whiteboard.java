@@ -360,6 +360,7 @@ public class Whiteboard {
                         __ -> serviceObjects.ungetService(service)
                 );
             }
+
             return just(
                     new PrototypeServiceReferenceResourceProvider(
                         cachingServiceReference,
@@ -855,38 +856,31 @@ public class Whiteboard {
                         () -> "Errored ServiceReference {} for endpoint left")
                 ).
                 then(nothing())
-            ).flatMap(st ->
-                just(st).
-                flatMap(
-                    Whiteboard::getResourceProvider
-                ).effects(
-                    rp -> _runtime.addApplicationEndpoint(
-                        registratorProperties::get,
-                        st.getCachingServiceReference(),
-                        registrator.getBus(), st.getService().getClass()),
-                    rp -> _runtime.removeApplicationEndpoint(
-                        registratorProperties::get,
-                        st.getCachingServiceReference())
-                ).effects(
-                    registrator::add,
-                    registrator::remove
-                ).effects(
-                    ifDebugEnabled(
-                        _log,
-                        () -> "Registered endpoint " +
-                            st.getCachingServiceReference().
-                                getServiceReference() + " into application " +
-                                getServiceName(registratorProperties::get)
-                    ),
-                    ifDebugEnabled(
-                        _log,
-                        () -> "Unregistered endpoint " +
-                            st.getCachingServiceReference().
-                                getServiceReference() + " from application " +
-                                getServiceName(registratorProperties::get)
-                    )
-
+            ).flatMap(
+                Whiteboard::getResourceProvider
+            ).effects(
+                rp -> _runtime.addApplicationEndpoint(
+                    registratorProperties::get, serviceReference,
+                    registrator.getBus(), rp.getResourceClass()),
+                rp -> _runtime.removeApplicationEndpoint(
+                    registratorProperties::get, serviceReference)
+            ).effects(
+                registrator::add,
+                registrator::remove
+            ).effects(
+                ifDebugEnabled(
+                    _log,
+                    () -> "Registered endpoint " +
+                        serviceReference.getServiceReference() + " into application " +
+                            getServiceName(registratorProperties::get)
+                ),
+                ifDebugEnabled(
+                    _log,
+                    () -> "Unregistered endpoint " +
+                        serviceReference.getServiceReference() + " from application " +
+                            getServiceName(registratorProperties::get)
                 )
+
             );
     }
 
