@@ -334,19 +334,20 @@ public class Whiteboard {
     }
 
     private static <T> OSGi<? extends ResourceProvider> getResourceProvider(
-            ServiceTuple<T> serviceTuple) {
+        ServiceTuple<T> serviceTuple) {
 
         CachingServiceReference<T> cachingServiceReference =
-                serviceTuple.getCachingServiceReference();
+            serviceTuple.getCachingServiceReference();
 
         String scope = Utils.getString(cachingServiceReference.getProperty("service.scope"));
 
         if (Objects.equals(scope, "prototype")) {
             boolean applicationScoped =
-                    Boolean.parseBoolean(
-                            getString(
-                                    cachingServiceReference.getProperty(
-                                            "org.apache.aries.jax.rs.whiteboard.application.scoped")));
+                Boolean.parseBoolean(
+                    getString(
+                        cachingServiceReference.getProperty(
+                            "org.apache.aries.jax.rs.whiteboard.application.scoped")));
+
             if (applicationScoped) {
                 return just(
                     serviceTuple.getServiceObjects().getService()
@@ -373,9 +374,9 @@ public class Whiteboard {
         }
         else {
             return just(
-                    new SingletonServiceReferenceResourceProvider(
-                        serviceTuple.getCachingServiceReference(),
-                        serviceTuple.getService()
+                new SingletonServiceReferenceResourceProvider(
+                    serviceTuple.getCachingServiceReference(),
+                    serviceTuple.getService()
             ));
         }
     }
