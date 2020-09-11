@@ -49,9 +49,7 @@ import org.apache.cxf.jaxrs.ext.ContextProvider;
 import org.apache.cxf.message.Message;
 import org.junit.Ignore;
 import org.junit.Test;
-import org.osgi.framework.InvalidSyntaxException;
-import org.osgi.framework.ServiceReference;
-import org.osgi.framework.ServiceRegistration;
+import org.osgi.framework.*;
 
 import org.osgi.service.cm.Configuration;
 import org.osgi.service.cm.ConfigurationAdmin;
@@ -1938,6 +1936,55 @@ public class JaxrsTest extends TestHelper {
 
         assertEquals("original-changed", webTarget.request().get(String.class));
         assertEquals("original-changed", webTarget.request().get(String.class));
+    }
+
+    @Test
+    public void testPrototypeScopedAddonIsReleasedAsSoonAsItIsRegistered() {
+        assertEquals(0, getRuntimeDTO().applicationDTOs.length);
+        assertEquals(0, getRuntimeDTO().failedApplicationDTOs.length);
+
+        final AtomicInteger getServiceInvocations = new AtomicInteger();
+        final AtomicInteger ungetServiceInvocations = new AtomicInteger();
+
+        PrototypeServiceFactory<Object> prototypeServiceFactory =
+            new PrototypeServiceFactory<Object>() {
+                @Override
+                public Object getService(
+                    Bundle bundle,
+                    ServiceRegistration<Object> registration) {
+
+                    getServiceInvocations.incrementAndGet();
+
+                    return new TestAddon();
+                }
+
+                @Override
+                public void ungetService(
+                    Bundle bundle, ServiceRegistration<Object> registration,
+                    Object service) {
+
+                    ungetServiceInvocations.incrementAndGet();
+                }
+            };
+
+        Dictionary<String, Object> properties = new Hashtable<>();
+
+        properties.put(JAX_RS_RESOURCE, "true");
+
+        ServiceRegistration<?> serviceRegistration =
+            bundleContext.registerService(
+                Object.class, (ServiceFactory<?>) prototypeServiceFactory,
+                properties);
+
+        try {
+            assertEquals(1, getServiceInvocations.get());
+            assertEquals(1, ungetServiceInvocations.get());
+        } finally {
+            serviceRegistration.unregister();
+        }
+
+        assertEquals(1, getServiceInvocations.get());
+        assertEquals(1, ungetServiceInvocations.get());
     }
 
     @Test
