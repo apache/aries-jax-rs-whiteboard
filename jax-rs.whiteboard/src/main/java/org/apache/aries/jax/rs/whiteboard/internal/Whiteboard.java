@@ -359,18 +359,19 @@ public class Whiteboard {
                         cachingServiceReference, service)
                 );
             }
-
-            return just(
-                new PrototypeServiceReferenceResourceProvider(
-                    cachingServiceReference,
-                    serviceTuple.getService().getClass(),
-                    serviceTuple.getServiceObjects())
-            ).effects(
-                __ -> {},
-                __ -> serviceTuple.dispose(),
-                __ -> {},
-                __ -> {}
-            );
+            else {
+                return just(
+                    new PrototypeServiceReferenceResourceProvider(
+                        cachingServiceReference,
+                        serviceTuple.getService().getClass(),
+                        serviceTuple.getServiceObjects())
+                ).effects(
+                    __ -> {},
+                    __ -> serviceTuple.dispose(),
+                    __ -> {},
+                    __ -> {}
+                );
+            }
         }
         else {
             return just(
