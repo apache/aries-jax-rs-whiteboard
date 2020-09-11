@@ -348,16 +348,14 @@ public class Whiteboard {
                                     cachingServiceReference.getProperty(
                                             "org.apache.aries.jax.rs.whiteboard.application.scoped")));
             if (applicationScoped) {
-                ServiceObjects<T> serviceObjects = serviceTuple.getServiceObjects();
-
-                T service = serviceObjects.getService();
-
-                return OSGi.<ResourceProvider>just(
-                        new SingletonServiceReferenceResourceProvider(
-                                cachingServiceReference, service)
+                return just(
+                    serviceTuple.getServiceObjects().getService()
                 ).effects(
-                        __ -> {},
-                        __ -> serviceObjects.ungetService(service)
+                    __ -> {},
+                    serviceTuple.getServiceObjects()::ungetService
+                ).map(
+                    service -> new SingletonServiceReferenceResourceProvider(
+                        cachingServiceReference, service)
                 );
             }
 
