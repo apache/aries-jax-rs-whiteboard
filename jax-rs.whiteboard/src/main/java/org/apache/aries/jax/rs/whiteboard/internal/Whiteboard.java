@@ -333,7 +333,7 @@ public class Whiteboard {
         }
     }
 
-    private static <T> OSGi<ResourceProvider> getResourceProvider(
+    private static <T> OSGi<? extends ResourceProvider> getResourceProvider(
             ServiceTuple<T> serviceTuple) {
 
         CachingServiceReference<T> cachingServiceReference =
@@ -362,10 +362,16 @@ public class Whiteboard {
             }
 
             return just(
-                    new PrototypeServiceReferenceResourceProvider(
-                        cachingServiceReference,
-                        serviceTuple.getService().getClass(),
-                        serviceTuple.getServiceObjects()));
+                new PrototypeServiceReferenceResourceProvider(
+                    cachingServiceReference,
+                    serviceTuple.getService().getClass(),
+                    serviceTuple.getServiceObjects())
+            ).effects(
+                __ -> {},
+                __ -> serviceTuple.dispose(),
+                __ -> {},
+                __ -> {}
+            );
         }
         else {
             return just(
