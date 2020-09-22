@@ -18,11 +18,18 @@
 package test.types;
 
 import javax.ws.rs.GET;
+import javax.ws.rs.NameBinding;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Application;
+import java.lang.annotation.Retention;
+import java.lang.annotation.Target;
 import java.util.Collections;
 import java.util.Set;
+
+import static java.lang.annotation.ElementType.METHOD;
+import static java.lang.annotation.ElementType.TYPE;
+import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 public class TestApplicationWithSingletons extends Application {
 
@@ -31,6 +38,7 @@ public class TestApplicationWithSingletons extends Application {
         return Collections.<Object>singleton(new MyResource$$Proxy());
     }
 
+    @Bind
     @Path("my")
     @Produces("text/plain")
     public static class MyResource {
@@ -38,6 +46,12 @@ public class TestApplicationWithSingletons extends Application {
         public String get() {
             return "ok";
         }
+    }
+
+    @NameBinding
+    @Retention(RUNTIME)
+    @Target({TYPE, METHOD})
+    public @interface Bind {
     }
 
     public static class MyResource$$Proxy extends MyResource {

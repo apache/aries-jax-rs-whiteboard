@@ -153,7 +153,7 @@ public class JaxrsTest extends TestHelper {
         assertArrayEquals(
             new String[]{MediaType.TEXT_PLAIN},
             resourceMethod.producingMimeType);
-        assertNull(resourceMethod.nameBindings);
+        assertArrayEquals(new String[]{TestApplicationWithSingletons.Bind.class.getName()}, resourceMethod.nameBindings);
     }
 
     @Test
