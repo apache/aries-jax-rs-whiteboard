@@ -21,6 +21,7 @@ import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
 import org.apache.cxf.jaxrs.model.ClassResourceInfo;
 import org.junit.Test;
 
+import javax.ws.rs.ApplicationPath;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.core.Application;
@@ -51,6 +52,17 @@ public class CxfJaxrsServiceRegistratorTest {
         assertEquals(MyResource.class, cri.getResourceClass());
         assertTrue(SingletonResourceProvider.class.isInstance(cri.getResourceProvider()));
     }
+
+    @Test
+    public void ignoreAppPAth() {
+        final JAXRSServerFactoryBean bean = new CxfJaxrsServiceRegistrator(
+                null, null, emptyMap(), null
+        ).createEndpoint(new MyApp(), JAXRSServerFactoryBean.class);
+        assertEquals("/", bean.getAddress());
+    }
+
+    @ApplicationPath("foo")
+    public static class MyApp extends Application {}
 
     @Path("my")
     public static class MyResource {

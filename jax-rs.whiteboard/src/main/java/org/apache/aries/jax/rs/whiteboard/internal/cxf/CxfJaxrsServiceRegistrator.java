@@ -246,6 +246,7 @@ public class CxfJaxrsServiceRegistrator {
         }
 
         String address = "/";
+        /* spec ignores @ApplicationPath
         ApplicationPath appPath = ResourceUtils.locateApplicationPath(app.getClass());
         if (appPath != null) {
             address = appPath.value();
@@ -253,7 +254,7 @@ public class CxfJaxrsServiceRegistrator {
         if (!address.startsWith("/")) {
             address = "/" + address;
         }
-        // todo resolve conflicts between @ApplicationPath and @JaxrsApplicationBase (if same  value -> use only one?)
+         */
         bean.setAddress(address);
         bean.setStaticSubresourceResolution(false);
         bean.setResourceClasses(resourceClasses);
