@@ -78,7 +78,9 @@ import test.types.TestAddonConflict;
 import test.types.TestAddonConflict2;
 import test.types.TestApplication;
 import test.types.TestApplicationConflict;
+import test.types.TestApplicationWithAppPath;
 import test.types.TestApplicationWithException;
+import test.types.TestApplicationWithSingletons;
 import test.types.TestAsyncResource;
 import test.types.TestCxfExtension;
 import test.types.TestFilter;
@@ -108,6 +110,51 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
 
 public class JaxrsTest extends TestHelper {
+
+    @Test
+    public void testApplicationWithAppPath() throws InterruptedException {
+        registerApplication(new TestApplicationWithAppPath());
+        assertEquals(1, getRuntimeDTO().applicationDTOs.length);
+
+        WebTarget webTarget = createDefaultTarget().path("/test-application/my");
+        Response response = webTarget.request().get();
+        assertEquals("ok", response.readEntity(String.class));
+
+        RuntimeDTO runtimeDTO = _runtime.getRuntimeDTO();
+        ApplicationDTO[] applicationDTOs = runtimeDTO.applicationDTOs;
+        assertEquals(1, applicationDTOs.length);
+
+        ApplicationDTO applicationDTO = applicationDTOs[0];
+        assertEquals("/test-application", applicationDTO.base);
+    }
+
+    @Test
+    public void testApplicationWithSingletonProxy() throws InterruptedException {
+        registerApplication(new TestApplicationWithSingletons());
+        assertEquals(1, getRuntimeDTO().applicationDTOs.length);
+
+        WebTarget webTarget = createDefaultTarget().path("/test-application/my");
+        Response response = webTarget.request().get();
+        assertEquals("ok", response.readEntity(String.class));
+
+        RuntimeDTO runtimeDTO = _runtime.getRuntimeDTO();
+        ApplicationDTO[] applicationDTOs = runtimeDTO.applicationDTOs;
+        assertEquals(1, applicationDTOs.length);
+
+        ApplicationDTO applicationDTO = applicationDTOs[0];
+        ResourceMethodInfoDTO[] resourceMethods =
+            applicationDTO.resourceMethods;
+        assertEquals(1, resourceMethods.length);
+
+        ResourceMethodInfoDTO resourceMethod = resourceMethods[0];
+        assertEquals(HttpMethod.GET, resourceMethod.method);
+        assertEquals("/my", resourceMethod.path);
+        assertNull(resourceMethod.consumingMimeType);
+        assertArrayEquals(
+            new String[]{MediaType.TEXT_PLAIN},
+            resourceMethod.producingMimeType);
+        assertNull(resourceMethod.nameBindings);
+    }
 
     @Test
     public void testApplication() throws InterruptedException {
