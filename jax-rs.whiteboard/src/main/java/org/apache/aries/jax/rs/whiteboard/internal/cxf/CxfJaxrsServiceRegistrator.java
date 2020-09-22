@@ -23,6 +23,7 @@ import static org.apache.aries.jax.rs.whiteboard.internal.Whiteboard.SUPPORTED_E
 import static org.apache.aries.jax.rs.whiteboard.internal.utils.Utils.canonicalize;
 import static org.apache.cxf.jaxrs.provider.ProviderFactory.DEFAULT_FILTER_NAME_BINDING;
 
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -34,16 +35,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+import javax.ws.rs.ApplicationPath;
 import javax.ws.rs.RuntimeType;
 import javax.ws.rs.container.DynamicFeature;
 import javax.ws.rs.core.Application;
 import javax.ws.rs.core.Feature;
 import javax.ws.rs.core.FeatureContext;
+import javax.ws.rs.ext.Provider;
 import javax.ws.rs.ext.RuntimeDelegate;
 
 import org.apache.aries.component.dsl.CachingServiceReference;
@@ -51,6 +53,7 @@ import org.apache.aries.component.dsl.OSGi;
 import org.apache.aries.jax.rs.whiteboard.ApplicationClasses;
 import org.apache.aries.jax.rs.whiteboard.internal.AriesJaxrsServiceRuntime;
 import org.apache.aries.jax.rs.whiteboard.internal.ServiceReferenceRegistry;
+import org.apache.aries.jax.rs.whiteboard.internal.introspection.Proxies;
 import org.apache.aries.jax.rs.whiteboard.internal.utils.ServiceTuple;
 import org.apache.cxf.Bus;
 import org.apache.cxf.common.util.ClassHelper;
@@ -61,7 +64,9 @@ import org.apache.cxf.jaxrs.JAXRSServiceFactoryBean;
 import org.apache.cxf.jaxrs.ext.ContextProvider;
 import org.apache.cxf.jaxrs.ext.ResourceContextProvider;
 import org.apache.cxf.jaxrs.impl.ConfigurableImpl;
+import org.apache.cxf.jaxrs.lifecycle.PerRequestResourceProvider;
 import org.apache.cxf.jaxrs.lifecycle.ResourceProvider;
+import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
 import org.apache.cxf.jaxrs.model.ApplicationInfo;
 import org.apache.cxf.jaxrs.model.ClassResourceInfo;
 import org.apache.cxf.jaxrs.provider.ProviderFactory.ProviderInfoClassComparator;
@@ -69,6 +74,7 @@ import org.apache.cxf.jaxrs.provider.ServerConfigurableFactory;
 import org.apache.cxf.jaxrs.sse.SseContextProvider;
 import org.apache.cxf.jaxrs.sse.SseEventSinkContextProvider;
 import org.apache.cxf.jaxrs.utils.AnnotationUtils;
+import org.apache.cxf.jaxrs.utils.ResourceUtils;
 import org.apache.cxf.message.Message;
 
 public class CxfJaxrsServiceRegistrator {
@@ -196,17 +202,86 @@ public class CxfJaxrsServiceRegistrator {
     }
 
     public <T> T createEndpoint(Application app, Class<T> endpointType) {
-        JAXRSServerFactoryBean bean =
-            RuntimeDelegate.getInstance().createEndpoint(
-                app, JAXRSServerFactoryBean.class);
+        // final JAXRSServerFactoryBean bean = ResourceUtils.createApplication(app, false, false, false, null);
+        final JAXRSServerFactoryBean bean = new JAXRSServerFactoryBean();
+        Set<Object> singletons = app.getSingletons();
+        if (!singletons.isEmpty() && singletons.stream().map(Object::getClass).count() < singletons.size()) {
+            throw new IllegalArgumentException("More than one instance of the same singleton class is available: " + singletons);
+        }
+
+        final List<Class<?>> resourceClasses = new ArrayList<>();
+        final List<Object> providers = new ArrayList<>();
+        final List<org.apache.cxf.feature.Feature> features = new ArrayList<>();
+        final Map<Class<?>, ResourceProvider> map = new HashMap<>();
+
+        // Note, app.getClasses() returns a list of per-request classes
+        // or singleton provider classes
+        for (Class<?> cls : app.getClasses()) {
+            if (!cls.isInterface() && !Modifier.isAbstract(cls.getModifiers())) {
+                if (isProvider(cls)) {
+                    providers.add(ResourceUtils.createProviderInstance(cls));
+                } else if (org.apache.cxf.feature.Feature.class.isAssignableFrom(cls)) {
+                    features.add(ResourceUtils.createFeatureInstance((Class<? extends org.apache.cxf.feature.Feature>) cls));
+                } else {
+                    resourceClasses.add(cls);
+                    /* todo: support singleton provider otherwise perfs can be a shame
+                    if (useSingletonResourceProvider) {
+                        map.put(cls, new SingletonResourceProvider(ResourceUtils.createProviderInstance(cls)));
+                    } else {
+                     */
+                    map.put(cls, new PerRequestResourceProvider(cls));
+                }
+            }
+        }
+
+        // we can get either a provider or resource class here
+        for (final Object o : singletons) {
+            if (isProvider(o.getClass())) {
+                providers.add(o);
+            } else if (o instanceof org.apache.cxf.feature.Feature) {
+                features.add((org.apache.cxf.feature.Feature) o);
+            } else {
+                final Class<?> unwrapped = Proxies.unwrap(o.getClass());
+                resourceClasses.add(unwrapped);
+                map.put(unwrapped, new SingletonResourceProvider(o));
+            }
+        }
+
+        String address = "/";
+        ApplicationPath appPath = ResourceUtils.locateApplicationPath(app.getClass());
+        if (appPath != null) {
+            address = appPath.value();
+        }
+        if (!address.startsWith("/")) {
+            address = "/" + address;
+        }
+        // todo resolve conflicts between @ApplicationPath and @JaxrsApplicationBase (if same  value -> use only one?)
+        bean.setAddress(address);
+        bean.setStaticSubresourceResolution(false);
+        bean.setResourceClasses(resourceClasses);
+        bean.setProviders(providers);
+        bean.getFeatures().addAll(features);
+        for (Map.Entry<Class<?>, ResourceProvider> entry : map.entrySet()) {
+            bean.setResourceProvider(entry.getKey(), entry.getValue());
+        }
+        Map<String, Object> appProps = app.getProperties();
+        if (appProps != null) {
+            bean.getProperties(true).putAll(appProps);
+        }
+        bean.setApplication(app);
 
         if (JAXRSServerFactoryBean.class.isAssignableFrom(endpointType)) {
             return endpointType.cast(bean);
         }
+
         bean.setApplication(app);
         bean.setStart(false);
-        Server server = bean.create();
+        final Server server = bean.create();
         return endpointType.cast(server);
+    }
+
+    private boolean isProvider(Class<?> cls) {
+        return cls.isAnnotationPresent(Provider.class) || SUPPORTED_EXTENSION_INTERFACES.values().stream().anyMatch(it -> it.isAssignableFrom(cls));
     }
 
     public Bus getBus() {

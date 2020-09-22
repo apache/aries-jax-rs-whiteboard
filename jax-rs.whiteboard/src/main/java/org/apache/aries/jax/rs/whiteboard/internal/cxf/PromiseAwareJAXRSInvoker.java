@@ -17,6 +17,8 @@
 package org.apache.aries.jax.rs.whiteboard.internal.cxf;
 
 import java.util.Arrays;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 import org.apache.cxf.jaxrs.JAXRSInvoker;
 import org.apache.cxf.jaxrs.impl.AsyncResponseImpl;
@@ -24,6 +26,7 @@ import org.apache.cxf.message.Message;
 import org.osgi.util.promise.Promise;
 
 public class PromiseAwareJAXRSInvoker extends JAXRSInvoker {
+    private final ConcurrentMap<Class<?>, Boolean> promises = new ConcurrentHashMap<>();
     
     /**
      * OSGi promises are a great way to do asynchronous work, and should be handled
@@ -40,11 +43,10 @@ public class PromiseAwareJAXRSInvoker extends JAXRSInvoker {
         } 
         
         // Slower check, is it a Promise?
-        Class<?> clazz = result.getClass();
-        if(Arrays.stream(clazz.getInterfaces())
-            .map(Class::getName)
-            .anyMatch(n -> "org.osgi.util.promise.Promise".equals(n))) {
-            
+        final Class<?> clazz = result.getClass();
+        if (promises.computeIfAbsent(clazz, type -> Arrays.stream(type.getInterfaces())
+                .map(Class::getName)
+                .anyMatch("org.osgi.util.promise.Promise"::equals))) {
             return handlePromiseFromAnotherClassSpace(inMessage, result, clazz);
         }
         

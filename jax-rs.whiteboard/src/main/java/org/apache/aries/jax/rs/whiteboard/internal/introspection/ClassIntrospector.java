@@ -18,6 +18,7 @@
 package org.apache.aries.jax.rs.whiteboard.internal.introspection;
 
 import org.apache.cxf.Bus;
+import org.apache.cxf.common.util.ClassUnwrapper;
 import org.apache.cxf.jaxrs.model.ClassResourceInfo;
 import org.apache.cxf.jaxrs.model.MethodDispatcher;
 import org.apache.cxf.jaxrs.model.OperationResourceInfo;
@@ -45,15 +46,24 @@ public class ClassIntrospector {
     public static Collection<ResourceMethodInfoDTO> getResourceMethodInfos(
         Class<?> clazz, Bus bus) {
 
+        final Class<?> realClass = unwrap(clazz, bus);
         ClassResourceInfo classResourceInfo =
             ResourceUtils.createClassResourceInfo(
-                clazz, clazz, true, true, bus);
+                    realClass, realClass, true, true, bus);
 
         Stream<ResourceMethodInfoDTO> convert = convert(
             new HashSet<>(), "/", null, null, null, null,
             true, classResourceInfo);
 
         return convert.collect(Collectors.toList());
+    }
+
+    private static Class<?> unwrap(final Class<?> clazz, final Bus bus) {
+        final ClassUnwrapper unwrapper = bus == null ? null : bus.getExtension(ClassUnwrapper.class);
+        if (unwrapper != null) {
+            return unwrapper.getRealClassFromClass(clazz);
+        }
+        return Proxies.unwrap(clazz);
     }
 
     private static Stream<ResourceMethodInfoDTO> convert(
