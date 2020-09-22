@@ -30,7 +30,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -46,7 +45,6 @@ import javax.ws.rs.core.Application;
 import javax.ws.rs.core.Feature;
 import javax.ws.rs.core.FeatureContext;
 import javax.ws.rs.ext.Provider;
-import javax.ws.rs.ext.RuntimeDelegate;
 
 import org.apache.aries.component.dsl.CachingServiceReference;
 import org.apache.aries.component.dsl.OSGi;
@@ -269,6 +267,9 @@ public class CxfJaxrsServiceRegistrator {
             bean.getProperties(true).putAll(appProps);
         }
         bean.setApplication(app);
+        if (_bus != null) {
+            bean.setBus(_bus);
+        }
 
         if (JAXRSServerFactoryBean.class.isAssignableFrom(endpointType)) {
             return endpointType.cast(bean);
