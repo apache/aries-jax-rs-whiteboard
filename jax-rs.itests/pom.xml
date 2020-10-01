@@ -23,7 +23,7 @@
     <parent>
         <groupId>org.apache.aries.jax.rs</groupId>
         <artifactId>org.apache.aries.jax.rs</artifactId>
-        <version>1.0.10-SNAPSHOT</version>
+        <version>1.0.10</version>
         <relativePath>..</relativePath>
     </parent>
 
@@ -99,7 +99,7 @@
         <dependency>
             <groupId>org.apache.aries.jax.rs</groupId>
             <artifactId>org.apache.aries.jax.rs.itests-fragment</artifactId>
-            <version>1.0.10-SNAPSHOT</version>
+            <version>1.0.10</version>
         </dependency>
         <dependency>
             <groupId>org.apache.geronimo.specs</groupId>
