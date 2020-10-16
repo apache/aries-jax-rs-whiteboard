@@ -40,7 +40,7 @@
         <maven.compiler.target>${java.build.version}</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <cxf.version>3.2.14</cxf.version>
-        <bnd.version>5.1.0</bnd.version>
+        <bnd.version>5.2.0</bnd.version>
         <dsl.version>1.2.2</dsl.version>
         <jaxb.version>2.3.3</jaxb.version>
         <bndjava15temorarysupplementalpackages><![CDATA[
