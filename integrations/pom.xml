@@ -29,12 +29,12 @@
     <parent>
         <groupId>org.apache.aries.jax.rs</groupId>
         <artifactId>org.apache.aries.jax.rs</artifactId>
-        <version>1.0.9-SNAPSHOT</version>
+        <version>1.0.11-SNAPSHOT</version>
         <relativePath>..</relativePath>
     </parent>
 
     <properties>
-        <aries.jaxrs.version>1.0.9-SNAPSHOT</aries.jaxrs.version>
+        <aries.jaxrs.version>1.0.11-SNAPSHOT</aries.jaxrs.version>
         <dsl.version>1.2.2</dsl.version>
     </properties>
 
