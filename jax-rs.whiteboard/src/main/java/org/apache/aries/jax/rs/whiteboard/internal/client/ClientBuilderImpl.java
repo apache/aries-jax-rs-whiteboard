@@ -19,6 +19,9 @@ package org.apache.aries.jax.rs.whiteboard.internal.client;
 
 import org.apache.cxf.jaxrs.client.PromiseRxInvokerProviderImpl;
 
+import aQute.bnd.annotation.spi.ServiceProvider;
+
+@ServiceProvider(javax.ws.rs.client.ClientBuilder.class)
 public class ClientBuilderImpl extends org.apache.cxf.jaxrs.client.spec.ClientBuilderImpl {
 
     public ClientBuilderImpl() {

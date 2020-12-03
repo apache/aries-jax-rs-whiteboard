@@ -53,16 +53,10 @@
     }
 )
 @Capability(
-    name = "javax.ws.rs.client.ClientBuilder",
-    namespace = "osgi.serviceloader",
-    attribute = {
-        "service.scope=prototype"
-    }
-)
-@Capability(
     name = "javax.ws.rs.ext.RuntimeDelegate",
     namespace = "osgi.serviceloader",
     attribute = {
+        "register:=org.apache.cxf.jaxrs.impl.RuntimeDelegateImpl",
         "service.scope=prototype"
     }
 )
@@ -70,6 +64,7 @@
     name = "javax.ws.rs.sse.SseEventSource.Builder",
     namespace = "osgi.serviceloader",
     attribute = {
+        "register:=org.apache.cxf.jaxrs.sse.client.SseEventSourceBuilderImpl",
         "service.scope=prototype"
     }
 )
