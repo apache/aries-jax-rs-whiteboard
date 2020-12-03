@@ -66,6 +66,18 @@
                     </bndruns>
                 </configuration>
             </plugin>
+            <plugin>
+                <groupId>biz.aQute.bnd</groupId>
+                <artifactId>bnd-run-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>example</id>
+                        <configuration>
+                            <bndrun>aries-jaxrs-whiteboard-example.bndrun</bndrun>
+                        </configuration>
+                    </execution>
+              </executions>
+            </plugin>
         </plugins>
     </build>
     <dependencies>
