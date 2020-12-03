@@ -23,18 +23,12 @@
     <parent>
         <groupId>org.apache.aries.jax.rs</groupId>
         <artifactId>jackson-integration</artifactId>
-        <version>1.0.3-SNAPSHOT</version>
-        <relativePath>..</relativePath>
+        <version>${revision}</version>
     </parent>
 
     <artifactId>org.apache.aries.jax.rs.jackson.itest</artifactId>
     <description>Apache Aries JAX-RS Jackson JAXB-JSON Integration Tests</description>
     <name>Apache Aries JAX-RS Jackson JAXB-JSON Integration Tests</name>
-
-    <properties>
-        <maven.deploy.skip>true</maven.deploy.skip>
-        <maven.install.skip>true</maven.install.skip>
-    </properties>
 
     <build>
         <plugins>
@@ -85,7 +79,7 @@
         <dependency>
             <groupId>org.apache.aries.jax.rs</groupId>
             <artifactId>org.apache.aries.jax.rs.whiteboard</artifactId>
-            <version>${aries.jaxrs.version}</version>
+            <version>${project.version}</version>
             <scope>runtime</scope>
         </dependency>
         <dependency>

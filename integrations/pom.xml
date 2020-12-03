@@ -21,21 +21,19 @@
 
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>integration</artifactId>
-    <name>Apache Aries JAX-RS Integration Projects Reactor</name>
-    <version>1.0.3-SNAPSHOT</version>
-    <packaging>pom</packaging>
-
     <parent>
         <groupId>org.apache.aries.jax.rs</groupId>
         <artifactId>org.apache.aries.jax.rs</artifactId>
-        <version>1.0.11-SNAPSHOT</version>
-        <relativePath>..</relativePath>
+        <version>${revision}</version>
     </parent>
 
+    <artifactId>integration</artifactId>
+    <name>Apache Aries JAX-RS Integration Projects Reactor</name>
+    <packaging>pom</packaging>
+
     <properties>
-        <aries.jaxrs.version>1.0.11-SNAPSHOT</aries.jaxrs.version>
-        <dsl.version>1.2.2</dsl.version>
+        <maven.deploy.skip>true</maven.deploy.skip>
+        <maven.install.skip>true</maven.install.skip>
     </properties>
 
     <scm>

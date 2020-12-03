@@ -1,15 +1,20 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-  <modelVersion>4.0.0</modelVersion>
+    <modelVersion>4.0.0</modelVersion>
     <parent>
-      <groupId>org.apache.aries.jax.rs</groupId>
-      <artifactId>org.apache.aries.jax.rs</artifactId>
-      <version>1.0.11-SNAPSHOT</version>
+        <groupId>org.apache.aries.jax.rs</groupId>
+        <artifactId>org.apache.aries.jax.rs</artifactId>
+        <version>${revision}</version>
     </parent>
 
     <groupId>org.apache.aries.jax.rs.cxf.repackage</groupId>
     <artifactId>org.apache.aries.jax.rs.cxf.repackage</artifactId>
     <description>This project extracts and repackages CXF so that the whiteboard can be more easily built</description>
     <name>Apache Aries JAX-RS Whiteboard CXF dependency repackaging</name>
+
+    <properties>
+        <maven.deploy.skip>true</maven.deploy.skip>
+        <maven.install.skip>true</maven.install.skip>
+    </properties>
 
     <dependencies>
         <dependency>

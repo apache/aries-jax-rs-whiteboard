@@ -21,17 +21,12 @@
     <parent>
         <groupId>org.apache.aries.jax.rs</groupId>
         <artifactId>cxf-jettison-integration</artifactId>
-        <version>1.0.3-SNAPSHOT</version>
+        <version>${revision}</version>
     </parent>
 
     <artifactId>org.apache.aries.jax.rs.jaxb.json.cxf-jettison-itest</artifactId>
     <description>Apache Aries JAX-RS CXF Jettison JAXB-JSON Integration Tests</description>
     <name>Apache Aries JAX-RS CXF Jettison JAXB-JSON Integration Tests</name>
-
-    <properties>
-        <maven.deploy.skip>true</maven.deploy.skip>
-        <maven.install.skip>true</maven.install.skip>
-    </properties>
 
     <build>
         <plugins>
@@ -82,13 +77,13 @@
         <dependency>
             <groupId>org.apache.aries.jax.rs</groupId>
             <artifactId>org.apache.aries.jax.rs.whiteboard</artifactId>
-            <version>${aries.jaxrs.version}</version>
+            <version>${project.version}</version>
             <scope>runtime</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.aries.jax.rs</groupId>
             <artifactId>org.apache.aries.jax.rs.itests-fragment</artifactId>
-            <version>${aries.jaxrs.version}</version>
+            <version>${project.version}</version>
             <scope>runtime</scope>
         </dependency>
         <dependency>

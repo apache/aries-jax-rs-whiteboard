@@ -20,19 +20,14 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-      <groupId>org.apache.aries.jax.rs</groupId>
-      <artifactId>integration</artifactId>
-      <version>1.0.3-SNAPSHOT</version>
-      <relativePath>..</relativePath>
+        <groupId>org.apache.aries.jax.rs</groupId>
+        <artifactId>integration</artifactId>
+        <version>${revision}</version>
     </parent>
 
     <artifactId>shiro-integration</artifactId>
     <name>Apache Aries JAX-RS Shiro Integration Project</name>
     <packaging>pom</packaging>
-
-    <properties>
-        <shiro.version>1.4.0</shiro.version>
-    </properties>
 
     <scm>
         <connection>scm:git:http://gitbox.apache.org/repos/asf/aries-jax-rs-whiteboard.git</connection>
@@ -46,37 +41,5 @@
         <module>shiro-authz</module>
         <module>shiro-itest</module>
     </modules>
-
-    <build>
-        <pluginManagement>
-            <plugins>
-                <plugin>
-                    <groupId>org.eclipse.m2e</groupId>
-                    <artifactId>lifecycle-mapping</artifactId>
-                    <version>1.0.0</version>
-                    <configuration>
-                        <lifecycleMappingMetadata>
-                            <pluginExecutions>
-                                <pluginExecution>
-                                    <pluginExecutionFilter>
-                                        <groupId>org.apache.maven.plugins</groupId>
-                                        <artifactId>maven-remote-resources-plugin</artifactId>
-                                        <versionRange>[1.0,)</versionRange>
-                                        <goals>
-                                            <goal>process</goal>
-                                        </goals>
-                                    </pluginExecutionFilter>
-                                    <action>
-                                        <ignore>
-                                        </ignore>
-                                    </action>
-                                </pluginExecution>
-                            </pluginExecutions>
-                        </lifecycleMappingMetadata>
-                    </configuration>
-                </plugin>
-            </plugins>
-        </pluginManagement>
-    </build>
 
 </project>
