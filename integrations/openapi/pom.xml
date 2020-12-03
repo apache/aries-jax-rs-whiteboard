@@ -22,17 +22,12 @@
     <parent>
       <groupId>org.apache.aries.jax.rs</groupId>
       <artifactId>integration</artifactId>
-      <version>1.0.3-SNAPSHOT</version>
-      <relativePath>..</relativePath>
+      <version>${revision}</version>
     </parent>
 
     <artifactId>openapi-integration</artifactId>
     <name>Apache Aries JAX-RS Open API Integration Project</name>
     <packaging>pom</packaging>
-
-    <properties>
-        <openapi.version>2.1.0</openapi.version>
-    </properties>
 
     <scm>
         <connection>scm:git:http://gitbox.apache.org/repos/asf/aries-jax-rs-whiteboard.git</connection>
@@ -45,37 +40,5 @@
         <module>openapi-resource</module>
         <module>openapi-itest</module>
     </modules>
-
-    <build>
-        <pluginManagement>
-            <plugins>
-                <plugin>
-                    <groupId>org.eclipse.m2e</groupId>
-                    <artifactId>lifecycle-mapping</artifactId>
-                    <version>1.0.0</version>
-                    <configuration>
-                        <lifecycleMappingMetadata>
-                            <pluginExecutions>
-                                <pluginExecution>
-                                    <pluginExecutionFilter>
-                                        <groupId>org.apache.maven.plugins</groupId>
-                                        <artifactId>maven-remote-resources-plugin</artifactId>
-                                        <versionRange>[1.0,)</versionRange>
-                                        <goals>
-                                            <goal>process</goal>
-                                        </goals>
-                                    </pluginExecutionFilter>
-                                    <action>
-                                        <ignore>
-                                        </ignore>
-                                    </action>
-                                </pluginExecution>
-                            </pluginExecutions>
-                        </lifecycleMappingMetadata>
-                    </configuration>
-                </plugin>
-            </plugins>
-        </pluginManagement>
-    </build>
 
 </project>

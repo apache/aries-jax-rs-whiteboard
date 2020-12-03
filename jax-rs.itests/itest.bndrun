@@ -22,11 +22,10 @@
 	org.apache.felix.logback,\
 	slf4j.api
 -runsystempackages: \
-	org.slf4j;version=1.7.25,\
-	org.slf4j.event;version=1.7.25,\
-	org.slf4j.helpers;version=1.7.25,\
-	org.slf4j.spi;version=1.7.25,\
-	${bndjava15temorarysupplementalpackages}
+	org.slf4j;version=${slf4j.version},\
+	org.slf4j.event;version=${slf4j.version},\
+	org.slf4j.helpers;version=${slf4j.version},\
+	org.slf4j.spi;version=${slf4j.version}
 
 -runfw: org.eclipse.osgi
 

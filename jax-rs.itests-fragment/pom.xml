@@ -18,17 +18,22 @@
   under the License.
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
     <parent>
         <groupId>org.apache.aries.jax.rs</groupId>
         <artifactId>org.apache.aries.jax.rs</artifactId>
-        <version>1.0.11-SNAPSHOT</version>
-        <relativePath>..</relativePath>
+        <version>${revision}</version>
     </parent>
-    <modelVersion>4.0.0</modelVersion>
 
     <artifactId>org.apache.aries.jax.rs.itests-fragment</artifactId>
     <description>Apache Aries JAX-RS Whiteboard Integration Tests Fragment</description>
     <name>Apache Aries JAX-RS Whiteboard Integration Tests Fragment</name>
+
+    <properties>
+        <maven.deploy.skip>true</maven.deploy.skip>
+        <maven.install.skip>true</maven.install.skip>
+    </properties>
 
     <build>
         <plugins>
@@ -38,9 +43,5 @@
             </plugin>
         </plugins>
     </build>
-
-    <properties>
-        <maven.deploy.skip>true</maven.deploy.skip>
-    </properties>
 
 </project>
