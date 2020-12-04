@@ -22,7 +22,6 @@ import java.util.concurrent.ExecutorService;
 import javax.ws.rs.client.RxInvokerProvider;
 import javax.ws.rs.client.SyncInvoker;
 
-import org.apache.cxf.jaxrs.client.SyncInvokerImpl;
 import org.osgi.service.jaxrs.client.PromiseRxInvoker;
 import org.osgi.util.promise.PromiseFactory;
 
