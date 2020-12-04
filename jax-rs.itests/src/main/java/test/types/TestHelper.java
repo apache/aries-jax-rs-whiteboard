@@ -51,6 +51,7 @@ import java.util.Collection;
 import java.util.Dictionary;
 import java.util.Hashtable;
 import java.util.Iterator;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -167,6 +168,9 @@ public class TestHelper {
 
         try {
             clientBuilder = _clientBuilderTracker.waitForService(5000);
+
+            clientBuilder.connectTimeout(600000, TimeUnit.SECONDS);
+            clientBuilder.readTimeout(600000, TimeUnit.SECONDS);
 
             return clientBuilder.build();
         }
