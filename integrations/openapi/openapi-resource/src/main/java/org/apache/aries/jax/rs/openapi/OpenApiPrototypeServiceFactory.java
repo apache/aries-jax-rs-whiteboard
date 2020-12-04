@@ -20,6 +20,9 @@ package org.apache.aries.jax.rs.openapi;
 import io.swagger.v3.oas.integration.SwaggerConfiguration;
 import io.swagger.v3.oas.models.OpenAPI;
 
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+
 import org.osgi.framework.Bundle;
 import org.osgi.framework.PrototypeServiceFactory;
 import org.osgi.framework.ServiceRegistration;
@@ -32,6 +35,7 @@ public class OpenApiPrototypeServiceFactory
 
     private final PropertyWrapper propertyWrapper;
     private final OpenAPI openAPI;
+    private final Set<SchemaProcessor> schemaProcessors = ConcurrentHashMap.newKeySet();
 
     public OpenApiPrototypeServiceFactory(
         PropertyWrapper propertyWrapper, OpenAPI openAPI) {
@@ -45,9 +49,8 @@ public class OpenApiPrototypeServiceFactory
         Bundle bundle,
         ServiceRegistration<Object> serviceRegistration) {
 
-        SwaggerConfiguration
-                swaggerConfiguration = new SwaggerConfiguration().
-                openAPI(openAPI);
+        SwaggerConfiguration swaggerConfiguration = new SwaggerConfiguration().
+            openAPI(openAPI);
 
         propertyWrapper.applyLong("cache.ttl", swaggerConfiguration::setCacheTTL);
         propertyWrapper.applyString("id", swaggerConfiguration::id);
@@ -55,7 +58,7 @@ public class OpenApiPrototypeServiceFactory
         propertyWrapper.applyBoolean("pretty.print", swaggerConfiguration::setPrettyPrint);
         propertyWrapper.applyBoolean("read.all.resources", swaggerConfiguration::setReadAllResources);
 
-        OpenApiResource openApiResource = new OpenApiResource();
+        OpenApiResource openApiResource = new OpenApiResource(schemaProcessors);
 
         openApiResource.setOpenApiConfiguration(swaggerConfiguration);
 
@@ -67,6 +70,14 @@ public class OpenApiPrototypeServiceFactory
         Bundle bundle,
         ServiceRegistration<Object> serviceRegistration,
         Object object) {
-
     }
+
+    void addModelConverter(SchemaProcessor schemaProcessor) {
+        schemaProcessors.add(schemaProcessor);
+    }
+
+    void removeModelConverter(SchemaProcessor schemaProcessor) {
+        schemaProcessors.remove(schemaProcessor);
+    }
+
 }

@@ -18,5 +18,5 @@
 # Ideally we would not include this, but for some reason the Shiro JAX-RS
 # Support is not an OSGi bundle
 
-Export-Package: org.apache.aries.jaxrs.openapi;version=${openapi.version}
+Export-Package: org.apache.aries.jax.rs.openapi;version=${openapi.version}
 -conditionalpackage: org.apache.aries.component.dsl.*
