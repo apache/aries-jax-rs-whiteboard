@@ -42,6 +42,7 @@
 -runproperties: \
 	logback.configurationFile=${fileuri;${.}/logback.xml},\
 	osgi.console=, \
+	org.apache.cxf.osgi.http.transport.disable=true,\
 	org.apache.felix.http.host=localhost,\
 	org.osgi.service.http.port=*,\
 	org.apache.aries.spifly.auto.consumers=jakarta.xml.bind-api,\
