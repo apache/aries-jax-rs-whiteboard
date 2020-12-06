@@ -74,6 +74,7 @@ public class CxfJaxrsBundleActivator implements BundleActivator {
 
     @Override
     public void start(BundleContext bundleContext) throws Exception {
+        System.setProperty("org.apache.cxf.osgi.http.transport.disable", "true");
         RuntimeDelegate.setInstance(new RuntimeDelegateImpl());
 
         if (_log.isDebugEnabled()) {
