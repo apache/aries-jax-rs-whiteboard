@@ -114,11 +114,6 @@
             <scope>runtime</scope>
         </dependency>
         <dependency>
-            <groupId>org.apache.aries.jax.rs</groupId>
-            <artifactId>org.apache.aries.jax.rs.itests-fragment</artifactId>
-            <version>1.0.11-SNAPSHOT</version>
-        </dependency>
-        <dependency>
             <groupId>org.apache.geronimo.specs</groupId>
             <artifactId>geronimo-jaxrs_2.1_spec</artifactId>
         </dependency>
