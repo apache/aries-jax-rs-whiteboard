@@ -80,12 +80,17 @@
     namespace = ExtenderNamespace.EXTENDER_NAMESPACE,
     resolution = Resolution.OPTIONAL
 )
+@Referenced({
+    com.ctc.wstx.stax.WstxInputFactory.class,
+    com.sun.xml.bind.annotation.XmlLocation.class
+})
 package org.apache.aries.jax.rs.whiteboard;
 
 import static org.osgi.service.jaxrs.whiteboard.JaxrsWhiteboardConstants.*;
 
 import org.osgi.annotation.bundle.Capability;
 import org.osgi.annotation.bundle.Export;
+import org.osgi.annotation.bundle.Referenced;
 import org.osgi.annotation.bundle.Requirement;
 import org.osgi.annotation.bundle.Requirement.Resolution;
 import org.osgi.annotation.versioning.Version;
