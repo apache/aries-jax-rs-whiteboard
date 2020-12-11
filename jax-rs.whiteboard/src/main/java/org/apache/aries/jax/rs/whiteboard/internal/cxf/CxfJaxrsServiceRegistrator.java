@@ -38,7 +38,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-import javax.ws.rs.ApplicationPath;
 import javax.ws.rs.RuntimeType;
 import javax.ws.rs.container.DynamicFeature;
 import javax.ws.rs.core.Application;
@@ -199,6 +198,7 @@ public class CxfJaxrsServiceRegistrator {
         }
     }
 
+    @SuppressWarnings("unchecked")
     public <T> T createEndpoint(Application app, Class<T> endpointType) {
         // final JAXRSServerFactoryBean bean = ResourceUtils.createApplication(app, false, false, false, null);
         final JAXRSServerFactoryBean bean = new JAXRSServerFactoryBean();
@@ -564,7 +564,7 @@ public class CxfJaxrsServiceRegistrator {
                 Collectors.toList()
             );
 
-        HashMap<Class, ResourceProvider> map = new HashMap<>();
+        HashMap<Class<?>, ResourceProvider> map = new HashMap<>();
 
         for (ClassResourceInfo classResourceInfo : classResourceInfos) {
             map.put(

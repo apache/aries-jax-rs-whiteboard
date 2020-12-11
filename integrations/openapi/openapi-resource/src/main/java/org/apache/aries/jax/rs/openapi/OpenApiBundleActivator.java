@@ -38,18 +38,26 @@ public class OpenApiBundleActivator implements BundleActivator {
 
     @Override
     public void start(BundleContext bundleContext) throws Exception {
-        OSGi<?> program =
-            serviceReferences(OpenAPI.class).flatMap(sr ->
-            service(sr).flatMap(openAPI ->
-            just(
-                new OpenApiPrototypeServiceFactory(
-                    new PropertyWrapper(sr),
-                    openAPI))).flatMap(factory ->
-            register(
-                Object.class,
-                factory,
-                () -> getProperties(sr))
-            ));
+        OSGi<?> program = serviceReferences(OpenAPI.class).flatMap(
+            sr -> service(sr).flatMap(
+                openAPI -> just(
+                    new OpenApiPrototypeServiceFactory(
+                        new PropertyWrapper(sr),
+                        openAPI)
+                )
+            ).flatMap(
+                factory -> register(
+                    Object.class,
+                    factory,
+                    () -> getProperties(sr)
+                ).then(
+                    services(SchemaProcessor.class).foreach(
+                        factory::addModelConverter,
+                        factory::removeModelConverter
+                    )
+                )
+            )
+        );
 
         result = program.run(bundleContext);
     }
