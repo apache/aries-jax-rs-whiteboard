@@ -12,7 +12,13 @@
 
 name: CI Build
 
-on: [push, pull_request]
+on:
+  push:
+    # Sequence of patterns matched against refs/heads
+    branches-ignore:
+      # Push events to branches matching refs/heads/dependabot/**
+      - 'dependabot/**'
+  pull_request:
 
 env:
   LC_ALL: en_US.UTF-8
