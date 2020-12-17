@@ -42,6 +42,7 @@ jobs:
       with:
         java-version: ${{ matrix.java }}
     - name: Build
+      continue-on-error: ${{contains(matrix.java, '-ea')}}
       shell: bash
       run: |
         mvn -U -e -B -ntp install
