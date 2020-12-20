@@ -53,4 +53,6 @@ Export-Package:\
 	org.apache.cxf.common.util;version="3.2.13"
 
 -resourceonly: true
--fixupmessages: Classpath is empty...;is:=ignore
+-fixupmessages: \
+	Classpath is empty...;is:=ignore,\
+	"Host org.apache.aries.jax.rs.whiteboard="
