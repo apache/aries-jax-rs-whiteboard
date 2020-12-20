@@ -4,6 +4,7 @@
 *.iml
 .classpath
 .project
+.flattened-pom.xml
 .settings/
 */bin/
 **/build/
