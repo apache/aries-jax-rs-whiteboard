@@ -5,6 +5,48 @@
 git shortlog --branches=master --no-merges -c --format="- %h %s" -w0,2 <from_tag>..<commit> >> changelog.md
 ```
 
+### 1.0.10 - 1.1.0
+
+Carlos Sierra Andrés (3):
+  - 99cf69e Update versions
+  - 2cc51a9 Fix incorrect license
+  - e67ccc6 Added documentation for OpenAPI and Jackson integration
+
+GitHub (1):
+  - 5219359 don't fail if Java Earler Access (ea) build job fails
+
+Raymond Auge (13):
+  - d4e36e8 add dependabot
+  - 825b1d1 add bnd-run-maven-plugin plugin
+  - 597168b update gogo dependency
+  - ee74c89 [ARIES-2026] Update/unify integrations into the main build
+  - 2f40ceb update jdks tested via github actions
+  - 9b24fb9 update resolution results
+  - 624222c add flattened pom plugin
+  - c779884 quiet host bundle warning
+  - c53b142 exclude flatten from eclipse execution
+  - 86e0044 add bnd snapshot repository for testing
+  - cf4094c add a changelog file
+  - 3277bb8 prepare next release
+  - 0fbbe88 [maven-release-plugin] prepare release org.apache.aries.jax.rs-1.1.0
+
+Raymond Augé (12):
+  - 40487a9 Bump jackson-jaxrs-json-provider from 2.9.6 to 2.12.0
+  - 18b8b9b Bump maven-jar-plugin from 3.0.1 to 3.2.0
+  - 749433c Bump findbugs-maven-plugin from 2.4.0 to 3.0.5
+  - f13194c Bump osgi.annotation from 7.0.0 to 8.0.0
+  - 2a16400 Bump geronimo-annotation_1.3_spec from 1.1 to 1.3
+  - 4aa173e only build for dependabot PRs not branches
+  - 33a2e38 Bump jettison from 1.3.8 to 1.4.1
+  - 3a97ec2 Bump shiro.version from 1.4.0 to 1.7.0
+  - 1598a2d Bump org.apache.felix.scr from 2.1.16 to 2.1.24
+  - 1b35737 Bump commons-lang3 from 3.10 to 3.11
+  - 888072b Bump org.osgi.util.promise from 1.1.0 to 1.1.1
+  - 222cc00 remove commons configuration since it's not used
+
+jbonofre (1):
+  - 1c374b0 [maven-release-plugin] prepare for next development iteration
+
 ### 1.0.9 - 1.0.10
 
 Carlos Sierra Andrés (8):
