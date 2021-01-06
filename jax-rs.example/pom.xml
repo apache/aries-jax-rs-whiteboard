@@ -116,7 +116,7 @@
         <dependency>
             <groupId>org.apache.aries.jax.rs</groupId>
             <artifactId>org.apache.aries.jax.rs.itests-fragment</artifactId>
-            <version>1.0.11-SNAPSHOT</version>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.geronimo.specs</groupId>
