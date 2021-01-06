@@ -31,7 +31,7 @@
     <groupId>org.apache.aries.jax.rs</groupId>
     <artifactId>org.apache.aries.jax.rs</artifactId>
     <name>Apache Aries JAX-RS Whiteboard Integration Project</name>
-    <version>${revision}</version>
+    <version>1.1.0</version>
     <packaging>pom</packaging>
 
     <properties>
@@ -55,7 +55,7 @@
         <connection>scm:git:http://gitbox.apache.org/repos/asf/aries-jax-rs-whiteboard.git</connection>
         <developerConnection>scm:git:https://gitbox.apache.org/repos/asf/aries-jax-rs-whiteboard.git</developerConnection>
         <url>https://gitbox.apache.org/repos/asf?p=aries-jax-rs-whiteboard.git</url>
-        <tag>HEAD</tag>
+        <tag>org.apache.aries.jax.rs-1.1.0</tag>
     </scm>
 
     <modules>
@@ -497,7 +497,7 @@
                                         </goals>
                                     </pluginExecutionFilter>
                                     <action>
-                                        <ignore></ignore>
+                                        <ignore />
                                     </action>
                                 </pluginExecution>
                             </pluginExecutions>

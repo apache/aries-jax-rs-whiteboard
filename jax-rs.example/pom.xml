@@ -23,7 +23,7 @@
     <parent>
         <groupId>org.apache.aries.jax.rs</groupId>
         <artifactId>org.apache.aries.jax.rs</artifactId>
-        <version>${revision}</version>
+        <version>1.1.0</version>
     </parent>
 
     <artifactId>org.apache.aries.jax.rs.example</artifactId>
