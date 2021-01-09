@@ -39,7 +39,7 @@ public class Registry<T> implements AutoCloseable {
 
     @Override
     public void close() {
-        for (FilteredPublisher publisher : new HashSet<>(_publishers)) {
+        for (FilteredPublisher<?> publisher : new HashSet<>(_publishers)) {
             publisher.close();
         }
     }

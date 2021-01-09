@@ -65,7 +65,6 @@ public class PrototypeServiceReferenceResourceProvider
         m.remove(_messageKey);
     }
 
-    @SuppressWarnings({ "rawtypes", "unchecked" })
     @Override
     public Class<?> getResourceClass() {
         return _serviceClass;

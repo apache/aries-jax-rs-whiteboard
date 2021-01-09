@@ -38,7 +38,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-import javax.ws.rs.ApplicationPath;
 import javax.ws.rs.RuntimeType;
 import javax.ws.rs.container.DynamicFeature;
 import javax.ws.rs.core.Application;
@@ -219,7 +218,7 @@ public class CxfJaxrsServiceRegistrator {
                 if (isProvider(cls)) {
                     providers.add(ResourceUtils.createProviderInstance(cls));
                 } else if (org.apache.cxf.feature.Feature.class.isAssignableFrom(cls)) {
-                    features.add(ResourceUtils.createFeatureInstance((Class<? extends org.apache.cxf.feature.Feature>) cls));
+                    features.add(ResourceUtils.createFeatureInstance(cls.asSubclass(org.apache.cxf.feature.Feature.class)));
                 } else {
                     resourceClasses.add(cls);
                     /* todo: support singleton provider otherwise perfs can be a shame
@@ -564,7 +563,7 @@ public class CxfJaxrsServiceRegistrator {
                 Collectors.toList()
             );
 
-        HashMap<Class, ResourceProvider> map = new HashMap<>();
+        HashMap<Class<?>, ResourceProvider> map = new HashMap<>();
 
         for (ClassResourceInfo classResourceInfo : classResourceInfos) {
             map.put(

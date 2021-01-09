@@ -832,10 +832,10 @@ public class Whiteboard {
         CachingServiceReference<T> serviceReference,
         CxfJaxrsServiceRegistrator registrator) {
 
-        Map registratorProperties = registrator.getProperties();
+        Map<?, ?> properties = registrator.getProperties();
 
         Bundle originalBundle = _bundleContext.getBundle(
-            (long)registratorProperties.get("service.bundleid"));
+            Long.class.cast(properties.get("service.bundleid")).longValue());
 
         return
             changeContext(
@@ -866,10 +866,10 @@ public class Whiteboard {
                 Whiteboard::getResourceProvider
             ).effects(
                 rp -> _runtime.addApplicationEndpoint(
-                    registratorProperties::get, serviceReference,
+                    properties::get, serviceReference,
                     registrator.getBus(), rp.getResourceClass()),
                 rp -> _runtime.removeApplicationEndpoint(
-                    registratorProperties::get, serviceReference)
+                    properties::get, serviceReference)
             ).effects(
                 registrator::add,
                 registrator::remove
@@ -878,13 +878,13 @@ public class Whiteboard {
                     _log,
                     () -> "Registered endpoint " +
                         serviceReference.getServiceReference() + " into application " +
-                            getServiceName(registratorProperties::get)
+                            getServiceName(properties::get)
                 ),
                 ifDebugEnabled(
                     _log,
                     () -> "Unregistered endpoint " +
                         serviceReference.getServiceReference() + " from application " +
-                            getServiceName(registratorProperties::get)
+                            getServiceName(properties::get)
                 )
 
             );
@@ -894,10 +894,10 @@ public class Whiteboard {
         CachingServiceReference<?> serviceReference,
         CxfJaxrsServiceRegistrator registrator) {
 
-        Map properties = registrator.getProperties();
+        Map<?, ?> properties = registrator.getProperties();
 
         Bundle originalBundle = _bundleContext.getBundle(
-            (long)properties.get("service.bundleid"));
+            Long.class.cast(properties.get("service.bundleid")).longValue());
 
         return
             just(() -> getServiceName(properties::get)).
