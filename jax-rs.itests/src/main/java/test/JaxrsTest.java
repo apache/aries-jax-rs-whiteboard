@@ -2369,6 +2369,8 @@ public class JaxrsTest extends TestHelper {
         runtimeDTO = runtime.getRuntimeDTO();
         assertEquals(0, runtimeDTO.failedResourceDTOs.length);
 
+        response = webTarget.request().get();
+
         assertEquals(
             "This should say hello", "Hello test",
             response.readEntity(String.class));
@@ -2451,6 +2453,8 @@ public class JaxrsTest extends TestHelper {
 
         runtimeDTO = runtime.getRuntimeDTO();
         assertEquals(0, runtimeDTO.failedResourceDTOs.length);
+
+        response = webTarget.request().get();
 
         assertEquals(
                 "This should say hello", "Hello test",
