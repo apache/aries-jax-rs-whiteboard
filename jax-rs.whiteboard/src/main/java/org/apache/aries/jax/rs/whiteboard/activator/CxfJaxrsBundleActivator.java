@@ -65,6 +65,11 @@ import static org.osgi.service.http.whiteboard.HttpWhiteboardConstants.HTTP_WHIT
 @Header(name = Constants.BUNDLE_ACTIVATOR, value = "${@class}")
 public class CxfJaxrsBundleActivator implements BundleActivator {
 
+    public static final List<Class<?>> INTERNALLY_REQUIRED_CLASSES = Arrays.asList(
+        com.ctc.wstx.stax.WstxInputFactory.class,
+        com.sun.xml.bind.annotation.XmlLocation.class
+    );
+
     private static final Logger _log = LoggerFactory.getLogger(
         CxfJaxrsBundleActivator.class);
 

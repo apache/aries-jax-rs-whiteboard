@@ -15,7 +15,6 @@
 #    specific language governing permissions and limitations
 #    under the License.
 
-Conditional-Package: org.apache.aries.component.dsl.*
-Import-Package: org.apache.cxf.jaxrs.client,*
-
 Provide-Capability: osgi.implementation;osgi.implementation="aries.jax-rs";version:Version="${Bundle-Version}"
+
+-conditionalpackage: org.apache.aries.component.dsl.*

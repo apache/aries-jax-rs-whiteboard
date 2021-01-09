@@ -18,6 +18,6 @@
 # Ideally we would not include this, but for some reason the Shiro JAX-RS
 # Support is not an OSGi bundle
 
-Export-Package: org.apache.shiro.web.jaxrs;version=${shiro.version}
+-includepackage: org.apache.shiro.web.jaxrs;version=${shiro.version}
 
 -conditionalpackage: org.apache.aries.component.dsl.*
