@@ -41,7 +41,6 @@
 -runsystemcapabilities: ${native_capability}
 -runproperties: \
 	logback.configurationFile=${fileuri;${.}/logback.xml},\
-	osgi.console.enable.builtin=false, \
 	osgi.console=, \
 	org.apache.felix.http.host=localhost,\
 	org.osgi.service.http.port=8080,\
