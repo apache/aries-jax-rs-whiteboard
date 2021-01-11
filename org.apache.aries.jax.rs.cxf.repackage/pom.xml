@@ -59,7 +59,7 @@
                             <goal>unpack-dependencies</goal>
                         </goals>
                         <configuration>
-                           <includes>**/*.class,**/Messages.properties,META-INF/services/*,org/apache/cxf/version/version.properties</includes>
+                           <includes>org/apache/aries/component/dsl/**/*.class,org/apache/cxf/**/*.class,**/Messages.properties,META-INF/services/*,org/apache/cxf/version/version.properties</includes>
                            <outputDirectory>${project.build.outputDirectory}</outputDirectory>
                            <markersDirectory>${project.build.directory}/dependency-maven-plugin-markers-classes</markersDirectory>
                         </configuration>
