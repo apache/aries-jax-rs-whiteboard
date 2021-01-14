@@ -11,6 +11,8 @@ import javax.ws.rs.core.*;
 import javax.ws.rs.ext.Providers;
 
 import org.apache.aries.jax.rs.whiteboard.ApplicationClasses;
+import org.osgi.annotation.bundle.Capability;
+import org.osgi.namespace.implementation.ImplementationNamespace;
 
 import io.swagger.v3.core.util.Json;
 import io.swagger.v3.core.util.Yaml;
@@ -21,6 +23,10 @@ import io.swagger.v3.oas.integration.api.OpenAPIConfiguration;
 import io.swagger.v3.oas.integration.api.OpenApiContext;
 import io.swagger.v3.oas.models.OpenAPI;
 
+@Capability(
+    namespace = ImplementationNamespace.IMPLEMENTATION_NAMESPACE,
+    name = "org.apache.aries.jax.rs.openapi"
+)
 @Path("/openapi.{type:json|yaml}")
 public class OpenApiResource extends BaseOpenApiResource {
 
