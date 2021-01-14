@@ -15,6 +15,6 @@
 #    specific language governing permissions and limitations
 #    under the License.
 
-Export-Package: org.apache.aries.jax.rs.openapi;version=${openapi.version}
+Bundle-Description: Integration Test bundle for the REST Management integration
 
--conditionalpackage: org.apache.aries.component.dsl.*
+Test-Cases: ${classes;CONCRETE;ANNOTATED;org.junit.Test}

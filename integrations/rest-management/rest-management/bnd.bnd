@@ -15,6 +15,10 @@
 #    specific language governing permissions and limitations
 #    under the License.
 
-Export-Package: org.apache.aries.jax.rs.openapi;version=${openapi.version}
+Import-Package: \
+	javax.xml.bind;version="[2.3.0,3)",\
+	javax.xml.bind.annotation;version="[2.3.0,3)",\
+	javax.xml.bind.annotation.adapters;version="[2.3.0,3)",\
+	*
 
 -conditionalpackage: org.apache.aries.component.dsl.*
