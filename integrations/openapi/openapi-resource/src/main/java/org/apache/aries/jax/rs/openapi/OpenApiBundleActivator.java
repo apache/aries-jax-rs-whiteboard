@@ -17,6 +17,8 @@
 
 package org.apache.aries.jax.rs.openapi;
 
+import io.swagger.v3.core.converter.ModelConverter;
+import io.swagger.v3.core.converter.ModelConverters;
 import io.swagger.v3.oas.models.OpenAPI;
 import org.apache.aries.component.dsl.CachingServiceReference;
 import org.apache.aries.component.dsl.OSGi;
@@ -25,8 +27,10 @@ import org.osgi.annotation.bundle.Header;
 import org.osgi.framework.*;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static org.apache.aries.component.dsl.OSGi.*;
+import static org.apache.aries.component.dsl.Utils.accumulate;
 
 /**
  * @author Carlos Sierra Andrés
@@ -36,22 +40,113 @@ public class OpenApiBundleActivator implements BundleActivator {
 
     private OSGiResult result;
 
+    private static <T> OSGi<Set<T>> sequence(Set<OSGi<T>> list) {
+        Set<T> objects = new HashSet<>();
+
+        OSGi<Set<T>> result = just(() -> objects);
+
+        for (OSGi<T> osgi : list) {
+            result = osgi.effects(objects::add, objects::remove).then(result);
+        }
+
+        return result;
+    }
+
+    private static OpenAPIWithModelResolvers pairModelConverterWithOpenAPI(
+        CachingServiceReference<OpenAPI> oasr, List<CachingServiceReference<ModelConverter>> mcsrs) {
+
+        return new OpenAPIWithModelResolvers(
+            oasr,
+            mcsrs.stream().filter(
+                mcsr -> filterModelConverter(oasr, mcsr)
+            ).collect(
+                Collectors.toSet()
+            )
+        );
+    }
+
+    private static boolean filterModelConverter(
+        CachingServiceReference<OpenAPI> oasr,
+        CachingServiceReference<ModelConverter> mcsr) {
+
+        final String[] propertyValues = canonicalize(
+            mcsr.getProperty("osgi.jaxrs.openapi.select"));
+
+        for (String propertyValue : propertyValues) {
+            if (propertyValue == null || propertyValue.isEmpty()) {
+                continue;
+            }
+            try {
+                Filter filter = FrameworkUtil.createFilter(propertyValue);
+
+                if (filter.match(oasr.getServiceReference())) {
+                    return true;
+                }
+            } catch (InvalidSyntaxException ise) {
+                //log
+                continue;
+            }
+        }
+
+        return false;
+    }
+
+    private static String[] canonicalize(Object propertyValue) {
+        if (propertyValue == null) {
+            return new String[0];
+        }
+        if (propertyValue instanceof String[]) {
+            return (String[]) propertyValue;
+        }
+        if (propertyValue instanceof Collection) {
+            return
+                ((Collection<?>) propertyValue).stream().
+                    map(
+                        Object::toString
+                    ).toArray(
+                    String[]::new
+                );
+        }
+
+        return new String[]{propertyValue.toString()};
+    }
+
     @Override
     public void start(BundleContext bundleContext) throws Exception {
-        OSGi<?> program =
-            serviceReferences(OpenAPI.class).flatMap(sr ->
-            service(sr).flatMap(openAPI ->
-            just(
-                new OpenApiPrototypeServiceFactory(
-                    new PropertyWrapper(sr),
-                    openAPI))).flatMap(factory ->
-            register(
-                Object.class,
-                factory,
-                () -> getProperties(sr))
-            ));
+        final OSGi<?> modelConverters = services(
+            ModelConverter.class
+        ).effects(
+            ModelConverters.getInstance()::addConverter,
+            ModelConverters.getInstance()::removeConverter
+        );
+
+        OSGi<?> program = combine(
+            (openAPI, __) -> openAPI,
+            serviceReferences(OpenAPI.class),
+            accumulate(modelConverters)
+        ).
+            flatMap(openAPICachingServiceReference ->
+                service(openAPICachingServiceReference).flatMap(openAPI ->
+                    register(
+                        Object.class,
+                        new OpenApiPrototypeServiceFactory(
+                            new PropertyWrapper(openAPICachingServiceReference), openAPI),
+                        () -> getProperties(openAPICachingServiceReference)
+                    )
+                )
+            );
 
         result = program.run(bundleContext);
+    }
+
+    private Set<OSGi<ModelConverter>> lazilyGetModelConverters(
+        OpenAPIWithModelResolvers openAPIWithModelConverters) {
+
+        return openAPIWithModelConverters.
+            getModelConverters().
+            stream().
+            map(OSGi::service).
+            collect(Collectors.toSet());
     }
 
     @Override

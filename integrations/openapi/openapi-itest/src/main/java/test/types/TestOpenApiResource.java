@@ -30,8 +30,11 @@ public class TestOpenApiResource {
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/operation")
     @Operation(description = "operation")
-    public String getJsonObject() {
-        return "operation";
+    public MyReturnType getJsonObject() {
+        return null;
     }
 
+    public static class MyReturnType {
+
+    }
 }

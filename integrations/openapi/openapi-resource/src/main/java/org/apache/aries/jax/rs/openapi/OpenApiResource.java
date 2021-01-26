@@ -7,12 +7,8 @@ import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
-import javax.ws.rs.core.Application;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriInfo;
+import javax.ws.rs.core.*;
+import javax.ws.rs.ext.Providers;
 
 import org.apache.aries.jax.rs.whiteboard.ApplicationClasses;
 
@@ -36,6 +32,17 @@ public class OpenApiResource extends BaseOpenApiResource {
 
     @Context
     ServletConfig config;
+    private long serviceId;
+
+    @Context
+    Providers providers;
+
+    @Context
+    Configuration configuration;
+
+    public OpenApiResource(long serviceId) {
+        this.serviceId = serviceId;
+    }
 
     @GET
     @Produces({MediaType.APPLICATION_JSON, "application/yaml"})
@@ -45,7 +52,9 @@ public class OpenApiResource extends BaseOpenApiResource {
                                @PathParam("type") String type) throws Exception {
 
         String ctxId = app.getClass().getCanonicalName()
-            .concat("#").concat(String.valueOf(System.identityHashCode(app)));
+            .concat("#").
+                concat(String.valueOf(System.identityHashCode(app))).
+                concat(String.valueOf(this.serviceId));
 
         OpenApiContext ctx = new JaxrsOpenApiContextBuilder<>()
             .servletConfig(config)
@@ -53,9 +62,11 @@ public class OpenApiResource extends BaseOpenApiResource {
             .configLocation(configLocation)
             .openApiConfiguration(openApiConfiguration)
             .ctxId(ctxId)
-            .buildContext(true);
+            .buildContext(false);
 
         ctx.setOpenApiScanner(new JaxrsWhiteboardScanner(applicationClasses));
+
+        ctx.init();
 
         OpenAPI oas = ctx.read();
 
@@ -67,14 +78,14 @@ public class OpenApiResource extends BaseOpenApiResource {
 
         if (Optional.ofNullable(type).map(String::trim).map("yaml"::equalsIgnoreCase).orElse(Boolean.FALSE)) {
             return Response.status(Response.Status.OK)
-                  .entity(pretty ? Yaml.pretty(oas) : Yaml.mapper().writeValueAsString(oas))
-                  .type("application/yaml")
-                  .build();
+                .entity(pretty ? Yaml.pretty(oas) : Yaml.mapper().writeValueAsString(oas))
+                .type("application/yaml")
+                .build();
         } else {
             return Response.status(Response.Status.OK)
-                  .entity(pretty ? Json.pretty(oas) : Json.mapper().writeValueAsString(oas))
-                  .type(MediaType.APPLICATION_JSON_TYPE)
-                  .build();
+                .entity(pretty ? Json.pretty(oas) : Json.mapper().writeValueAsString(oas))
+                .type(MediaType.APPLICATION_JSON_TYPE)
+                .build();
         }
     }
 

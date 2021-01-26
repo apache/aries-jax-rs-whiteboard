@@ -45,9 +45,8 @@ public class OpenApiPrototypeServiceFactory
         Bundle bundle,
         ServiceRegistration<Object> serviceRegistration) {
 
-        SwaggerConfiguration
-                swaggerConfiguration = new SwaggerConfiguration().
-                openAPI(openAPI);
+        SwaggerConfiguration swaggerConfiguration = new SwaggerConfiguration().
+            openAPI(openAPI);
 
         propertyWrapper.applyLong("cache.ttl", swaggerConfiguration::setCacheTTL);
         propertyWrapper.applyString("id", swaggerConfiguration::id);
@@ -55,7 +54,8 @@ public class OpenApiPrototypeServiceFactory
         propertyWrapper.applyBoolean("pretty.print", swaggerConfiguration::setPrettyPrint);
         propertyWrapper.applyBoolean("read.all.resources", swaggerConfiguration::setReadAllResources);
 
-        OpenApiResource openApiResource = new OpenApiResource();
+        OpenApiResource openApiResource = new OpenApiResource(
+            (long) serviceRegistration.getReference().getProperty("service.id"));
 
         openApiResource.setOpenApiConfiguration(swaggerConfiguration);
 

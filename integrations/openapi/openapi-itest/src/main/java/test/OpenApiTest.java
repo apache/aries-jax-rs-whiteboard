@@ -20,9 +20,14 @@ package test;
 import static org.osgi.service.jaxrs.whiteboard.JaxrsWhiteboardConstants.JAX_RS_APPLICATION_BASE;
 import static org.osgi.service.jaxrs.whiteboard.JaxrsWhiteboardConstants.JAX_RS_APPLICATION_SELECT;
 
+import io.swagger.v3.core.converter.ModelConverter;
+import io.swagger.v3.core.jackson.ModelResolver;
+import io.swagger.v3.core.jackson.TypeNameResolver;
+import io.swagger.v3.core.util.Json;
 import io.swagger.v3.oas.models.info.Contact;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.OpenAPI;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import org.osgi.framework.ServiceRegistration;
@@ -34,6 +39,7 @@ import test.types.TestOpenApiResource;
 import javax.ws.rs.client.WebTarget;
 
 import java.util.Hashtable;
+import java.util.Set;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -66,9 +72,84 @@ public class OpenApiTest extends TestHelper {
             String response = webTarget.request().get(String.class);
 
             assertTrue(response.contains("operation"));
-        }
-        finally {
+        } finally {
             serviceRegistration.unregister();
+        }
+    }
+
+    @Test
+    public void testOpenApiEndpointWithModelResolver() {
+        OpenAPI openAPI = new OpenAPI();
+
+        openAPI.info(
+            new Info()
+                .title("My Service")
+                .description("Service REST API")
+                .contact(
+                    new Contact()
+                        .email("oschweitzer@me.com"))
+        );
+
+        Hashtable<String, Object> properties = new Hashtable<>();
+
+        properties.put("name", "test");
+
+        ServiceRegistration<OpenAPI> serviceRegistration =
+            bundleContext.registerService(
+                OpenAPI.class, openAPI, properties);
+
+        try {
+            WebTarget webTarget = createDefaultTarget().
+                path("openapi.json");
+
+            registerAddon(new TestOpenApiResource());
+
+            String response = webTarget.request().get(String.class);
+
+            assertFalse(response.contains("MyOwnClassName"));
+        } catch (Exception e) {
+            serviceRegistration.unregister();
+
+            throw e;
+        }
+
+        ServiceRegistration<ModelConverter> serviceRegistration2 =
+            bundleContext.registerService(
+                ModelConverter.class, new ModelResolver(Json.mapper(), new TypeNameResolver() {
+                    @Override
+                    protected String nameForClass(Class<?> cls, Set<Options> options) {
+                        return "MyOwnClassName";
+                    }
+                }), new Hashtable<>());
+
+        try {
+            WebTarget webTarget = createDefaultTarget().
+                path("openapi.json");
+
+            registerAddon(new TestOpenApiResource());
+
+            String response = webTarget.request().get(String.class);
+
+            assertTrue(response.contains("MyOwnClassName"));
+        } catch (Exception e) {
+            serviceRegistration.unregister();
+        } finally {
+            serviceRegistration2.unregister();
+        }
+
+        try {
+            WebTarget webTarget = createDefaultTarget().
+                path("openapi.json");
+
+            registerAddon(new TestOpenApiResource());
+
+            String response = webTarget.request().get(String.class);
+
+            assertFalse(response.contains("MyOwnClassName"));
+        } catch (Exception e) {
+            serviceRegistration.unregister();
+
+            throw e;
         }
     }
 
@@ -92,7 +173,7 @@ public class OpenApiTest extends TestHelper {
                         .email("oschweitzer@me.com"))
         );
 
-        @SuppressWarnings({ "unchecked", "rawtypes", "serial" })
+        @SuppressWarnings({"unchecked", "rawtypes", "serial"})
         ServiceRegistration<OpenAPI> serviceRegistration =
             bundleContext.registerService(
                 OpenAPI.class, openAPI, new Hashtable() {{
@@ -123,8 +204,7 @@ public class OpenApiTest extends TestHelper {
             response = webTarget.request().get(String.class);
 
             assertFalse(response.contains("\"/operation\":"));
-        }
-        finally {
+        } finally {
             serviceRegistration.unregister();
         }
     }
