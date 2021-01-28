@@ -416,6 +416,28 @@ public class TestHelper {
         return serviceRegistration;
     }
 
+    protected ServiceRegistration<?> registerExtension(
+        String[] serviceTypes, Object extension, String name, Object... keyValues) {
+
+        Hashtable<String, Object> properties = new Hashtable<>();
+
+        properties.put(JAX_RS_EXTENSION, true);
+        properties.put(JAX_RS_NAME, name);
+        properties.putIfAbsent(
+            JAX_RS_APPLICATION_SELECT, "(osgi.jaxrs.name=*)");
+
+        for (int i = 0; i < keyValues.length; i = i + 2) {
+            properties.put(keyValues[i].toString(), keyValues[i + 1]);
+        }
+
+        ServiceRegistration<?> serviceRegistration =
+            bundleContext.registerService(serviceTypes, extension, properties);
+
+        _registrations.add(serviceRegistration);
+
+        return serviceRegistration;
+    }
+
     protected ServiceRegistration<?> registerInvalidExtension(
         String name, Object... keyValues) {
 
