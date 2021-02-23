@@ -15,6 +15,8 @@
 #    specific language governing permissions and limitations
 #    under the License.
 
+-tester: biz.aQute.tester.junit-platform
+
 -runpath: \
     ch.qos.logback.classic,\
     ch.qos.logback.core,\
@@ -38,7 +40,9 @@
     osgi.identity;filter:='(osgi.identity=org.apache.aries.jax.rs.rest.management)',\
     osgi.identity;filter:='(osgi.identity=org.apache.aries.jax.rs.rest.management.itest)',\
     osgi.identity;filter:='(osgi.identity=org.apache.felix.gogo.command)',\
-    osgi.identity;filter:='(osgi.identity=org.apache.johnzon.mapper)'
+    osgi.identity;filter:='(osgi.identity=org.apache.johnzon.mapper)',\
+    bnd.identity;id='junit-jupiter-engine',\
+    bnd.identity;id='junit-platform-launcher'
 
 -runsystemcapabilities: ${native_capability}
 -runproperties: \
@@ -51,67 +55,74 @@
     org.apache.aries.spifly.auto.providers=com.sun.*
 
 -runbundles: \
-	assertj-core;version='[3.19.0,3.19.1)',\
-	com.fasterxml.jackson.core.jackson-annotations;version='[2.10.1,2.10.2)',\
-	com.fasterxml.jackson.core.jackson-core;version='[2.10.1,2.10.2)',\
-	com.fasterxml.jackson.core.jackson-databind;version='[2.10.1,2.10.2)',\
-	com.fasterxml.jackson.dataformat.jackson-dataformat-yaml;version='[2.10.1,2.10.2)',\
-	com.fasterxml.jackson.datatype.jackson-datatype-jsr310;version='[2.10.1,2.10.2)',\
-	com.fasterxml.woodstox.woodstox-core;version='[6.2.3,6.2.4)',\
-	com.jayway.jsonpath.json-path;version='[2.4.0,2.4.1)',\
-	com.sun.istack.commons-runtime;version='[3.0.11,3.0.12)',\
-	com.sun.xml.bind.jaxb-osgi;version='[2.3.3,2.3.4)',\
-	io.github.classgraph.classgraph;version='[4.6.32,4.6.33)',\
-	io.swagger.core.v3.swagger-annotations;version='[2.1.0,2.1.1)',\
-	io.swagger.core.v3.swagger-core;version='[2.1.0,2.1.1)',\
-	io.swagger.core.v3.swagger-integration;version='[2.1.0,2.1.1)',\
-	io.swagger.core.v3.swagger-jaxrs2;version='[2.1.0,2.1.1)',\
-	io.swagger.core.v3.swagger-models;version='[2.1.0,2.1.1)',\
-	jakarta.xml.bind-api;version='[2.3.3,2.3.4)',\
-	javax.validation.api;version='[1.1.0,1.1.1)',\
-	net.javacrumbs.json-unit.json-unit-assertj;version='[2.24.0,2.24.1)',\
-	net.javacrumbs.json-unit.json-unit-core;version='[2.24.0,2.24.1)',\
-	net.javacrumbs.json-unit.json-unit-json-path;version='[2.24.0,2.24.1)',\
-	net.minidev.accessors-smart;version='[1.2.0,1.2.1)',\
-	net.minidev.json-smart;version='[2.3.0,2.3.1)',\
-	org.apache.aries.jax.rs.openapi.resource;version='[2.0.0,2.0.1)',\
-	org.apache.aries.jax.rs.rest.management;version='[2.0.0,2.0.1)',\
-	org.apache.aries.jax.rs.rest.management.itest;version='[2.0.0,2.0.1)',\
-	org.apache.aries.jax.rs.whiteboard;version='[2.0.0,2.0.1)',\
-	org.apache.aries.spifly.dynamic.framework.extension;version='[1.3.2,1.3.3)',\
-	org.apache.commons.lang3;version='[3.7.0,3.7.1)',\
-	org.apache.cxf.cxf-core;version='[3.4.2,3.4.3)',\
-	org.apache.cxf.cxf-rt-frontend-jaxrs;version='[3.4.2,3.4.3)',\
-	org.apache.cxf.cxf-rt-rs-client;version='[3.4.2,3.4.3)',\
-	org.apache.cxf.cxf-rt-rs-sse;version='[3.4.2,3.4.3)',\
-	org.apache.cxf.cxf-rt-security;version='[3.4.2,3.4.3)',\
-	org.apache.cxf.cxf-rt-transports-http;version='[3.4.2,3.4.3)',\
-	org.apache.felix.configadmin;version='[1.9.20,1.9.21)',\
-	org.apache.felix.gogo.command;version='[1.1.2,1.1.3)',\
-	org.apache.felix.gogo.runtime;version='[1.1.4,1.1.5)',\
-	org.apache.felix.gogo.shell;version='[1.1.4,1.1.5)',\
-	org.apache.felix.http.jetty;version='[4.1.4,4.1.5)',\
-	org.apache.felix.http.servlet-api;version='[1.1.2,1.1.3)',\
-	org.apache.geronimo.specs.geronimo-annotation_1.3_spec;version='[1.3.0,1.3.1)',\
-	org.apache.geronimo.specs.geronimo-jaxrs_2.1_spec;version='[1.1.0,1.1.1)',\
-	org.apache.geronimo.specs.geronimo-json_1.1_spec;version='[1.5.0,1.5.1)',\
-	org.apache.johnzon.core;version='[1.2.10,1.2.11)',\
-	org.apache.johnzon.mapper;version='[1.2.10,1.2.11)',\
-	org.apache.servicemix.bundles.junit;version='[4.13.0,4.13.1)',\
-	org.apache.ws.xmlschema.core;version='[2.2.5,2.2.6)',\
-	org.hamcrest;version='[2.2.0,2.2.1)',\
-	org.objectweb.asm;version='[5.0.4,5.0.5)',\
-	org.osgi.service.jaxrs;version='[1.0.0,1.0.1)',\
-	org.osgi.service.rest;version='[1.0.0,1.0.1)',\
-	org.osgi.test.assertj.framework;version='[0.10.0,0.10.1)',\
-	org.osgi.test.common;version='[0.10.0,0.10.1)',\
-	org.osgi.test.junit4;version='[0.10.0,0.10.1)',\
-	org.osgi.util.function;version='[1.1.0,1.1.1)',\
-	org.osgi.util.promise;version='[1.1.1,1.1.2)',\
-	org.xmlunit.xmlunit-assertj3;version='[2.8.2,2.8.3)',\
-	org.xmlunit.xmlunit-core;version='[2.8.2,2.8.3)',\
-	org.yaml.snakeyaml;version='[1.24.0,1.24.1)',\
-	stax2-api;version='[4.2.1,4.2.2)'
+    assertj-core;version='[3.19.0,3.19.1)',\
+    com.fasterxml.jackson.core.jackson-annotations;version='[2.10.1,2.10.2)',\
+    com.fasterxml.jackson.core.jackson-core;version='[2.10.1,2.10.2)',\
+    com.fasterxml.jackson.core.jackson-databind;version='[2.10.1,2.10.2)',\
+    com.fasterxml.jackson.dataformat.jackson-dataformat-yaml;version='[2.10.1,2.10.2)',\
+    com.fasterxml.jackson.datatype.jackson-datatype-jsr310;version='[2.10.1,2.10.2)',\
+    com.fasterxml.jackson.jaxrs.jackson-jaxrs-base;version='[2.10.1,2.10.2)',\
+    com.fasterxml.jackson.jaxrs.jackson-jaxrs-json-provider;version='[2.10.1,2.10.2)',\
+    com.fasterxml.woodstox.woodstox-core;version='[6.2.3,6.2.4)',\
+    com.jayway.jsonpath.json-path;version='[2.4.0,2.4.1)',\
+    com.sun.istack.commons-runtime;version='[3.0.11,3.0.12)',\
+    com.sun.xml.bind.jaxb-osgi;version='[2.3.3,2.3.4)',\
+    io.github.classgraph.classgraph;version='[4.6.32,4.6.33)',\
+    io.swagger.core.v3.swagger-annotations;version='[2.1.0,2.1.1)',\
+    io.swagger.core.v3.swagger-core;version='[2.1.0,2.1.1)',\
+    io.swagger.core.v3.swagger-integration;version='[2.1.0,2.1.1)',\
+    io.swagger.core.v3.swagger-jaxrs2;version='[2.1.0,2.1.1)',\
+    io.swagger.core.v3.swagger-models;version='[2.1.0,2.1.1)',\
+    jakarta.xml.bind-api;version='[2.3.3,2.3.4)',\
+    javax.validation.api;version='[1.1.0,1.1.1)',\
+    junit-jupiter-api;version='[5.6.0,5.6.1)',\
+    junit-jupiter-engine;version='[5.6.0,5.6.1)',\
+    junit-platform-commons;version='[1.6.0,1.6.1)',\
+    junit-platform-engine;version='[1.6.0,1.6.1)',\
+    junit-platform-launcher;version='[1.6.0,1.6.1)',\
+    net.javacrumbs.json-unit.json-unit-assertj;version='[2.24.0,2.24.1)',\
+    net.javacrumbs.json-unit.json-unit-core;version='[2.24.0,2.24.1)',\
+    net.javacrumbs.json-unit.json-unit-json-path;version='[2.24.0,2.24.1)',\
+    net.minidev.accessors-smart;version='[1.2.0,1.2.1)',\
+    net.minidev.json-smart;version='[2.3.0,2.3.1)',\
+    org.apache.aries.jax.rs.openapi.resource;version='[2.0.0,2.0.1)',\
+    org.apache.aries.jax.rs.rest.management;version='[2.0.0,2.0.1)',\
+    org.apache.aries.jax.rs.rest.management.itest;version='[2.0.0,2.0.1)',\
+    org.apache.aries.jax.rs.whiteboard;version='[2.0.0,2.0.1)',\
+    org.apache.aries.spifly.dynamic.framework.extension;version='[1.3.2,1.3.3)',\
+    org.apache.commons.lang3;version='[3.7.0,3.7.1)',\
+    org.apache.cxf.cxf-core;version='[3.4.2,3.4.3)',\
+    org.apache.cxf.cxf-rt-frontend-jaxrs;version='[3.4.2,3.4.3)',\
+    org.apache.cxf.cxf-rt-rs-client;version='[3.4.2,3.4.3)',\
+    org.apache.cxf.cxf-rt-rs-sse;version='[3.4.2,3.4.3)',\
+    org.apache.cxf.cxf-rt-security;version='[3.4.2,3.4.3)',\
+    org.apache.cxf.cxf-rt-transports-http;version='[3.4.2,3.4.3)',\
+    org.apache.felix.configadmin;version='[1.9.20,1.9.21)',\
+    org.apache.felix.gogo.command;version='[1.1.2,1.1.3)',\
+    org.apache.felix.gogo.runtime;version='[1.1.4,1.1.5)',\
+    org.apache.felix.gogo.shell;version='[1.1.4,1.1.5)',\
+    org.apache.felix.http.jetty;version='[4.1.4,4.1.5)',\
+    org.apache.felix.http.servlet-api;version='[1.1.2,1.1.3)',\
+    org.apache.geronimo.specs.geronimo-annotation_1.3_spec;version='[1.3.0,1.3.1)',\
+    org.apache.geronimo.specs.geronimo-jaxrs_2.1_spec;version='[1.1.0,1.1.1)',\
+    org.apache.geronimo.specs.geronimo-json_1.1_spec;version='[1.5.0,1.5.1)',\
+    org.apache.johnzon.core;version='[1.2.10,1.2.11)',\
+    org.apache.johnzon.mapper;version='[1.2.10,1.2.11)',\
+    org.apache.ws.xmlschema.core;version='[2.2.5,2.2.6)',\
+    org.hamcrest;version='[2.2.0,2.2.1)',\
+    org.objectweb.asm;version='[5.0.4,5.0.5)',\
+    org.opentest4j;version='[1.2.0,1.2.1)',\
+    org.osgi.service.jaxrs;version='[1.0.0,1.0.1)',\
+    org.osgi.service.rest;version='[1.0.0,1.0.1)',\
+    org.osgi.test.assertj.framework;version='[0.10.0,0.10.1)',\
+    org.osgi.test.common;version='[0.10.0,0.10.1)',\
+    org.osgi.test.junit5;version='[0.10.0,0.10.1)',\
+    org.osgi.util.function;version='[1.1.0,1.1.1)',\
+    org.osgi.util.promise;version='[1.1.1,1.1.2)',\
+    org.xmlunit.xmlunit-assertj3;version='[2.8.2,2.8.3)',\
+    org.xmlunit.xmlunit-core;version='[2.8.2,2.8.3)',\
+    org.yaml.snakeyaml;version='[1.24.0,1.24.1)',\
+    stax2-api;version='[4.2.1,4.2.2)'
 
 -runstartlevel: \
     order=sortbynameversion,\

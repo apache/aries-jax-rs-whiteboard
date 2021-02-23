@@ -17,8 +17,8 @@
 
 package org.apache.aries.jax.rs.rest.management.internal;
 
-import static org.apache.aries.jax.rs.rest.management.RestManagementConstants.APPLICATION_BUNDLE_JSON;
-import static org.apache.aries.jax.rs.rest.management.RestManagementConstants.APPLICATION_BUNDLE_XML;
+import static org.apache.aries.jax.rs.rest.management.RestManagementConstants.APPLICATION_BUNDLESTATE_JSON;
+import static org.apache.aries.jax.rs.rest.management.RestManagementConstants.APPLICATION_BUNDLESTATE_XML;
 
 import java.util.Optional;
 
@@ -29,7 +29,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
 
-import org.apache.aries.jax.rs.rest.management.schema.BundleSchema;
+import org.apache.aries.jax.rs.rest.management.schema.BundleStateSchema;
 import org.osgi.framework.BundleContext;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -38,22 +38,22 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 
-public class FrameworkResource extends BaseResource {
+public class FrameworkStateResource extends BaseResource {
 
-    public FrameworkResource(BundleContext bundleContext) {
+    public FrameworkStateResource(BundleContext bundleContext) {
         super(bundleContext);
     }
 
     @GET
-    @Path("framework{ext: (\\.json|\\.xml)*}")
-    @Produces({APPLICATION_BUNDLE_JSON, APPLICATION_BUNDLE_XML})
+    @Produces({APPLICATION_BUNDLESTATE_JSON, APPLICATION_BUNDLESTATE_XML})
+    @Path("framework/state{ext:(\\.json|\\.xml)*}")
     @Operation(
-        summary = "Get the framework bundle by extension type",
+        summary = "Get the framework state by extension type",
         responses = {
             @ApiResponse(
                 responseCode = "200",
-                description = "The framework bundle",
-                content = @Content(schema = @Schema(implementation = BundleSchema.class))
+                description = "The framework state",
+                content = @Content(schema = @Schema(implementation = BundleStateSchema.class))
             ),
             @ApiResponse(
                 responseCode = "404",
@@ -65,13 +65,14 @@ public class FrameworkResource extends BaseResource {
             )
         }
     )
-    public Response framework(
+    public Response state(
         @Parameter(allowEmptyValue = true, schema = @Schema(allowableValues = {".json", ".xml"}))
         @PathParam("ext") String ext) {
+
         ResponseBuilder builder = Response.status(
             Response.Status.OK
         ).entity(
-            bundleSchema(framework)
+            bundleStateSchema(framework)
         );
 
         return Optional.ofNullable(
@@ -79,8 +80,10 @@ public class FrameworkResource extends BaseResource {
         ).map(
             String::trim
         ).map(
-            t -> ".json".equals(t) ? APPLICATION_BUNDLE_JSON : APPLICATION_BUNDLE_XML
-        ).map(t -> builder.type(t)).orElse(
+            e -> ".json".equals(e) ? APPLICATION_BUNDLESTATE_JSON : APPLICATION_BUNDLESTATE_XML
+        ).map(
+            type -> builder.type(type)
+        ).orElse(
             builder
         ).build();
     }

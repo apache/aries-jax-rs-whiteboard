@@ -21,6 +21,10 @@ import javax.ws.rs.core.MediaType;
 
 public class RestManagementConstants {
 
+    public static final String SPECIFICATION_IMPLEMENTATION = "osgi.rest";
+
+    public static final String SPECIFICATION_VERSION = "1.0.0";
+
     public static final String APPLICATION_BUNDLE_JSON =
         "application/org.osgi.bundle+json";
 

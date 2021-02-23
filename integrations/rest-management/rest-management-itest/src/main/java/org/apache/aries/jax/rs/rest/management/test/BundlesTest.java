@@ -25,39 +25,24 @@ import static org.apache.aries.jax.rs.rest.management.RestManagementConstants.AP
 import static org.apache.aries.jax.rs.rest.management.RestManagementConstants.APPLICATION_BUNDLES_XML_TYPE;
 import static org.apache.aries.jax.rs.rest.management.RestManagementConstants.APPLICATION_VNDOSGIBUNDLE_TYPE;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertTrue;
-
-import java.util.List;
 
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.WebTarget;
-import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 import org.apache.aries.jax.rs.rest.management.RestManagementConstants;
-import org.apache.aries.jax.rs.rest.management.handler.RestManagementMessageBodyHandler;
-import org.apache.aries.jax.rs.rest.management.model.BundlesDTO;
-import org.junit.Ignore;
-import org.junit.Rule;
-import org.junit.Test;
-import org.osgi.framework.BundleContext;
-import org.osgi.framework.dto.BundleDTO;
+import org.apache.aries.jax.rs.rest.management.schema.BundleSchemaListSchema;
+import org.apache.aries.jax.rs.rest.management.schema.BundleSchema;
+import org.apache.aries.jax.rs.rest.management.schema.BundleListSchema;
+import org.junit.jupiter.api.Test;
 import org.osgi.test.assertj.bundle.BundleAssert;
-import org.osgi.test.common.annotation.InjectBundleContext;
-import org.osgi.test.junit4.context.BundleContextRule;
 import org.xmlunit.assertj3.XmlAssert;
 
 import net.javacrumbs.jsonunit.assertj.JsonAssertions;
 
 public class BundlesTest extends TestUtil {
-
-    @Rule
-    public BundleContextRule bundleContextRule = new BundleContextRule();
-
-    @InjectBundleContext
-    BundleContext bundleContext;
 
     @Test
     public void getBundlesJSON() {
@@ -87,8 +72,7 @@ public class BundlesTest extends TestUtil {
         );
     }
 
-    @Ignore
-    @Test
+    //@Test
     public void getBundlesJSON_DOT() {
         WebTarget target = createDefaultTarget().path(
             "framework"
@@ -124,8 +108,7 @@ public class BundlesTest extends TestUtil {
         ).contains("/framework/bundle/0");
     }
 
-    @Ignore
-    @Test
+    //@Test
     public void getBundlesXML_DOT() {
         WebTarget target = createDefaultTarget().path("framework").path("bundles.xml");
 
@@ -144,32 +127,28 @@ public class BundlesTest extends TestUtil {
     public void getBundlesDTOJSON() {
         WebTarget target = createDefaultTarget().path("framework").path("bundles");
 
-        target.register(RestManagementMessageBodyHandler.class);
-
         Response response = target.request().get();
 
-        BundlesDTO bundlesDTO = response.readEntity(BundlesDTO.class);
+        BundleListSchema bundlesDTO = response.readEntity(BundleListSchema.class);
 
-        assertTrue(bundlesDTO.toString(), bundlesDTO.bundles.size() > 0);
+        assertThat(bundlesDTO.bundles.size()).isGreaterThan(0);
     }
 
     @Test
     public void getBundlesDTOXML() {
         WebTarget target = createDefaultTarget().path("framework").path("bundles");
 
-        target.register(RestManagementMessageBodyHandler.class);
-
         Response response = target.request(
             APPLICATION_BUNDLES_XML_TYPE
         ).get();
 
-        BundlesDTO bundlesDTO = response.readEntity(BundlesDTO.class);
+        BundleListSchema bundlesDTO = response.readEntity(BundleListSchema.class);
 
-        assertTrue(bundlesDTO.toString(), bundlesDTO.bundles.size() > 0);
+        assertThat(bundlesDTO.bundles.size()).isGreaterThan(0);
     }
 
     @Test
-    public void getBundleDTOsJSON() {
+    public void getBundleSchemasJSON() {
         WebTarget target = createDefaultTarget().path("framework").path(
             "bundles"
         ).path("representations");
@@ -183,19 +162,22 @@ public class BundlesTest extends TestUtil {
         JsonAssertions.assertThatJson(
             result
         ).and(
-            j -> j.isArray(),
-            j -> j.node("[0]").and(
-                j1 -> j1.node("id").isNumber(),
-                j1 -> j1.node("lastModified").isNumber(),
-                j1 -> j1.node("state").isNumber(),
-                j1 -> j1.node("symbolicName").isString(),
-                j1 -> j1.node("version").isString()
+            j -> j.isObject(),
+            j -> j.node("bundles").and(
+                j1 -> j1.isArray(),
+                j1 -> j1.node("[0]").and(
+                    j2 -> j2.node("id").isNumber(),
+                    j2 -> j2.node("lastModified").isNumber(),
+                    j2 -> j2.node("state").isNumber(),
+                    j2 -> j2.node("symbolicName").isString(),
+                    j2 -> j2.node("version").isString()
+                )
             )
         );
     }
 
     @Test
-    public void getBundleDTOsXML() {
+    public void getBundleSchemasXML() {
         WebTarget target = createDefaultTarget().path(
             "framework"
         ).path("bundles").path("representations");
@@ -214,31 +196,27 @@ public class BundlesTest extends TestUtil {
     }
 
     @Test
-    public void getBundleDTOs_ListJSON() {
+    public void getBundleSchemas_ListJSON() {
         WebTarget target = createDefaultTarget().path(
             "framework"
         ).path("bundles").path("representations");
-
-        target.register(RestManagementMessageBodyHandler.class);
 
         Response response = target.request(
             APPLICATION_BUNDLES_REPRESENTATIONS_JSON_TYPE
         ).get();
 
-        List<BundleDTO> bundleDTOList = response.readEntity(new GenericType<List<BundleDTO>>() {});
+        BundleSchemaListSchema bundleSchemas = response.readEntity(BundleSchemaListSchema.class);
 
         assertThat(
-            bundleDTOList
+            bundleSchemas.bundles
         ).isNotEmpty();
     }
 
     @Test
-    public void getBundleDTOs_ListJSON_FilterError() {
+    public void getBundleSchemas_ListJSON_FilterError() {
         WebTarget target = createDefaultTarget().path(
             "framework"
         ).path("bundles").path("representations");
-
-        target.register(RestManagementMessageBodyHandler.class);
 
         Response response = target.queryParam(
             "osgi.wiring.package", "osgi.wiring.package=org.*"
@@ -252,12 +230,10 @@ public class BundlesTest extends TestUtil {
     }
 
     @Test
-    public void getBundleDTOs_ListJSON_Filter_nomatch() {
+    public void getBundleSchemas_ListJSON_Filter_nomatch() {
         WebTarget target = createDefaultTarget().path(
             "framework"
         ).path("bundles").path("representations");
-
-        target.register(RestManagementMessageBodyHandler.class);
 
         Response response = target.queryParam(
             "osgi.wiring.package", "(osgi.wiring.package=org.osgi.service.jaxrs)"
@@ -265,20 +241,18 @@ public class BundlesTest extends TestUtil {
             APPLICATION_BUNDLES_REPRESENTATIONS_JSON_TYPE
         ).get();
 
-        List<BundleDTO> bundleDTOList = response.readEntity(new GenericType<List<BundleDTO>>() {});
+        BundleSchemaListSchema bundleSchemas = response.readEntity(BundleSchemaListSchema.class);
 
         assertThat(
-            bundleDTOList
+            bundleSchemas.bundles
         ).hasSize(0);
     }
 
     @Test
-    public void getBundleDTOs_ListJSON_Filter() {
+    public void getBundleSchemas_ListJSON_Filter() {
         WebTarget target = createDefaultTarget().path(
             "framework"
         ).path("bundles").path("representations");
-
-        target.register(RestManagementMessageBodyHandler.class);
 
         Response response = target.queryParam(
             "osgi.wiring.package", "(osgi.wiring.package=org.osgi.service.*)"
@@ -286,20 +260,18 @@ public class BundlesTest extends TestUtil {
             APPLICATION_BUNDLES_REPRESENTATIONS_JSON_TYPE
         ).get();
 
-        List<BundleDTO> bundleDTOList = response.readEntity(new GenericType<List<BundleDTO>>() {});
+        BundleSchemaListSchema bundleSchemas = response.readEntity(BundleSchemaListSchema.class);
 
         assertThat(
-            bundleDTOList
+            bundleSchemas.bundles
         ).hasSize(5);
     }
 
     @Test
-    public void getBundleDTOs_ListJSON_FilterOr() {
+    public void getBundleSchemas_ListJSON_FilterOr() {
         WebTarget target = createDefaultTarget().path(
             "framework"
         ).path("bundles").path("representations");
-
-        target.register(RestManagementMessageBodyHandler.class);
 
         Response response = target.queryParam(
             "osgi.wiring.package", "(osgi.wiring.package=org.osgi.service.jaxrs.whiteboard)"
@@ -309,20 +281,18 @@ public class BundlesTest extends TestUtil {
             APPLICATION_BUNDLES_REPRESENTATIONS_JSON_TYPE
         ).get();
 
-        List<BundleDTO> bundleDTOList = response.readEntity(new GenericType<List<BundleDTO>>() {});
+        BundleSchemaListSchema bundleSchemas = response.readEntity(BundleSchemaListSchema.class);
 
         assertThat(
-            bundleDTOList
+            bundleSchemas.bundles
         ).hasSize(2);
     }
 
     @Test
-    public void getBundleDTOs_ListJSON_FilterAnd() {
+    public void getBundleSchemas_ListJSON_FilterAnd() {
         WebTarget target = createDefaultTarget().path(
             "framework"
         ).path("bundles").path("representations");
-
-        target.register(RestManagementMessageBodyHandler.class);
 
         Response response = target.queryParam(
             "osgi.wiring.package", "(osgi.wiring.package=org.osgi.service.*)"
@@ -332,29 +302,27 @@ public class BundlesTest extends TestUtil {
             APPLICATION_BUNDLES_REPRESENTATIONS_JSON_TYPE
         ).get();
 
-        List<BundleDTO> bundleDTOList = response.readEntity(new GenericType<List<BundleDTO>>() {});
+        BundleSchemaListSchema bundleSchemas = response.readEntity(BundleSchemaListSchema.class);
 
         assertThat(
-            bundleDTOList
+            bundleSchemas.bundles
         ).hasSize(3);
     }
 
     @Test
-    public void getBundleDTOs_ListXML() {
+    public void getBundleSchemas_ListXML() {
         WebTarget target = createDefaultTarget().path(
             "framework"
         ).path("bundles").path("representations");
-
-        target.register(RestManagementMessageBodyHandler.class);
 
         Response response = target.request(
             APPLICATION_BUNDLES_REPRESENTATIONS_XML_TYPE
         ).get();
 
-        List<BundleDTO> bundleDTOList = response.readEntity(new GenericType<List<BundleDTO>>() {});
+        BundleSchemaListSchema bundleSchemas = response.readEntity(BundleSchemaListSchema.class);
 
         assertThat(
-            bundleDTOList
+            bundleSchemas.bundles
         ).isNotEmpty();
     }
 
@@ -367,36 +335,27 @@ public class BundlesTest extends TestUtil {
             WebTarget target = createDefaultTarget().path(
                 "framework").path("bundles");
 
-            target.register(RestManagementMessageBodyHandler.class);
+            BundleSchema bundleSchema = null;
 
-            BundleDTO bundleDTO = null;
+            Response response = target.request().post(
+                Entity.entity(String.format(
+                    "http://localhost:%d/minor-change-1.0.1.jar",
+                    server.getPort()),
+                MediaType.TEXT_PLAIN));
 
-            try {
-                Response response = target.request().post(
-                    Entity.entity(String.format(
-                        "http://localhost:%d/minor-change-1.0.1.jar",
-                        server.getPort()),
-                    MediaType.TEXT_PLAIN));
+            assertThat(
+                response.getStatus()
+            ).isEqualTo(
+                200
+            );
 
-                assertThat(
-                    response.getStatus()
-                ).isEqualTo(
-                    200
-                );
+            bundleSchema = response.readEntity(BundleSchema.class);
 
-                bundleDTO = response.readEntity(BundleDTO.class);
-
-                assertThat(
-                    bundleDTO.symbolicName
-                ).isEqualTo(
-                    "minor-and-removed-change"
-                );
-            }
-            finally {
-                if (bundleDTO != null) {
-                    bundleContext.getBundle(bundleDTO.id).uninstall();
-                }
-            }
+            assertThat(
+                bundleSchema.symbolicName
+            ).isEqualTo(
+                "minor-and-removed-change"
+            );
         }
     }
 
@@ -405,38 +364,29 @@ public class BundlesTest extends TestUtil {
         WebTarget target = createDefaultTarget().path(
             "framework").path("bundles");
 
-        target.register(RestManagementMessageBodyHandler.class);
+        BundleSchema bundleSchema = null;
 
-        BundleDTO bundleDTO = null;
+        Response response = target.request().header(
+            HttpHeaders.CONTENT_LOCATION, "minor-change-1.0.1.jar"
+        ).post(
+            Entity.entity(
+                BundlesTest.class.getClassLoader().getResourceAsStream("minor-change-1.0.1.jar"),
+                APPLICATION_VNDOSGIBUNDLE_TYPE)
+        );
 
-        try {
-            Response response = target.request().header(
-                HttpHeaders.CONTENT_LOCATION, "minor-change-1.0.1.jar"
-            ).post(
-                Entity.entity(
-                    BundlesTest.class.getClassLoader().getResourceAsStream("minor-change-1.0.1.jar"),
-                    APPLICATION_VNDOSGIBUNDLE_TYPE)
-            );
+        assertThat(
+            response.getStatus()
+        ).isEqualTo(
+            200
+        );
 
-            assertThat(
-                response.getStatus()
-            ).isEqualTo(
-                200
-            );
+        bundleSchema = response.readEntity(BundleSchema.class);
 
-            bundleDTO = response.readEntity(BundleDTO.class);
-
-            assertThat(
-                bundleDTO.symbolicName
-            ).isEqualTo(
-                "minor-and-removed-change"
-            );
-        }
-        finally {
-            if (bundleDTO != null) {
-                bundleContext.getBundle(bundleDTO.id).uninstall();
-            }
-        }
+        assertThat(
+            bundleSchema.symbolicName
+        ).isEqualTo(
+            "minor-and-removed-change"
+        );
     }
 
     @Test
@@ -444,41 +394,32 @@ public class BundlesTest extends TestUtil {
         WebTarget target = createDefaultTarget().path(
             "framework").path("bundles");
 
-        target.register(RestManagementMessageBodyHandler.class);
+        BundleSchema bundleSchema = null;
 
-        BundleDTO bundleDTO = null;
+        Response response = target.request().post(
+            Entity.entity(
+                BundlesTest.class.getClassLoader().getResourceAsStream("minor-change-1.0.1.jar"),
+                APPLICATION_VNDOSGIBUNDLE_TYPE)
+        );
 
-        try {
-            Response response = target.request().post(
-                Entity.entity(
-                    BundlesTest.class.getClassLoader().getResourceAsStream("minor-change-1.0.1.jar"),
-                    APPLICATION_VNDOSGIBUNDLE_TYPE)
-            );
+        assertThat(
+            response.getStatus()
+        ).isEqualTo(
+            200
+        );
 
-            assertThat(
-                response.getStatus()
-            ).isEqualTo(
-                200
-            );
+        bundleSchema = response.readEntity(BundleSchema.class);
 
-            bundleDTO = response.readEntity(BundleDTO.class);
-
-            assertThat(
-                bundleDTO.symbolicName
-            ).isEqualTo(
-                "minor-and-removed-change"
-            );
-            BundleAssert.assertThat(
-                bundleContext.getBundle(bundleDTO.id)
-            ).hasLocationThat().contains(
-                "org.apache.aries.jax.rs.whiteboard:"
-            );
-        }
-        finally {
-            if (bundleDTO != null) {
-                bundleContext.getBundle(bundleDTO.id).uninstall();
-            }
-        }
+        assertThat(
+            bundleSchema.symbolicName
+        ).isEqualTo(
+            "minor-and-removed-change"
+        );
+        BundleAssert.assertThat(
+            bundleContext.getBundle(bundleSchema.id)
+        ).hasLocationThat().contains(
+            "org.apache.aries.jax.rs.whiteboard:"
+        );
     }
 
 }

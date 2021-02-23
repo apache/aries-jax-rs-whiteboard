@@ -21,29 +21,16 @@ import static org.apache.aries.jax.rs.rest.management.RestManagementConstants.AP
 import static org.apache.aries.jax.rs.rest.management.RestManagementConstants.APPLICATION_BUNDLEHEADER_XML_TYPE;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.util.Dictionary;
-
 import javax.ws.rs.client.WebTarget;
-import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.Response;
 
-import org.apache.aries.jax.rs.rest.management.handler.RestManagementMessageBodyHandler;
-import org.junit.Rule;
-import org.junit.Test;
-import org.osgi.framework.BundleContext;
-import org.osgi.test.common.annotation.InjectBundleContext;
-import org.osgi.test.junit4.context.BundleContextRule;
+import org.apache.aries.jax.rs.rest.management.schema.BundleHeaderSchema;
+import org.junit.jupiter.api.Test;
 import org.xmlunit.assertj3.XmlAssert;
 
 import net.javacrumbs.jsonunit.assertj.JsonAssertions;
 
 public class BundleHeaderTest extends TestUtil {
-
-    @Rule
-    public BundleContextRule bundleContextRule = new BundleContextRule();
-
-    @InjectBundleContext
-    BundleContext bundleContext;
 
     @Test
     public void getBundleHeaderJSON() {
@@ -85,19 +72,17 @@ public class BundleHeaderTest extends TestUtil {
             result
         ).isInvalid(
         ).valueByXPath(
-            "//bundleHeader/entry/@key"
+            "//bundleHeader/entry[@key = 'Bundle-ManifestVersion']/@value"
         ).isEqualTo(
-            "Bundle-Name"
+            "2"
         );
     }
 
     @Test
-    public void getBundleHeaderDictionaryJSON() {
+    public void getBundleHeaderDTOJSON() {
         WebTarget target = createDefaultTarget().path(
             "framework"
         ).path("bundle").path("{bundleid}").path("header");
-
-        target.register(RestManagementMessageBodyHandler.class);
 
         Response response = target.resolveTemplate(
             "bundleid", 2l
@@ -105,8 +90,7 @@ public class BundleHeaderTest extends TestUtil {
             APPLICATION_BUNDLEHEADER_JSON_TYPE
         ).get();
 
-        Dictionary<String, String> bundleHeader = response.readEntity(
-            new GenericType<Dictionary<String, String>>() {});
+        BundleHeaderSchema bundleHeader = response.readEntity(BundleHeaderSchema.class);
 
         assertThat(
             bundleHeader
@@ -118,12 +102,10 @@ public class BundleHeaderTest extends TestUtil {
     }
 
     @Test
-    public void getBundleHeaderDictionaryXML() {
+    public void getBundleHeaderDTOXML() {
         WebTarget target = createDefaultTarget().path(
             "framework"
         ).path("bundle").path("{bundleid}").path("header");
-
-        target.register(RestManagementMessageBodyHandler.class);
 
         Response response = target.resolveTemplate(
             "bundleid", 2l
@@ -131,8 +113,7 @@ public class BundleHeaderTest extends TestUtil {
             APPLICATION_BUNDLEHEADER_XML_TYPE
         ).get();
 
-        Dictionary<String, String> bundleHeader = response.readEntity(
-            new GenericType<Dictionary<String, String>>() {});
+        BundleHeaderSchema bundleHeader = response.readEntity(BundleHeaderSchema.class);
 
         assertThat(
             bundleHeader

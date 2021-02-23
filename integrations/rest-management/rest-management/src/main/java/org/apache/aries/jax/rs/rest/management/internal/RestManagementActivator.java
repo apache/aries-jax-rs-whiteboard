@@ -22,22 +22,20 @@ import static org.apache.aries.component.dsl.OSGi.ignore;
 import static org.apache.aries.component.dsl.OSGi.register;
 import static org.apache.aries.component.dsl.OSGi.service;
 import static org.apache.aries.component.dsl.OSGi.serviceReferences;
+import static org.apache.aries.jax.rs.rest.management.RestManagementConstants.SPECIFICATION_VERSION;
 import static org.osgi.service.jaxrs.whiteboard.JaxrsWhiteboardConstants.JAX_RS_APPLICATION_SELECT;
 import static org.osgi.service.jaxrs.whiteboard.JaxrsWhiteboardConstants.JAX_RS_EXTENSION;
-import static org.osgi.service.jaxrs.whiteboard.JaxrsWhiteboardConstants.JAX_RS_EXTENSION_SELECT;
 import static org.osgi.service.jaxrs.whiteboard.JaxrsWhiteboardConstants.JAX_RS_NAME;
-import static org.osgi.service.jaxrs.whiteboard.JaxrsWhiteboardConstants.JAX_RS_RESOURCE;
 
 import java.util.HashMap;
 import java.util.function.BiFunction;
 
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.core.Application;
-import javax.ws.rs.ext.MessageBodyReader;
-import javax.ws.rs.ext.MessageBodyWriter;
 
 import org.apache.aries.component.dsl.OSGiResult;
-import org.apache.aries.jax.rs.rest.management.handler.RestManagementMessageBodyHandler;
+import org.apache.aries.jax.rs.rest.management.feature.RestManagementFeature;
+import org.apache.aries.jax.rs.rest.management.internal.client.RestClientFactoryImpl;
 import org.osgi.annotation.bundle.Header;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleActivator;
@@ -48,9 +46,11 @@ import org.osgi.framework.ServiceRegistration;
 import org.osgi.service.jaxrs.whiteboard.JaxrsWhiteboardConstants;
 import org.osgi.service.rest.client.RestClientFactory;
 
+import io.swagger.v3.oas.models.ExternalDocumentation;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Contact;
 import io.swagger.v3.oas.models.info.Info;
+import io.swagger.v3.oas.models.info.License;
 
 @Header(name = Constants.BUNDLE_ACTIVATOR, value = "${@class}")
 public class RestManagementActivator implements BundleActivator {
@@ -65,7 +65,7 @@ public class RestManagementActivator implements BundleActivator {
             ignore(
                 register(
                     Application.class,
-                    () -> new RestManagementApplication(),
+                    () -> new RestManagementApplication(bundleContext),
                     () -> {
                         HashMap<String, Object> map = new HashMap<>();
 
@@ -90,17 +90,14 @@ public class RestManagementActivator implements BundleActivator {
             ),
             ignore(
                 register(
-                    new String[] {
-                        MessageBodyReader.class.getName(),
-                        MessageBodyWriter.class.getName()
-                    },
-                    () -> new PrototypeWrapper<>(
-                        (b, r) -> new RestManagementMessageBodyHandler()
+                    javax.ws.rs.core.Feature.class,
+                    new PrototypeWrapper<>(
+                        (b, r) -> new RestManagementFeature()
                     ),
                     () -> {
                         HashMap<String, Object> map = new HashMap<>();
 
-                        map.put(JAX_RS_NAME, RestManagementMessageBodyHandler.class.getSimpleName());
+                        map.put(JAX_RS_NAME, RestManagementFeature.class.getSimpleName());
                         map.put(
                             JAX_RS_APPLICATION_SELECT,
                             String.format(
@@ -114,40 +111,34 @@ public class RestManagementActivator implements BundleActivator {
             ),
             ignore(
                 register(
-                    FrameworkResource.class,
-                    () -> new FrameworkResource(bundleContext),
-                    () -> {
-                        HashMap<String, Object> map = new HashMap<>();
-
-                        map.put(
-                            JAX_RS_APPLICATION_SELECT,
-                            String.format(
-                                "(%s=%s)", JAX_RS_NAME,
-                                RestManagementApplication.class.getSimpleName()));
-                        map.put(JAX_RS_RESOURCE, true);
-                        map.put(JAX_RS_EXTENSION_SELECT, new String[] {
-                            String.format(
-                                "(%s=%s)", JAX_RS_NAME,
-                                RestManagementMessageBodyHandler.class.getSimpleName())
-                        });
-
-                        return map;
-                    }
-                )
-            ),
-            ignore(
-                register(
                     OpenAPI.class,
                     () -> {
                         OpenAPI openAPI = new OpenAPI();
 
                         openAPI.info(
-                            new Info()
-                                .title("Apache Aries OSGi Rest Management Service")
-                                .description("Apache Aries OSGi Rest Management Service REST API")
-                                .contact(
-                                    new Contact()
-                                        .email("dev@aries.apache.org"))
+                            new Info().title(
+                                "Apache Aries OSGi Rest Management Service"
+                            ).description(
+                                "A REST API to manage an OSGi Framework"
+                            ).license(
+                                new License().name(
+                                    "Apache 2.0"
+                                ).url(
+                                    "https://www.apache.org/licenses/LICENSE-2.0.html"
+                                )
+                            ).version(
+                                SPECIFICATION_VERSION
+                            ).contact(
+                                new Contact().email(
+                                    "dev@aries.apache.org"
+                                )
+                            )
+                        ).externalDocs(
+                            new ExternalDocumentation().description(
+                                "OSGi Compendium Chapter 137 - REST Management Service Specification"
+                            ).url(
+                                "https://docs.osgi.org/specification/osgi.cmpn/7.0.0/service.rest.html"
+                            )
                         );
 
                         return openAPI;

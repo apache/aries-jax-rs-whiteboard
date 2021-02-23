@@ -15,29 +15,24 @@
  * limitations under the License.
  */
 
-package org.apache.aries.jax.rs.rest.management.internal;
+package org.apache.aries.jax.rs.rest.management.schema;
 
-import java.net.URI;
+import javax.xml.bind.annotation.XmlRootElement;
 
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
+import org.osgi.dto.DTO;
 
-import org.osgi.service.rest.client.RestClient;
-import org.osgi.service.rest.client.RestClientFactory;
+@XmlRootElement(name = "bundleState")
+public class BundleStateSchema extends DTO {
 
-public class RestClientFactoryImpl implements RestClientFactory {
+    public int state;
 
-    private final ClientBuilder clientBuilder;
+    public int options;
 
-    public RestClientFactoryImpl(ClientBuilder clientBuilder) {
-        this.clientBuilder = clientBuilder;
-    }
-
-    @Override
-    public RestClient createRestClient(URI uri) {
-        Client client = clientBuilder.build();
-
-        return new RestClientImpl(client.target(uri));
+    public static BundleStateSchema build(int state, int options) {
+        final BundleStateSchema bundleState = new BundleStateSchema();
+        bundleState.state = state;
+        bundleState.options = options;
+        return bundleState;
     }
 
 }

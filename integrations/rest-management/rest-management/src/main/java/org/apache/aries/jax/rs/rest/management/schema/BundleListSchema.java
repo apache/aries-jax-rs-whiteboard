@@ -15,12 +15,28 @@
  * limitations under the License.
  */
 
-@Requirement(
-    namespace = IMPLEMENTATION_NAMESPACE,
-    name = "org.apache.aries.jax.rs.openapi"
-)
-package org.apache.aries.jax.rs.rest.management.internal;
+package org.apache.aries.jax.rs.rest.management.schema;
 
-import static org.osgi.namespace.implementation.ImplementationNamespace.IMPLEMENTATION_NAMESPACE;
+import static javax.xml.bind.annotation.XmlAccessType.FIELD;
 
-import org.osgi.annotation.bundle.Requirement;
+import java.util.List;
+
+import javax.xml.bind.annotation.XmlAccessorType;
+import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlRootElement;
+
+import org.osgi.dto.DTO;
+
+@XmlRootElement(name = "bundles")
+@XmlAccessorType(FIELD)
+public class BundleListSchema extends DTO {
+    @XmlElement(name = "uri")
+    public List<String> bundles;
+
+    public static BundleListSchema build(List<String> bundles) {
+        final BundleListSchema bundleListSchema = new BundleListSchema();
+        bundleListSchema.bundles = bundles;
+        return bundleListSchema;
+    }
+
+}

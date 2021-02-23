@@ -17,6 +17,7 @@
 
 package org.apache.aries.jax.rs.rest.management.test;
 
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.osgi.service.jaxrs.runtime.JaxrsServiceRuntimeConstants.JAX_RS_SERVICE_ENDPOINT;
 
 import java.io.IOException;
@@ -28,22 +29,29 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.util.Collection;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
+import java.util.stream.Stream;
 
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.WebTarget;
 
-import org.apache.aries.jax.rs.rest.management.handler.RestManagementMessageBodyHandler;
-import org.junit.Rule;
+import org.apache.aries.jax.rs.rest.management.feature.RestManagementFeature;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.osgi.framework.BundleContext;
+import org.osgi.framework.BundleException;
 import org.osgi.service.jaxrs.runtime.JaxrsServiceRuntime;
+import org.osgi.test.common.annotation.InjectBundleContext;
 import org.osgi.test.common.annotation.InjectService;
 import org.osgi.test.common.service.ServiceAware;
-import org.osgi.test.junit4.service.ServiceRule;
+import org.osgi.test.junit5.context.BundleContextExtension;
+import org.osgi.test.junit5.service.ServiceExtension;
 
+@ExtendWith({
+    BundleContextExtension.class,
+    ServiceExtension.class
+})
 public class TestUtil {
-    @Rule
-    public ServiceRule serviceRule = new ServiceRule();
 
     @InjectService
     public ClientBuilder clientBuilder;
@@ -51,13 +59,29 @@ public class TestUtil {
     @InjectService(filter = "(%s=*)", filterArguments = JAX_RS_SERVICE_ENDPOINT)
     public ServiceAware<JaxrsServiceRuntime> jaxrsServiceRuntimeAware;
 
+    @InjectBundleContext
+    public BundleContext bundleContext;
+
+    @BeforeEach
+    public void beforeEach(@InjectBundleContext BundleContext bundleContext) {
+        Stream.of(bundleContext.getBundles()).filter(b -> b.getSymbolicName().equals("minor-and-removed-change")).forEach(
+            b -> {
+                try {
+                    b.uninstall();
+                } catch (BundleException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        );
+    }
+
     protected WebTarget createDefaultTarget() {
-        clientBuilder.connectTimeout(600000, TimeUnit.SECONDS);
-        clientBuilder.readTimeout(600000, TimeUnit.SECONDS);
+        clientBuilder.connectTimeout(600000, SECONDS);
+        clientBuilder.readTimeout(600000, SECONDS);
 
         Client client = clientBuilder.build();
 
-        client.register(RestManagementMessageBodyHandler.class);
+        client.register(RestManagementFeature.class);
 
         return client.target(runtimeURI());
     }
