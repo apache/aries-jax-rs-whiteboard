@@ -48,21 +48,21 @@
 	org.apache.aries.spifly.auto.providers=com.sun.*
 
 -runbundles: \
-	com.fasterxml.jackson.core.jackson-annotations;version='[2.10.1,2.10.2)',\
-	com.fasterxml.jackson.core.jackson-core;version='[2.10.1,2.10.2)',\
-	com.fasterxml.jackson.core.jackson-databind;version='[2.10.1,2.10.2)',\
-	com.fasterxml.jackson.dataformat.jackson-dataformat-yaml;version='[2.10.1,2.10.2)',\
-	com.fasterxml.jackson.datatype.jackson-datatype-jsr310;version='[2.10.1,2.10.2)',\
+	com.fasterxml.jackson.core.jackson-annotations;version='[2.12.1,2.12.2)',\
+	com.fasterxml.jackson.core.jackson-core;version='[2.12.1,2.12.2)',\
+	com.fasterxml.jackson.core.jackson-databind;version='[2.12.1,2.12.2)',\
+	com.fasterxml.jackson.dataformat.jackson-dataformat-yaml;version='[2.12.1,2.12.2)',\
+	com.fasterxml.jackson.datatype.jackson-datatype-jsr310;version='[2.12.1,2.12.2)',\
 	com.fasterxml.woodstox.woodstox-core;version='[6.2.3,6.2.4)',\
 	com.sun.xml.bind.jaxb-osgi;version='[2.3.3,2.3.4)',\
-	io.github.classgraph.classgraph;version='[4.6.32,4.6.33)',\
-	io.swagger.core.v3.swagger-annotations;version='[2.1.0,2.1.1)',\
-	io.swagger.core.v3.swagger-core;version='[2.1.0,2.1.1)',\
-	io.swagger.core.v3.swagger-integration;version='[2.1.0,2.1.1)',\
-	io.swagger.core.v3.swagger-jaxrs2;version='[2.1.0,2.1.1)',\
-	io.swagger.core.v3.swagger-models;version='[2.1.0,2.1.1)',\
+	io.github.classgraph.classgraph;version='[4.8.95,4.8.96)',\
+	io.swagger.core.v3.swagger-annotations;version='[2.1.7,2.1.8)',\
+	io.swagger.core.v3.swagger-core;version='[2.1.7,2.1.8)',\
+	io.swagger.core.v3.swagger-integration;version='[2.1.7,2.1.8)',\
+	io.swagger.core.v3.swagger-jaxrs2;version='[2.1.7,2.1.8)',\
+	io.swagger.core.v3.swagger-models;version='[2.1.7,2.1.8)',\
+	jakarta.validation.jakarta.validation-api;version='[2.0.2,2.0.3)',\
 	jakarta.xml.bind-api;version='[2.3.3,2.3.4)',\
-	javax.validation.api;version='[1.1.0,1.1.1)',\
 	org.apache.aries.jax.rs.openapi.itest;version='[2.0.0,2.0.1)',\
 	org.apache.aries.jax.rs.openapi.resource;version='[2.0.0,2.0.1)',\
 	org.apache.aries.jax.rs.whiteboard;version='[2.0.0,2.0.1)',\
@@ -84,7 +84,7 @@
 	org.osgi.service.jaxrs;version='[1.0.0,1.0.1)',\
 	org.osgi.util.function;version='[1.1.0,1.1.1)',\
 	org.osgi.util.promise;version='[1.1.1,1.1.2)',\
-	org.yaml.snakeyaml;version='[1.24.0,1.24.1)',\
+	org.yaml.snakeyaml;version='[1.27.0,1.27.1)',\
 	stax2-api;version='[4.2.1,4.2.2)'
 
 -runstartlevel: \
