@@ -26,26 +26,15 @@ import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Response;
 
 import org.apache.aries.jax.rs.rest.management.RestManagementConstants;
-import org.apache.aries.jax.rs.rest.management.handler.RestManagementMessageBodyHandler;
-import org.apache.aries.jax.rs.rest.management.model.BundleStateDTO;
-import org.junit.Rule;
-import org.junit.Test;
+import org.apache.aries.jax.rs.rest.management.schema.BundleSchema;
+import org.apache.aries.jax.rs.rest.management.schema.BundleStateSchema;
+import org.junit.jupiter.api.Test;
 import org.osgi.framework.Bundle;
-import org.osgi.framework.BundleContext;
-import org.osgi.framework.dto.BundleDTO;
-import org.osgi.test.common.annotation.InjectBundleContext;
-import org.osgi.test.junit4.context.BundleContextRule;
 import org.xmlunit.assertj3.XmlAssert;
 
 import net.javacrumbs.jsonunit.assertj.JsonAssertions;
 
 public class BundleStateTest extends TestUtil {
-
-    @Rule
-    public BundleContextRule bundleContextRule = new BundleContextRule();
-
-    @InjectBundleContext
-    BundleContext bundleContext;
 
     @Test
     public void getBundleStateJSON() {
@@ -98,15 +87,13 @@ public class BundleStateTest extends TestUtil {
             "framework"
         ).path("bundle").path("{bundleid}").path("state");
 
-        target.register(RestManagementMessageBodyHandler.class);
-
         Response response = target.resolveTemplate(
             "bundleid", 2l
         ).request(
             APPLICATION_BUNDLESTATE_JSON_TYPE
         ).get();
 
-        BundleStateDTO bundleStateDTO = response.readEntity(BundleStateDTO.class);
+        BundleStateSchema bundleStateDTO = response.readEntity(BundleStateSchema.class);
 
         assertThat(
             bundleStateDTO
@@ -120,68 +107,61 @@ public class BundleStateTest extends TestUtil {
         WebTarget target = createDefaultTarget().path(
             "framework").path("bundles");
 
-        BundleDTO bundleDTO = null;
+        BundleSchema bundleSchema = null;
 
-        try {
-            Response response = target.request().post(
-                Entity.entity(
-                    BundleStateTest.class.getClassLoader().getResourceAsStream("minor-change-1.0.1.jar"),
-                    RestManagementConstants.APPLICATION_VNDOSGIBUNDLE_TYPE)
-            );
+        Response response = target.request().post(
+            Entity.entity(
+                BundleStateTest.class.getClassLoader().getResourceAsStream("minor-change-1.0.1.jar"),
+                RestManagementConstants.APPLICATION_VNDOSGIBUNDLE_TYPE)
+        );
 
-            assertThat(
-                response.getStatus()
-            ).isEqualTo(
-                200
-            );
+        assertThat(
+            response.getStatus()
+        ).isEqualTo(
+            200
+        );
 
-            bundleDTO = response.readEntity(BundleDTO.class);
+        bundleSchema = response.readEntity(BundleSchema.class);
 
-            assertThat(
-                bundleDTO.symbolicName
-            ).isEqualTo(
-                "minor-and-removed-change"
-            );
-            assertThat(
-                bundleDTO.state
-            ).isEqualTo(
-                2
-            );
+        assertThat(
+            bundleSchema.symbolicName
+        ).isEqualTo(
+            "minor-and-removed-change"
+        );
+        assertThat(
+            bundleSchema.state
+        ).isEqualTo(
+            2
+        );
 
-            target = createDefaultTarget().path(
-                "framework").path("bundle").path("{bundleid}").path("state");
+        target = createDefaultTarget().path(
+            "framework").path("bundle").path("{bundleid}").path("state");
 
-            BundleStateDTO bundleStateDTO = new BundleStateDTO();
-            bundleStateDTO.state = Bundle.ACTIVE;
+        BundleStateSchema bundleStateDTO = new BundleStateSchema();
+        bundleStateDTO.state = Bundle.ACTIVE;
 
-            response = target.resolveTemplate(
-                "bundleid", bundleDTO.id
-            ).request().put(
-                Entity.entity(
-                    bundleStateDTO,
-                    APPLICATION_BUNDLESTATE_JSON_TYPE
-                )
-            );
+        response = target.resolveTemplate(
+            "bundleid", bundleSchema.id
+        ).request().put(
+            Entity.entity(
+                bundleStateDTO,
+                APPLICATION_BUNDLESTATE_JSON_TYPE
+            )
+        );
 
-            assertThat(
-                response.getStatus()
-            ).isEqualTo(
-                200
-            );
+        assertThat(
+            response.getStatus()
+        ).isEqualTo(
+            200
+        );
 
-            bundleStateDTO = response.readEntity(BundleStateDTO.class);
+        bundleStateDTO = response.readEntity(BundleStateSchema.class);
 
-            assertThat(
-                bundleStateDTO.state
-            ).isEqualTo(
-                32
-            );
-        }
-        finally {
-            if (bundleDTO != null) {
-                bundleContext.getBundle(bundleDTO.id).uninstall();
-            }
-        }
+        assertThat(
+            bundleStateDTO.state
+        ).isIn(
+            2, 32
+        );
     }
 
     @Test
@@ -189,68 +169,61 @@ public class BundleStateTest extends TestUtil {
         WebTarget target = createDefaultTarget().path(
             "framework").path("bundles");
 
-        BundleDTO bundleDTO = null;
+        BundleSchema bundleSchema = null;
 
-        try {
-            Response response = target.request().post(
-                Entity.entity(
-                    BundleStateTest.class.getClassLoader().getResourceAsStream("minor-change-1.0.1.jar"),
-                    RestManagementConstants.APPLICATION_VNDOSGIBUNDLE_TYPE)
-            );
+        Response response = target.request().post(
+            Entity.entity(
+                BundleStateTest.class.getClassLoader().getResourceAsStream("minor-change-1.0.1.jar"),
+                RestManagementConstants.APPLICATION_VNDOSGIBUNDLE_TYPE)
+        );
 
-            assertThat(
-                response.getStatus()
-            ).isEqualTo(
-                200
-            );
+        assertThat(
+            response.getStatus()
+        ).isEqualTo(
+            200
+        );
 
-            bundleDTO = response.readEntity(BundleDTO.class);
+        bundleSchema = response.readEntity(BundleSchema.class);
 
-            assertThat(
-                bundleDTO.symbolicName
-            ).isEqualTo(
-                "minor-and-removed-change"
-            );
-            assertThat(
-                bundleDTO.state
-            ).isEqualTo(
-                2
-            );
+        assertThat(
+            bundleSchema.symbolicName
+        ).isEqualTo(
+            "minor-and-removed-change"
+        );
+        assertThat(
+            bundleSchema.state
+        ).isEqualTo(
+            2
+        );
 
-            target = createDefaultTarget().path(
-                "framework").path("bundle").path("{bundleid}").path("state");
+        target = createDefaultTarget().path(
+            "framework").path("bundle").path("{bundleid}").path("state");
 
-            BundleStateDTO bundleStateDTO = new BundleStateDTO();
-            bundleStateDTO.state = Bundle.RESOLVED;
+        BundleStateSchema bundleStateDTO = new BundleStateSchema();
+        bundleStateDTO.state = Bundle.RESOLVED;
 
-            response = target.resolveTemplate(
-                "bundleid", bundleDTO.id
-            ).request().put(
-                Entity.entity(
-                    bundleStateDTO,
-                    APPLICATION_BUNDLESTATE_JSON_TYPE
-                )
-            );
+        response = target.resolveTemplate(
+            "bundleid", bundleSchema.id
+        ).request().put(
+            Entity.entity(
+                bundleStateDTO,
+                APPLICATION_BUNDLESTATE_JSON_TYPE
+            )
+        );
 
-            assertThat(
-                response.getStatus()
-            ).isEqualTo(
-                200
-            );
+        assertThat(
+            response.getStatus()
+        ).isEqualTo(
+            200
+        );
 
-            bundleStateDTO = response.readEntity(BundleStateDTO.class);
+        bundleStateDTO = response.readEntity(BundleStateSchema.class);
 
-            assertThat(
-                bundleStateDTO.state
-            ).isEqualTo(
-                Bundle.RESOLVED
-            );
-        }
-        finally {
-            if (bundleDTO != null) {
-                bundleContext.getBundle(bundleDTO.id).uninstall();
-            }
-        }
+        assertThat(
+            bundleStateDTO.state
+        ).isEqualTo(
+            Bundle.RESOLVED
+        );
     }
 
     @Test
@@ -258,99 +231,92 @@ public class BundleStateTest extends TestUtil {
         WebTarget target = createDefaultTarget().path(
             "framework").path("bundles");
 
-        BundleDTO bundleDTO = null;
+        BundleSchema bundleSchema = null;
 
-        try {
-            Response response = target.request().post(
-                Entity.entity(
-                    BundleStateTest.class.getClassLoader().getResourceAsStream("minor-change-1.0.1.jar"),
-                    RestManagementConstants.APPLICATION_VNDOSGIBUNDLE_TYPE)
-            );
+        Response response = target.request().post(
+            Entity.entity(
+                BundleStateTest.class.getClassLoader().getResourceAsStream("minor-change-1.0.1.jar"),
+                RestManagementConstants.APPLICATION_VNDOSGIBUNDLE_TYPE)
+        );
 
-            assertThat(
-                response.getStatus()
-            ).isEqualTo(
-                200
-            );
+        assertThat(
+            response.getStatus()
+        ).isEqualTo(
+            200
+        );
 
-            bundleDTO = response.readEntity(BundleDTO.class);
+        bundleSchema = response.readEntity(BundleSchema.class);
 
-            assertThat(
-                bundleDTO.symbolicName
-            ).isEqualTo(
-                "minor-and-removed-change"
-            );
-            assertThat(
-                bundleDTO.state
-            ).isEqualTo(
-                2
-            );
+        assertThat(
+            bundleSchema.symbolicName
+        ).isEqualTo(
+            "minor-and-removed-change"
+        );
+        assertThat(
+            bundleSchema.state
+        ).isEqualTo(
+            2
+        );
 
-            target = createDefaultTarget().path(
-                "framework").path("bundle").path("{bundleid}").path("state");
+        target = createDefaultTarget().path(
+            "framework").path("bundle").path("{bundleid}").path("state");
 
-            BundleStateDTO bundleStateDTO = new BundleStateDTO();
-            bundleStateDTO.state = Bundle.ACTIVE;
+        BundleStateSchema bundleStateDTO = new BundleStateSchema();
+        bundleStateDTO.state = Bundle.ACTIVE;
 
-            response = target.resolveTemplate(
-                "bundleid", bundleDTO.id
-            ).request().put(
-                Entity.entity(
-                    bundleStateDTO,
-                    APPLICATION_BUNDLESTATE_JSON_TYPE
-                )
-            );
+        response = target.resolveTemplate(
+            "bundleid", bundleSchema.id
+        ).request().put(
+            Entity.entity(
+                bundleStateDTO,
+                APPLICATION_BUNDLESTATE_JSON_TYPE
+            )
+        );
 
-            assertThat(
-                response.getStatus()
-            ).isEqualTo(
-                200
-            );
+        assertThat(
+            response.getStatus()
+        ).isEqualTo(
+            200
+        );
 
-            bundleStateDTO = response.readEntity(BundleStateDTO.class);
+        bundleStateDTO = response.readEntity(BundleStateSchema.class);
 
-            assertThat(
-                bundleStateDTO.state
-            ).isEqualTo(
-                32
-            );
+        assertThat(
+            bundleStateDTO.state
+        ).isIn(
+            2, 32
+        );
 
-            ////////////////
+        ////////////////
 
-            target = createDefaultTarget().path(
-                "framework").path("bundle").path("{bundleid}").path("state");
+        target = createDefaultTarget().path(
+            "framework").path("bundle").path("{bundleid}").path("state");
 
-            bundleStateDTO = new BundleStateDTO();
-            bundleStateDTO.state = Bundle.RESOLVED;
+        bundleStateDTO = new BundleStateSchema();
+        bundleStateDTO.state = Bundle.RESOLVED;
 
-            response = target.resolveTemplate(
-                "bundleid", bundleDTO.id
-            ).request().put(
-                Entity.entity(
-                    bundleStateDTO,
-                    APPLICATION_BUNDLESTATE_JSON_TYPE
-                )
-            );
+        response = target.resolveTemplate(
+            "bundleid", bundleSchema.id
+        ).request().put(
+            Entity.entity(
+                bundleStateDTO,
+                APPLICATION_BUNDLESTATE_JSON_TYPE
+            )
+        );
 
-            assertThat(
-                response.getStatus()
-            ).isEqualTo(
-                200
-            );
+        assertThat(
+            response.getStatus()
+        ).isEqualTo(
+            200
+        );
 
-            bundleStateDTO = response.readEntity(BundleStateDTO.class);
+        bundleStateDTO = response.readEntity(BundleStateSchema.class);
 
-            assertThat(
-                bundleStateDTO.state
-            ).isEqualTo(
-                Bundle.RESOLVED
-            );
-        }
-        finally {
-            if (bundleDTO != null) {
-                bundleContext.getBundle(bundleDTO.id).uninstall();
-            }
-        }
+        assertThat(
+            bundleStateDTO.state
+        ).isEqualTo(
+            Bundle.RESOLVED
+        );
     }
 
 }

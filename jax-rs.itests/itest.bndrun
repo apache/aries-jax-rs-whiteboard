@@ -48,7 +48,7 @@
 	org.apache.aries.spifly.auto.providers=com.sun.*
 
 -runbundles: \
-	assertj-core;version='[3.17.2,3.17.3)',\
+	assertj-core;version='[3.19.0,3.19.1)',\
 	com.fasterxml.woodstox.woodstox-core;version='[6.2.3,6.2.4)',\
 	com.sun.xml.bind.jaxb-osgi;version='[2.3.3,2.3.4)',\
 	jakarta.xml.bind-api;version='[2.3.3,2.3.4)',\

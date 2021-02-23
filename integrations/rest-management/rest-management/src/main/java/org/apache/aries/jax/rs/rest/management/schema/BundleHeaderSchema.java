@@ -15,12 +15,25 @@
  * limitations under the License.
  */
 
-@Requirement(
-    namespace = IMPLEMENTATION_NAMESPACE,
-    name = "org.apache.aries.jax.rs.openapi"
-)
-package org.apache.aries.jax.rs.rest.management.internal;
+package org.apache.aries.jax.rs.rest.management.schema;
 
-import static org.osgi.namespace.implementation.ImplementationNamespace.IMPLEMENTATION_NAMESPACE;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
-import org.osgi.annotation.bundle.Requirement;
+import javax.xml.bind.annotation.XmlRootElement;
+import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
+
+@SuppressWarnings("serial")
+@XmlRootElement(name = "bundleHeader")
+@XmlJavaTypeAdapter(BundleHeaderAdapter.class)
+public class BundleHeaderSchema extends LinkedHashMap<String, String> {
+
+    public BundleHeaderSchema() {
+        super();
+    }
+
+    public BundleHeaderSchema(Map<String, String> map) {
+        super(map);
+    }
+
+}

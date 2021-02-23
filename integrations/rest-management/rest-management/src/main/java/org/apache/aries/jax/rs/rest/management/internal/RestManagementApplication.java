@@ -17,7 +17,41 @@
 
 package org.apache.aries.jax.rs.rest.management.internal;
 
+import java.util.HashSet;
+import java.util.Set;
+
 import javax.ws.rs.core.Application;
 
+import org.apache.aries.jax.rs.rest.management.internal.jaxb.ServiceSchemaContextResolver;
+import org.osgi.framework.BundleContext;
+
 public class RestManagementApplication extends Application {
+
+    private final BundleContext bundleContext;
+
+    public RestManagementApplication(BundleContext bundleContext) {
+        this.bundleContext = bundleContext;
+    }
+
+    @Override
+    public Set<Object> getSingletons() {
+        Set<Object> singletons = new HashSet<>();
+
+        singletons.add(new ServiceSchemaContextResolver());
+
+        singletons.add(new FrameworkBundleHeaderResource(bundleContext));
+        singletons.add(new FrameworkBundleResource(bundleContext));
+        singletons.add(new FrameworkBundlesRepresentationsResource(bundleContext));
+        singletons.add(new FrameworkBundlesResource(bundleContext));
+        singletons.add(new FrameworkBundleStartLevelResource(bundleContext));
+        singletons.add(new FrameworkBundleStateResource(bundleContext));
+        singletons.add(new FrameworkResource(bundleContext));
+        singletons.add(new FrameworkServiceResource(bundleContext));
+        singletons.add(new FrameworkServicesRepresentationsResource(bundleContext));
+        singletons.add(new FrameworkServicesResource(bundleContext));
+        singletons.add(new FrameworkStartLevelResource(bundleContext));
+        singletons.add(new FrameworkStateResource(bundleContext));
+        return singletons;
+    }
+
 }

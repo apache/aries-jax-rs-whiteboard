@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.aries.jax.rs.rest.management.handler;
+package org.apache.aries.jax.rs.rest.management.internal.coerce;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -49,7 +49,7 @@ public class Coerce {
         return list;
     }
 
-    public static String type(Attribute typeAT, String name) {
+    public static String type(String type, String name) {
         if (Constants.SERVICE_ID.equals(name) ||
             Constants.SERVICE_BUNDLEID.equals(name)) {
             return "Long";
@@ -63,10 +63,10 @@ public class Coerce {
             return "String";
         }
 
-        if (typeAT == null) {
+        if (type == null) {
             return "String";
         }
-        return typeAT.getValue();
+        return type;
     }
 
     public static String type(JsonNode node, String name) {
@@ -134,7 +134,7 @@ public class Coerce {
             s -> s.trim().split("\\s*\\n\\s*")
         ).map(Arrays::asList).orElseGet(ArrayList::new);
 
-        return from(type(typeAT, keyAT.getValue()), array, valueParts);
+        return from(type((typeAT == null ? null : typeAT.getValue()), keyAT.getValue()), array, valueParts);
     }
 
     public static Object from(

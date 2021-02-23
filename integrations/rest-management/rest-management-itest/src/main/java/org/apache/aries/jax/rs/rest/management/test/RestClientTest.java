@@ -22,24 +22,16 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.util.Collection;
 
-import org.junit.Rule;
-import org.junit.Test;
-import org.osgi.framework.BundleContext;
+import org.apache.aries.jax.rs.rest.management.schema.FrameworkStartLevelSchema;
+import org.junit.jupiter.api.Test;
+import org.osgi.framework.BundleException;
 import org.osgi.framework.dto.BundleDTO;
 import org.osgi.framework.startlevel.dto.FrameworkStartLevelDTO;
 import org.osgi.service.rest.client.RestClient;
 import org.osgi.service.rest.client.RestClientFactory;
-import org.osgi.test.common.annotation.InjectBundleContext;
 import org.osgi.test.common.annotation.InjectService;
-import org.osgi.test.junit4.context.BundleContextRule;
 
 public class RestClientTest extends TestUtil {
-
-    @Rule
-    public BundleContextRule bundleContextRule = new BundleContextRule();
-
-    @InjectBundleContext
-    BundleContext bundleContext;
 
     @InjectService
     public RestClientFactory restClientFactory;
@@ -65,7 +57,7 @@ public class RestClientTest extends TestUtil {
         RestClient restClient = restClientFactory.createRestClient(
             runtimeURI());
 
-        FrameworkStartLevelDTO frameworkStartLevel = new FrameworkStartLevelDTO();
+        FrameworkStartLevelSchema frameworkStartLevel = new FrameworkStartLevelSchema();
 
         assertThatThrownBy(
             () -> restClient.setFrameworkStartLevel(frameworkStartLevel)
@@ -77,7 +69,7 @@ public class RestClientTest extends TestUtil {
         RestClient restClient = restClientFactory.createRestClient(
             runtimeURI());
 
-        FrameworkStartLevelDTO frameworkStartLevel = new FrameworkStartLevelDTO();
+        FrameworkStartLevelSchema frameworkStartLevel = new FrameworkStartLevelSchema();
 
         frameworkStartLevel.initialBundleStartLevel = 2;
         frameworkStartLevel.startLevel = 1;
@@ -147,28 +139,21 @@ public class RestClientTest extends TestUtil {
 
             BundleDTO bundleDTO = null;
 
-            try {
-                RestClient restClient = restClientFactory.createRestClient(
-                    runtimeURI());
+            RestClient restClient = restClientFactory.createRestClient(
+                runtimeURI());
 
-                bundleDTO = restClient.installBundle(
-                    String.format(
-                        "http://localhost:%d/minor-change-1.0.1.jar",
-                        server.getPort()
-                    )
-                );
+            bundleDTO = restClient.installBundle(
+                String.format(
+                    "http://localhost:%d/minor-change-1.0.1.jar",
+                    server.getPort()
+                )
+            );
 
-                assertThat(
-                    bundleDTO.symbolicName
-                ).isEqualTo(
-                    "minor-and-removed-change"
-                );
-            }
-            finally {
-                if (bundleDTO != null) {
-                    bundleContext.getBundle(bundleDTO.id).uninstall();
-                }
-            }
+            assertThat(
+                bundleDTO.symbolicName
+            ).isEqualTo(
+                "minor-and-removed-change"
+            );
         }
     }
 
@@ -182,9 +167,9 @@ public class RestClientTest extends TestUtil {
                 "http://localhost:%d/minor-change-1.0.1.jar"
             );
         }).isInstanceOf(
-            Exception.class
+            BundleException.class
         ).hasMessageContaining(
-            "Bad Request"
+            "Error reading bundle content."
         );
     }
 

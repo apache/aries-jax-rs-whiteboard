@@ -15,19 +15,22 @@
  * limitations under the License.
  */
 
-package org.apache.aries.jax.rs.rest.management.model;
+package org.apache.aries.jax.rs.rest.management.schema;
 
-import java.util.List;
+import javax.xml.bind.annotation.XmlRootElement;
 
-import org.osgi.framework.dto.ServiceReferenceDTO;
+@XmlRootElement(name = "bundleexception")
+public class BundleExceptionSchema {
 
-public class ServiceReferenceDTOs {
-    public List<ServiceReferenceDTO> services;
+    public int typecode;
 
-    public static ServiceReferenceDTOs build(List<ServiceReferenceDTO> services) {
-        ServiceReferenceDTOs serviceReferenceDTOs = new ServiceReferenceDTOs();
-        serviceReferenceDTOs.services = services;
-        return serviceReferenceDTOs;
+    public String message;
+
+    public static BundleExceptionSchema build(int typecode, String message) {
+        final BundleExceptionSchema bundleExceptionSchema = new BundleExceptionSchema();
+        bundleExceptionSchema.typecode = typecode;
+        bundleExceptionSchema.message = message;
+        return bundleExceptionSchema;
     }
 
 }

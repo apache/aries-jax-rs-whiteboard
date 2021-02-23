@@ -15,14 +15,24 @@
  * limitations under the License.
  */
 
-package org.apache.aries.jax.rs.rest.management.model;
+package org.apache.aries.jax.rs.rest.management.schema;
+
+import java.util.List;
+
+import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlRootElement;
 
 import org.osgi.dto.DTO;
 
-public class BundleStateDTO extends DTO {
+@XmlRootElement(name = "services")
+public class ServiceSchemaListSchema extends DTO {
+    @XmlElement(name = "service")
+    public List<ServiceSchema> services;
 
-    public int state;
-
-    public int options;
+    public static ServiceSchemaListSchema build(List<ServiceSchema> services) {
+        final ServiceSchemaListSchema serviceSchemaListSchema = new ServiceSchemaListSchema();
+        serviceSchemaListSchema.services = services;
+        return serviceSchemaListSchema;
+    }
 
 }

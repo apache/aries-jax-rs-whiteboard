@@ -17,7 +17,7 @@
 
 @Export
 @Version("1.0.0")
-package org.apache.aries.jax.rs.rest.management.handler;
+package org.apache.aries.jax.rs.rest.management.feature;
 
 import org.osgi.annotation.bundle.Export;
 import org.osgi.annotation.versioning.Version;

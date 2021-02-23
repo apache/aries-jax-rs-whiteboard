@@ -15,20 +15,29 @@
  * limitations under the License.
  */
 
-package org.apache.aries.jax.rs.rest.management.model;
+package org.apache.aries.jax.rs.rest.management.internal.client;
 
-import java.util.List;
+import java.net.URI;
 
-import org.osgi.dto.DTO;
+import javax.ws.rs.client.Client;
+import javax.ws.rs.client.ClientBuilder;
 
-public class ServicesDTO extends DTO {
+import org.osgi.service.rest.client.RestClient;
+import org.osgi.service.rest.client.RestClientFactory;
 
-    public List<String> services;
+public class RestClientFactoryImpl implements RestClientFactory {
 
-    public static ServicesDTO build(List<String> services) {
-        ServicesDTO servicesDTO = new ServicesDTO();
-        servicesDTO.services = services;
-        return servicesDTO;
+    private final ClientBuilder clientBuilder;
+
+    public RestClientFactoryImpl(ClientBuilder clientBuilder) {
+        this.clientBuilder = clientBuilder;
+    }
+
+    @Override
+    public RestClient createRestClient(URI uri) {
+        Client client = clientBuilder.build();
+
+        return new RestClientImpl(client.target(uri));
     }
 
 }

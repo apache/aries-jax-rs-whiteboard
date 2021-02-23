@@ -30,6 +30,10 @@
 
     <dependencies>
         <dependency>
+            <groupId>net.javacrumbs.json-unit</groupId>
+            <artifactId>json-unit-assertj</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.assertj</groupId>
             <artifactId>assertj-core</artifactId>
         </dependency>
@@ -49,17 +53,25 @@
             <artifactId>org.apache.aries.component-dsl.component-dsl</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.hamcrest</groupId>
+            <artifactId>hamcrest-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.platform</groupId>
+            <artifactId>junit-platform-commons</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-params</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.osgi</groupId>
             <artifactId>org.osgi.service.rest</artifactId>
             <version>1.0.0</version>
-        </dependency>
-        <dependency>
-            <groupId>org.osgi</groupId>
-            <artifactId>osgi.enroute.junit.wrapper</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.osgi</groupId>
-            <artifactId>osgi.enroute.hamcrest.wrapper</artifactId>
         </dependency>
         <dependency>
             <groupId>org.osgi</groupId>
@@ -67,15 +79,7 @@
         </dependency>
         <dependency>
             <groupId>org.osgi</groupId>
-            <artifactId>org.osgi.test.junit4</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>net.javacrumbs.json-unit</groupId>
-            <artifactId>json-unit-assertj</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.hamcrest</groupId>
-            <artifactId>hamcrest-core</artifactId>
+            <artifactId>org.osgi.test.junit5</artifactId>
         </dependency>
         <dependency>
             <groupId>org.xmlunit</groupId>
@@ -95,6 +99,7 @@
                 <configuration>
                     <failOnChanges>false</failOnChanges>
                     <includeDependencyManagement>true</includeDependencyManagement>
+                    <reportOptional>false</reportOptional>
                     <bndruns>
                         <bndrun>itest.bndrun</bndrun>
                     </bndruns>

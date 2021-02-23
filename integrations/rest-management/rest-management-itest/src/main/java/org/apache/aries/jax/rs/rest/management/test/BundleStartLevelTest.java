@@ -25,9 +25,8 @@ import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Response;
 
-import org.apache.aries.jax.rs.rest.management.handler.RestManagementMessageBodyHandler;
-import org.junit.Test;
-import org.osgi.framework.startlevel.dto.BundleStartLevelDTO;
+import org.apache.aries.jax.rs.rest.management.schema.BundleStartLevelSchema;
+import org.junit.jupiter.api.Test;
 import org.xmlunit.assertj3.XmlAssert;
 
 import net.javacrumbs.jsonunit.assertj.JsonAssertions;
@@ -92,16 +91,14 @@ public class BundleStartLevelTest extends TestUtil {
     }
 
     @Test
-    public void getBundleStartLevelDTO() {
+    public void getBundleStartLevelSchema() {
         WebTarget target = createDefaultTarget().path(
             "framework").path("bundle").path("{bundleid}").path("startlevel");
 
-        target.register(RestManagementMessageBodyHandler.class);
-
         Response response = target.resolveTemplate("bundleid", 2l).request().get();
 
-        BundleStartLevelDTO bundleStartLevelDTO =
-            response.readEntity(BundleStartLevelDTO.class);
+        BundleStartLevelSchema bundleStartLevelDTO =
+            response.readEntity(BundleStartLevelSchema.class);
 
         assertThat(
             bundleStartLevelDTO.startLevel
@@ -115,10 +112,8 @@ public class BundleStartLevelTest extends TestUtil {
         WebTarget target = createDefaultTarget().path(
             "framework").path("bundle").path("{bundleid}").path("startlevel");
 
-        target.register(RestManagementMessageBodyHandler.class);
-
-        BundleStartLevelDTO bundleStartLevelDTO =
-            new BundleStartLevelDTO();
+        BundleStartLevelSchema bundleStartLevelDTO =
+            new BundleStartLevelSchema();
 
         Response response = target.resolveTemplate("bundleid", 2l).request().put(
             Entity.entity(
@@ -136,10 +131,8 @@ public class BundleStartLevelTest extends TestUtil {
         WebTarget target = createDefaultTarget().path(
             "framework").path("bundle").path("{bundleid}").path("startlevel");
 
-        target.register(RestManagementMessageBodyHandler.class);
-
-        BundleStartLevelDTO bundleStartLevelDTO =
-            new BundleStartLevelDTO();
+        BundleStartLevelSchema bundleStartLevelDTO =
+            new BundleStartLevelSchema();
 
         bundleStartLevelDTO.startLevel = 2;
 

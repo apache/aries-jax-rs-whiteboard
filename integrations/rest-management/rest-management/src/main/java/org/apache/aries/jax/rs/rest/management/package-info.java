@@ -17,7 +17,24 @@
 
 @Export
 @Version("1.0.0")
+@Capability(
+    name = SPECIFICATION_IMPLEMENTATION,
+    namespace = IMPLEMENTATION_NAMESPACE,
+    version = SPECIFICATION_VERSION,
+    uses = org.osgi.service.rest.RestApiExtension.class
+)
+@org.osgi.annotation.bundle.Capability(
+    attribute = "objectClass:List<String>='org.osgi.service.rest.client.RestClientFactory'",
+    namespace = SERVICE_NAMESPACE,
+    uses = org.osgi.service.rest.client.RestClientFactory.class
+)
 package org.apache.aries.jax.rs.rest.management;
 
+import static org.apache.aries.jax.rs.rest.management.RestManagementConstants.SPECIFICATION_IMPLEMENTATION;
+import static org.apache.aries.jax.rs.rest.management.RestManagementConstants.SPECIFICATION_VERSION;
+import static org.osgi.namespace.implementation.ImplementationNamespace.IMPLEMENTATION_NAMESPACE;
+import static org.osgi.namespace.service.ServiceNamespace.SERVICE_NAMESPACE;
+
+import org.osgi.annotation.bundle.Capability;
 import org.osgi.annotation.bundle.Export;
 import org.osgi.annotation.versioning.Version;

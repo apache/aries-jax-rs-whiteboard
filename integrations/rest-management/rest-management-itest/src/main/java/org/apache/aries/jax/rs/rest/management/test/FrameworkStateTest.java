@@ -23,9 +23,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Response;
 
-import org.apache.aries.jax.rs.rest.management.handler.RestManagementMessageBodyHandler;
-import org.apache.aries.jax.rs.rest.management.model.BundleStateDTO;
-import org.junit.Test;
+import org.apache.aries.jax.rs.rest.management.schema.BundleStateSchema;
+import org.junit.jupiter.api.Test;
 import org.osgi.framework.Bundle;
 import org.xmlunit.assertj3.XmlAssert;
 
@@ -102,11 +101,9 @@ public class FrameworkStateTest extends TestUtil {
     public void getFrameworkStateDTO() {
         WebTarget target = createDefaultTarget().path("framework").path("state");
 
-        target.register(RestManagementMessageBodyHandler.class);
-
         Response response = target.request().get();
 
-        BundleStateDTO bundleStateDTO = response.readEntity(BundleStateDTO.class);
+        BundleStateSchema bundleStateDTO = response.readEntity(BundleStateSchema.class);
 
         assertThat(
             bundleStateDTO.state

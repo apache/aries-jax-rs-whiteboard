@@ -27,9 +27,8 @@ import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Response;
 
-import org.apache.aries.jax.rs.rest.management.handler.RestManagementMessageBodyHandler;
-import org.junit.Test;
-import org.osgi.framework.startlevel.dto.FrameworkStartLevelDTO;
+import org.apache.aries.jax.rs.rest.management.schema.FrameworkStartLevelSchema;
+import org.junit.jupiter.api.Test;
 import org.xmlunit.assertj3.XmlAssert;
 
 import net.javacrumbs.jsonunit.assertj.JsonAssertions;
@@ -133,24 +132,22 @@ public class FrameworkStartLevelTest extends TestUtil {
     }
 
     @Test
-    public void getFrameworkStartLevelDTO() {
+    public void getFrameworkStartLevelSchema() {
         WebTarget target = createDefaultTarget().path(
             "framework").path("startlevel");
 
-        target.register(RestManagementMessageBodyHandler.class);
-
         Response response = target.request().get();
 
-        FrameworkStartLevelDTO frameworkStartLevelDTO =
-            response.readEntity(FrameworkStartLevelDTO.class);
+        FrameworkStartLevelSchema frameworkStartLevelSchema =
+            response.readEntity(FrameworkStartLevelSchema.class);
 
         assertThat(
-            frameworkStartLevelDTO.startLevel
+            frameworkStartLevelSchema.startLevel
         ).isGreaterThan(
             0
         );
         assertThat(
-            frameworkStartLevelDTO.initialBundleStartLevel
+            frameworkStartLevelSchema.initialBundleStartLevel
         ).isGreaterThan(
             0
         );
@@ -161,14 +158,12 @@ public class FrameworkStartLevelTest extends TestUtil {
         WebTarget target = createDefaultTarget().path(
             "framework").path("startlevel");
 
-        target.register(RestManagementMessageBodyHandler.class);
-
-        FrameworkStartLevelDTO frameworkStartLevelDTO =
-            new FrameworkStartLevelDTO();
+        FrameworkStartLevelSchema frameworkStartLevelSchema =
+            new FrameworkStartLevelSchema();
 
         Response response = target.request().put(
             Entity.entity(
-                frameworkStartLevelDTO, APPLICATION_FRAMEWORKSTARTLEVEL_JSON_TYPE));
+                frameworkStartLevelSchema, APPLICATION_FRAMEWORKSTARTLEVEL_JSON_TYPE));
 
         assertThat(
             response.getStatus()
@@ -182,18 +177,16 @@ public class FrameworkStartLevelTest extends TestUtil {
         WebTarget target = createDefaultTarget().path(
             "framework").path("startlevel");
 
-        target.register(RestManagementMessageBodyHandler.class);
+        FrameworkStartLevelSchema frameworkStartLevelSchema =
+            new FrameworkStartLevelSchema();
 
-        FrameworkStartLevelDTO frameworkStartLevelDTO =
-            new FrameworkStartLevelDTO();
-
-        frameworkStartLevelDTO.startLevel = 2;
-        frameworkStartLevelDTO.initialBundleStartLevel = 1;
+        frameworkStartLevelSchema.startLevel = 2;
+        frameworkStartLevelSchema.initialBundleStartLevel = 1;
 
         try {
             Response response = target.request().put(
                 Entity.entity(
-                    frameworkStartLevelDTO, APPLICATION_FRAMEWORKSTARTLEVEL_JSON_TYPE));
+                    frameworkStartLevelSchema, APPLICATION_FRAMEWORKSTARTLEVEL_JSON_TYPE));
 
             assertThat(
                 response.getStatus()
@@ -202,11 +195,11 @@ public class FrameworkStartLevelTest extends TestUtil {
             );
         }
         finally {
-            frameworkStartLevelDTO.startLevel = 1;
+            frameworkStartLevelSchema.startLevel = 1;
 
             Response response = target.request().put(
                 Entity.entity(
-                    frameworkStartLevelDTO, APPLICATION_FRAMEWORKSTARTLEVEL_JSON_TYPE));
+                    frameworkStartLevelSchema, APPLICATION_FRAMEWORKSTARTLEVEL_JSON_TYPE));
 
             assertThat(
                 response.getStatus()
@@ -221,18 +214,16 @@ public class FrameworkStartLevelTest extends TestUtil {
         WebTarget target = createDefaultTarget().path(
             "framework").path("startlevel");
 
-        target.register(RestManagementMessageBodyHandler.class);
+        FrameworkStartLevelSchema frameworkStartLevelSchema =
+            new FrameworkStartLevelSchema();
 
-        FrameworkStartLevelDTO frameworkStartLevelDTO =
-            new FrameworkStartLevelDTO();
-
-        frameworkStartLevelDTO.startLevel = 1;
-        frameworkStartLevelDTO.initialBundleStartLevel = 2;
+        frameworkStartLevelSchema.startLevel = 1;
+        frameworkStartLevelSchema.initialBundleStartLevel = 2;
 
         try {
             Response response = target.request().put(
                 Entity.entity(
-                    frameworkStartLevelDTO, APPLICATION_FRAMEWORKSTARTLEVEL_JSON_TYPE));
+                    frameworkStartLevelSchema, APPLICATION_FRAMEWORKSTARTLEVEL_JSON_TYPE));
 
             assertThat(
                 response.getStatus()
@@ -241,11 +232,11 @@ public class FrameworkStartLevelTest extends TestUtil {
             );
         }
         finally {
-            frameworkStartLevelDTO.initialBundleStartLevel = 1;
+            frameworkStartLevelSchema.initialBundleStartLevel = 1;
 
             Response response = target.request().put(
                 Entity.entity(
-                    frameworkStartLevelDTO, APPLICATION_FRAMEWORKSTARTLEVEL_JSON_TYPE));
+                    frameworkStartLevelSchema, APPLICATION_FRAMEWORKSTARTLEVEL_JSON_TYPE));
 
             assertThat(
                 response.getStatus()

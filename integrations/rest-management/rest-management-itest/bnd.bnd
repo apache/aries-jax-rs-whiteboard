@@ -17,4 +17,4 @@
 
 Bundle-Description: Integration Test bundle for the REST Management integration
 
-Test-Cases: ${classes;CONCRETE;ANNOTATED;org.junit.Test}
+Test-Cases: ${classes;CONCRETE;ANNOTATED;org.junit.jupiter.api.Test}
