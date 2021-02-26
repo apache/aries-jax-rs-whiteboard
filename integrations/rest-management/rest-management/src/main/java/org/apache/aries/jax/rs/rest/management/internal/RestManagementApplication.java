@@ -17,17 +17,23 @@
 
 package org.apache.aries.jax.rs.rest.management.internal;
 
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.ConcurrentSkipListSet;
 
 import javax.ws.rs.core.Application;
 
+import org.apache.aries.component.dsl.CachingServiceReference;
 import org.apache.aries.jax.rs.rest.management.internal.jaxb.ServiceSchemaContextResolver;
 import org.osgi.framework.BundleContext;
+import org.osgi.service.rest.RestApiExtension;
 
 public class RestManagementApplication extends Application {
 
     private final BundleContext bundleContext;
+    private final Set<CachingServiceReference<RestApiExtension>> extensions =
+        new ConcurrentSkipListSet<>(Comparator.naturalOrder());
 
     public RestManagementApplication(BundleContext bundleContext) {
         this.bundleContext = bundleContext;
@@ -39,6 +45,7 @@ public class RestManagementApplication extends Application {
 
         singletons.add(new ServiceSchemaContextResolver());
 
+        singletons.add(new ExtensionResource(bundleContext, extensions));
         singletons.add(new FrameworkBundleHeaderResource(bundleContext));
         singletons.add(new FrameworkBundleResource(bundleContext));
         singletons.add(new FrameworkBundlesRepresentationsResource(bundleContext));
@@ -52,6 +59,14 @@ public class RestManagementApplication extends Application {
         singletons.add(new FrameworkStartLevelResource(bundleContext));
         singletons.add(new FrameworkStateResource(bundleContext));
         return singletons;
+    }
+
+    public void addExtension(CachingServiceReference<RestApiExtension> extension) {
+        extensions.add(extension);
+    }
+
+    public void removeExtension(CachingServiceReference<RestApiExtension> extension) {
+        extensions.remove(extension);
     }
 
 }

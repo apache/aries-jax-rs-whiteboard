@@ -8,6 +8,24 @@ In essence this integration allows for management and introspection of the OSGi 
 
 Since there should only be one management API per framework the integration creates a separate application rooted at `${osgi.jaxrs.endpoint}/rms`
 
+Some of the available paths are:
+
+```
+/rms/framework/bundle/{bundleid}/header
+/rms/framework/bundle/{bundleid}
+/rms/framework/bundle/{bundleid}/startlevel
+/rms/framework/bundle/{bundleid}/state
+/rms/framework/bundles/representations
+/rms/framework/bundles
+/rms/framework
+/rms/framework/service/{serviceid}
+/rms/framework/services/representations
+/rms/framework/services
+/rms/framework/startlevel
+/rms/framework/state
+/rms/extensions
+```
+
 ### Open API
 
 To simplify developer experience there is an Open API endpoint mounted at `${osgi.jaxrs.endpoint}/rms/openapi.(json|yaml)`.

@@ -56,7 +56,11 @@ public class TestUtil {
     @InjectService
     public ClientBuilder clientBuilder;
 
-    @InjectService(filter = "(%s=*)", filterArguments = JAX_RS_SERVICE_ENDPOINT)
+    @InjectService(
+        filter = "(%s=*)",
+        filterArguments = JAX_RS_SERVICE_ENDPOINT,
+        timeout = 400l
+    )
     public ServiceAware<JaxrsServiceRuntime> jaxrsServiceRuntimeAware;
 
     @InjectBundleContext
