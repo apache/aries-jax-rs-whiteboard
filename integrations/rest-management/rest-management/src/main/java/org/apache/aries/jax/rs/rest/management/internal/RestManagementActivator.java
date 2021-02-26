@@ -19,6 +19,7 @@ package org.apache.aries.jax.rs.rest.management.internal;
 
 import static org.apache.aries.component.dsl.OSGi.all;
 import static org.apache.aries.component.dsl.OSGi.ignore;
+import static org.apache.aries.component.dsl.OSGi.just;
 import static org.apache.aries.component.dsl.OSGi.register;
 import static org.apache.aries.component.dsl.OSGi.service;
 import static org.apache.aries.component.dsl.OSGi.serviceReferences;
@@ -29,10 +30,12 @@ import static org.osgi.service.jaxrs.whiteboard.JaxrsWhiteboardConstants.JAX_RS_
 
 import java.util.HashMap;
 import java.util.function.BiFunction;
+import java.util.function.Consumer;
 
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.core.Application;
 
+import org.apache.aries.component.dsl.OSGi;
 import org.apache.aries.component.dsl.OSGiResult;
 import org.apache.aries.jax.rs.rest.management.feature.RestManagementFeature;
 import org.apache.aries.jax.rs.rest.management.internal.client.RestClientFactoryImpl;
@@ -44,6 +47,7 @@ import org.osgi.framework.Constants;
 import org.osgi.framework.PrototypeServiceFactory;
 import org.osgi.framework.ServiceRegistration;
 import org.osgi.service.jaxrs.whiteboard.JaxrsWhiteboardConstants;
+import org.osgi.service.rest.RestApiExtension;
 import org.osgi.service.rest.client.RestClientFactory;
 
 import io.swagger.v3.oas.models.ExternalDocumentation;
@@ -63,18 +67,31 @@ public class RestManagementActivator implements BundleActivator {
     public void start(BundleContext bundleContext) throws Exception {
         result = all(
             ignore(
-                register(
-                    Application.class,
-                    () -> new RestManagementApplication(bundleContext),
-                    () -> {
-                        HashMap<String, Object> map = new HashMap<>();
+                just(
+                    new RestManagementApplication(bundleContext)
+                ).flatMap(application ->
+                    register(
+                        Application.class,
+                        () -> application,
+                        () -> {
+                            HashMap<String, Object> map = new HashMap<>();
 
-                        map.put(JAX_RS_NAME, RestManagementApplication.class.getSimpleName());
-                        map.put(
-                            JaxrsWhiteboardConstants.JAX_RS_APPLICATION_BASE, RMS_BASE);
+                            map.put(JAX_RS_NAME, RestManagementApplication.class.getSimpleName());
+                            map.put(
+                                JaxrsWhiteboardConstants.JAX_RS_APPLICATION_BASE, RMS_BASE);
 
-                        return map;
-                    }
+                            return map;
+                        }
+                    ).then(
+                        dynamic(
+                            serviceReferences(
+                                RestApiExtension.class,
+                                "(&(org.osgi.rest.name=*)(org.osgi.rest.uri.path=*))"
+                            ),
+                            application::addExtension,
+                            application::removeExtension
+                        )
+                    )
                 )
             ),
             ignore(
@@ -162,6 +179,12 @@ public class RestManagementActivator implements BundleActivator {
     @Override
     public void stop(BundleContext context) throws Exception {
         result.close();
+    }
+
+    public static <T> OSGi<Void> dynamic(
+        OSGi<T> program, Consumer<T> bind, Consumer<T> unbind) {
+
+        return program.foreach(bind, unbind);
     }
 
     class PrototypeWrapper<S> implements PrototypeServiceFactory<S> {

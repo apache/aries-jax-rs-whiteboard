@@ -109,6 +109,18 @@ public class RestManagementConstants {
     public static final MediaType APPLICATION_BUNDLESTATE_XML_TYPE =
         new MediaType("application", "org.osgi.bundlestate+xml");
 
+    public static final String APPLICATION_EXTENSIONS_JSON =
+        "application/org.osgi.extensions+json";
+
+    public static final MediaType APPLICATION_EXTENSIONS_JSON_TYPE =
+        new MediaType("application", "org.osgi.extensions+json");
+
+    public static final String APPLICATION_EXTENSIONS_XML =
+        "application/org.osgi.extensions+xml";
+
+    public static final MediaType APPLICATION_EXTENSIONS_XML_TYPE =
+        new MediaType("application", "org.osgi.extensions+xml");
+
     public static final String APPLICATION_FRAMEWORKSTARTLEVEL_JSON =
         "application/org.osgi.frameworkstartlevel+json";
 
