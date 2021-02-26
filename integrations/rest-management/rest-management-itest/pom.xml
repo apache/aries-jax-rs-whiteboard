@@ -117,6 +117,18 @@
                     </bndruns>
                 </configuration>
             </plugin>
+            <plugin>
+                <groupId>biz.aQute.bnd</groupId>
+                <artifactId>bnd-run-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>rest-management</id>
+                    </execution>
+                </executions>
+                <configuration>
+                    <bndrun>rest-management.bndrun</bndrun>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
 
