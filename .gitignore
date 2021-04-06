@@ -6,6 +6,7 @@
 .project
 .flattened-pom.xml
 .settings/
+.vscode/
 */bin/
 **/build/
 **/generated/
