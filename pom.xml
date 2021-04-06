@@ -722,6 +722,15 @@
                 </dependency>
             </dependencies>
         </profile>
+        <profile>
+            <id>java-release-17+</id>
+            <activation>
+                <jdk>[17,)</jdk>
+            </activation>
+            <properties>
+                <spifly.extension.version>1.3.3-SNAPSHOT</spifly.extension.version>
+            </properties>
+        </profile>
     </profiles>
 
     <reporting>
