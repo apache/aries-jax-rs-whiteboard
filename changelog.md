@@ -1,11 +1,4 @@
-# Changelog
-
-*generated using*
-```
-git shortlog --branches=master --no-merges -c --format="- %h %s" -w0,2 <from_tag>..<commit> >> changelog.md
-```
-
-### 1.0.10 - 1.1.0
+## org.apache.aries.jax.rs-1.1.0
 
 Carlos Sierra Andrés (3):
   - 99cf69e Update versions
@@ -47,7 +40,7 @@ Raymond Augé (12):
 jbonofre (1):
   - 1c374b0 [maven-release-plugin] prepare for next development iteration
 
-### 1.0.9 - 1.0.10
+## org.apache.aries.jax.rs-1.0.10
 
 Carlos Sierra Andrés (8):
   - e8c4656 [ARIES-JAXRS-Whiteboard][maven-release-plugin] 1.0.9 prepare for next development iteration
@@ -72,7 +65,7 @@ Romain Manni-Bucau (5):
 jbonofre (1):
   - 6dd1a3a [maven-release-plugin] prepare release org.apache.aries.jax.rs-1.0.10
 
-### 1.0.8 - 1.0.9
+## org.apache.aries.jax.rs-1.0.9
 
 Carlos Sierra Andrés (12):
   - b04385c [ARIES-JAXRS-Whiteboard][maven-release-plugin] 1.0.8 prepare for next development iteration
@@ -119,7 +112,7 @@ Raymond Auge (20):
   - 87ef144 add exports required for java 15
   - 7f16404 fix cxf java 15 detection bug
 
-### 1.0.7 - 1.0.8
+## org.apache.aries.jax.rs-1.0.8
 
 Carlos Sierra Andrés (8):
   - 281f15a [ARIES-JAXRS-Whiteboard][maven-release-plugin] 1.0.7 prepare for next development iteration
@@ -131,7 +124,7 @@ Carlos Sierra Andrés (8):
   - 0608e52 Check in resolver output
   - 065e22c [ARIES-JAXRS-Whiteboard][maven-release-plugin] 1.0.8 prepare release org.apache.aries.jax.rs-1.0.8
 
-### 1.0.6 - 1.0.7
+## org.apache.aries.jax.rs-1.0.7
 
 Carlos Sierra (1):
   - 20c8a0a [ARIES-JAXRS-Whitebord][maven-release-plugin] 1.0.6 prepare for next development iteration
@@ -147,7 +140,7 @@ Carlos Sierra Andrés (6):
 Tim Ward (1):
   - 22a5cf6 Add tests showing that Aries JAX-RS can break static resource handling
 
-### 1.0.5 - 1.0.6
+## org.apache.aries.jax.rs-1.0.6
 
 Carlos Sierra (17):
   - c7ce0a6 [ARIES-JAX-RS-whiteboard][maven-release-plugin] 1.0.5 prepare for next development iteration
@@ -171,8 +164,7 @@ Carlos Sierra (17):
 Raymond Auge (1):
   - c607c3f build badges
 
-
-### 1.0.4 - 1.0.5
+## org.apache.aries.jax.rs-1.0.5
 
 Carlos Sierra (11):
   - e3bac54 [ARIES-JAX-RS-Whiteboard][maven-release-plugin] 1.0.4 prepare for next development iteration
@@ -196,7 +188,7 @@ Raymond Auge (4):
   - c1195de [eclipse] JDT just does not like this method usage so give in so that it will compile in eclipse
   - 64c2461 [tidy up] bnd 4.2.0, use bundle annotations where possible, etc.
 
-### 1.0.3 - 1.0.4
+## org.apache.aries.jax.rs-1.0.4
 
 Carlos Sierra (19):
   - d9d0081 [ARIES-JAX-RS-WHITEBOARD][maven-release-plugin] 1.0.3 prepare for next development iteration
@@ -219,7 +211,7 @@ Carlos Sierra (19):
   - 3a21658 [ARIES-1899] Unify configurations
   - 2805ad3 [ARIES-JAX-RS-Whiteboard][maven-release-plugin] 1.0.4 prepare release org.apache.aries.jax.rs-1.0.4
 
-### 1.0.2 - 1.0.3
+## org.apache.aries.jax.rs-1.0.3
 
 Carlos Sierra (11):
   - d520d4e [ARIES-JAX-RS Whiteboard][maven-release-plugin] 1.0.2prepare for next development iteration
@@ -242,7 +234,7 @@ Jean-Baptiste Onofré (3):
 Raymond Auge (1):
   - afff1b7 project and whitespace cleanup, eliminate other warnings (no logical changes at all)
 
-### 1.0.1 - 1.0.2
+## org.apache.aries.jax.rs-1.0.2
 
 Carlos Sierra (16):
   - 47506ef [ARIES-JAXRS-Whiteabord][maven-release-plugin] 1.0.1prepare for next development iteration
@@ -274,7 +266,7 @@ Raymond Auge (7):
   - 11eb9ce prevent eclipse m2e build from complaining
   - 9face0a re-resolve
 
-### 1.0.0 - 1.0.1
+## org.apache.aries.jax.rs-1.0.1
 
 Carlos Sierra (12):
   - e20e691 [ARIES-JAXRS-Whiteboard][maven-release-plugin] 1.0.0 prepare for next development iteration
