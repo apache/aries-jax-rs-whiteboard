@@ -16,5 +16,3 @@
 #    under the License.
 
 Provide-Capability: osgi.implementation;osgi.implementation="aries.jax-rs";version:Version="${Bundle-Version}"
-
--conditionalpackage: org.apache.aries.component.dsl.*

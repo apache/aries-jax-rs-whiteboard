@@ -16,5 +16,3 @@
 #    under the License.
 
 Export-Package: org.apache.aries.jax.rs.openapi;version=${openapi.version}
-
--conditionalpackage: org.apache.aries.component.dsl.*

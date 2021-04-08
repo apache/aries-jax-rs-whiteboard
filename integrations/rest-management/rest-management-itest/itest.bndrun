@@ -85,6 +85,7 @@
 	net.javacrumbs.json-unit.json-unit-json-path;version='[2.25.0,2.25.1)',\
 	net.minidev.accessors-smart;version='[1.2.0,1.2.1)',\
 	net.minidev.json-smart;version='[2.3.0,2.3.1)',\
+	org.apache.aries.component-dsl.component-dsl;version='[1.2.2,1.2.3)',\
 	org.apache.aries.jax.rs.openapi.resource;version='[2.0.0,2.0.1)',\
 	org.apache.aries.jax.rs.rest.management;version='[2.0.0,2.0.1)',\
 	org.apache.aries.jax.rs.rest.management.itest;version='[2.0.0,2.0.1)',\
