@@ -19,22 +19,25 @@ package org.apache.aries.jax.rs.whiteboard.internal;
 
 import org.apache.aries.component.dsl.OSGi;
 import org.apache.aries.component.dsl.OSGiResult;
-import org.apache.aries.component.dsl.internal.ConcurrentDoublyLinkedList;
+import org.osgi.framework.Constants;
 import org.osgi.framework.Filter;
 import org.osgi.framework.FrameworkUtil;
 import org.osgi.framework.InvalidSyntaxException;
 
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
+import static java.util.Objects.requireNonNull;
 import static org.apache.aries.component.dsl.OSGi.fromOsgiRunnable;
 
 public class Registry<T> implements AutoCloseable {
 
     public Registry() {
         _publishers = new HashSet<>();
-        _servicesWithPropertiesList = new ConcurrentDoublyLinkedList<>();
+        _servicesWithPropertiesList = new ArrayList<>();
     }
 
     @Override
@@ -87,9 +90,10 @@ public class Registry<T> implements AutoCloseable {
     public OSGi<T> registerService(T service, Map<String, ?> properties) {
         return (bc, p) -> {
             synchronized (Registry.this) {
-                ConcurrentDoublyLinkedList.Node node =
-                    _servicesWithPropertiesList.addLast(
-                        new ServiceWithProperties<>(service, properties));
+                final ServiceWithProperties<T> serviceWithProperties =
+                    new ServiceWithProperties<>(service, properties);
+
+                _servicesWithPropertiesList.add(serviceWithProperties);
 
                 OSGiResult result = p.publish(service);
 
@@ -108,7 +112,8 @@ public class Registry<T> implements AutoCloseable {
                         }
 
                         result.close();
-                        node.remove();
+                        _servicesWithPropertiesList.remove(
+                            serviceWithProperties);
                     }
                 };
             }
@@ -117,18 +122,38 @@ public class Registry<T> implements AutoCloseable {
 
 
     private final HashSet<FilteredPublisher<T>> _publishers;
-    private final ConcurrentDoublyLinkedList<ServiceWithProperties<T>>
-        _servicesWithPropertiesList;
+    private final List<ServiceWithProperties<T>> _servicesWithPropertiesList;
 
     private static class ServiceWithProperties<T> {
 
-        T service;
-        Map<String, ?> properties;
+        final T service;
+        final Map<String, ?> properties;
+        final Long serviceId;
 
         ServiceWithProperties(T service, Map<String, ?> properties) {
-            this.service = service;
-            this.properties = properties;
+            this.service = requireNonNull(service);
+            this.properties = requireNonNull(properties);
+            this.serviceId = requireNonNull(
+                (Long)properties.get(Constants.SERVICE_ID));
         }
+
+        @Override
+        public int hashCode() {
+            return Objects.hashCode(serviceId);
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj)
+                return true;
+            if (obj == null)
+                return false;
+            if (getClass() != obj.getClass())
+                return false;
+            ServiceWithProperties<?> other = (ServiceWithProperties<?>) obj;
+            return Objects.equals(other.serviceId, serviceId);
+        }
+
     }
 
 }
