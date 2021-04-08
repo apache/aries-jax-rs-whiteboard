@@ -19,5 +19,3 @@
 # Support is not an OSGi bundle
 
 -includepackage: org.apache.shiro.web.jaxrs;version=${shiro.version}
-
--conditionalpackage: org.apache.aries.component.dsl.*
