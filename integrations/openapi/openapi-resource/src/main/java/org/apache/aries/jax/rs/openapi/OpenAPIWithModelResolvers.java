@@ -12,12 +12,9 @@
 package org.apache.aries.jax.rs.openapi;
 
 import io.swagger.v3.core.converter.ModelConverter;
-import io.swagger.v3.core.jackson.ModelResolver;
 import io.swagger.v3.oas.models.OpenAPI;
 import org.apache.aries.component.dsl.CachingServiceReference;
 
-import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 /**

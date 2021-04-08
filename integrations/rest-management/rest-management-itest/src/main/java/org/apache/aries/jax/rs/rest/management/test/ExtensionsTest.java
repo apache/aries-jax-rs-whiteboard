@@ -27,7 +27,6 @@ import org.apache.aries.jax.rs.rest.management.schema.ExtensionsSchema;
 import org.junit.jupiter.api.Test;
 import org.osgi.service.rest.RestApiExtension;
 import org.osgi.test.common.dictionary.Dictionaries;
-import org.osgi.test.common.stream.MapStream;
 import org.xmlunit.assertj3.XmlAssert;
 
 import net.javacrumbs.jsonunit.assertj.JsonAssertions;

@@ -27,7 +27,6 @@ import io.swagger.v3.core.util.Json;
 import io.swagger.v3.oas.models.info.Contact;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.OpenAPI;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import org.osgi.framework.ServiceRegistration;

@@ -129,7 +129,6 @@ public class TestUtil {
         return new String[]{propertyValue.toString()};
     }
 
-    @SuppressWarnings("restriction")
     public static class HttpServer implements AutoCloseable {
 
         private final com.sun.net.httpserver.HttpServer server;
