@@ -59,7 +59,7 @@
         <geronimo.json.version>1.5</geronimo.json.version>
         <hamcrest.version>2.2</hamcrest.version>
         <johnzon.version>1.2.10</johnzon.version>
-        <jackson.version>2.12.2</jackson.version>
+        <jackson.version>2.12.3</jackson.version>
         <jaxb.version>2.3.3</jaxb.version>
         <jettison.version>1.4.1</jettison.version>
         <json.unit.assertj.version>2.25.0</json.unit.assertj.version>
