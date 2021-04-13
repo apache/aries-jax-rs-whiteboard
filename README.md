@@ -29,6 +29,12 @@ application.ready.service.filter        |                               | A serv
 
 properties existing in the application service, as those in the whiteboard configuration, are used when the servlet contexts and servlets are registered.
 
+Proprietary Property                                  | Default                       | Description
+------------------------------------------------------|-------------------------------|--------------------------------------------------------
+org.apache.aries.jax.rs.whiteboard.application.scoped | false                         | Marks a resource prototype service as application scoped 
+
+
+
 ## Integrations
 
 The `integrations` folder contains OSGi enabled integrations for a variety of useful libraries that you might want to use with JAX-RS. In many cases these are just adding OSGi lifecycle and configuration to existing JAX-RS enabled libraries.
