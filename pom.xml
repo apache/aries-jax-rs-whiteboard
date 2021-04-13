@@ -82,7 +82,7 @@
         <osgi.test.version>0.10.0</osgi.test.version>
         <shiro.version>1.7.1</shiro.version>
         <slf4j.version>1.7.30</slf4j.version>
-        <spifly.extension.version>1.3.2</spifly.extension.version>
+        <spifly.extension.version>1.3.3</spifly.extension.version>
         <xmlunit.assertj3.version>2.8.2</xmlunit.assertj3.version>
     </properties>
 
@@ -720,15 +720,6 @@
                     <artifactId>jakarta.xml.ws-api</artifactId>
                 </dependency>
             </dependencies>
-        </profile>
-        <profile>
-            <id>java-release-17+</id>
-            <activation>
-                <jdk>[17,)</jdk>
-            </activation>
-            <properties>
-                <spifly.extension.version>1.3.3-SNAPSHOT</spifly.extension.version>
-            </properties>
         </profile>
     </profiles>
 
