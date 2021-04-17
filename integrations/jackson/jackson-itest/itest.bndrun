@@ -44,13 +44,14 @@
 	org.apache.aries.spifly.auto.providers=com.sun.*
 
 -runbundles: \
-	com.fasterxml.jackson.core.jackson-annotations;version='[2.12.1,2.12.2)',\
-	com.fasterxml.jackson.core.jackson-core;version='[2.12.1,2.12.2)',\
-	com.fasterxml.jackson.core.jackson-databind;version='[2.12.1,2.12.2)',\
-	com.fasterxml.jackson.jaxrs.jackson-jaxrs-base;version='[2.12.1,2.12.2)',\
-	com.fasterxml.jackson.jaxrs.jackson-jaxrs-json-provider;version='[2.12.1,2.12.2)',\
-	com.fasterxml.jackson.module.jackson-module-jaxb-annotations;version='[2.12.1,2.12.2)',\
+	com.fasterxml.jackson.core.jackson-annotations;version='[2.12.3,2.12.4)',\
+	com.fasterxml.jackson.core.jackson-core;version='[2.12.3,2.12.4)',\
+	com.fasterxml.jackson.core.jackson-databind;version='[2.12.3,2.12.4)',\
+	com.fasterxml.jackson.jaxrs.jackson-jaxrs-base;version='[2.12.3,2.12.4)',\
+	com.fasterxml.jackson.jaxrs.jackson-jaxrs-json-provider;version='[2.12.3,2.12.4)',\
+	com.fasterxml.jackson.module.jackson-module-jaxb-annotations;version='[2.12.3,2.12.4)',\
 	com.fasterxml.woodstox.woodstox-core;version='[6.2.4,6.2.5)',\
+	com.sun.istack.commons-runtime;version='[3.0.11,3.0.12)',\
 	com.sun.xml.bind.jaxb-osgi;version='[2.3.3,2.3.4)',\
 	jakarta.xml.bind-api;version='[2.3.3,2.3.4)',\
 	org.apache.aries.component-dsl.component-dsl;version='[1.2.2,1.2.3)',\

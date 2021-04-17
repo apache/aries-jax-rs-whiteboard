@@ -110,6 +110,7 @@
 	org.apache.johnzon.core;version='[1.2.10,1.2.11)',\
 	org.apache.johnzon.mapper;version='[1.2.10,1.2.11)',\
 	org.apache.ws.xmlschema.core;version='[2.2.5,2.2.6)',\
+	org.glassfish.jaxb.runtime;version='[2.3.3,2.3.4)',\
 	org.hamcrest;version='[2.2.0,2.2.1)',\
 	org.objectweb.asm;version='[5.0.4,5.0.5)',\
 	org.opentest4j;version='[1.2.0,1.2.1)',\

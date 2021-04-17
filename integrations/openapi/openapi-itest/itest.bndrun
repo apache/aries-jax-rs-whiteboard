@@ -54,6 +54,7 @@
 	com.fasterxml.jackson.dataformat.jackson-dataformat-yaml;version='[2.12.1,2.12.2)',\
 	com.fasterxml.jackson.datatype.jackson-datatype-jsr310;version='[2.12.1,2.12.2)',\
 	com.fasterxml.woodstox.woodstox-core;version='[6.2.4,6.2.5)',\
+	com.sun.istack.commons-runtime;version='[3.0.11,3.0.12)',\
 	com.sun.xml.bind.jaxb-osgi;version='[2.3.3,2.3.4)',\
 	io.github.classgraph.classgraph;version='[4.8.95,4.8.96)',\
 	io.swagger.core.v3.swagger-annotations;version='[2.1.7,2.1.8)',\
