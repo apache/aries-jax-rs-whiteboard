@@ -59,7 +59,7 @@ public class TestUtil {
     @InjectService(
         filter = "(%s=*)",
         filterArguments = JAX_RS_SERVICE_ENDPOINT,
-        timeout = 2000l
+        timeout = 800l
     )
     public ServiceAware<JaxrsServiceRuntime> jaxrsServiceRuntimeAware;
 
