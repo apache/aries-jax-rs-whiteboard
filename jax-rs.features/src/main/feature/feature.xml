@@ -19,8 +19,6 @@
 -->
 <features name="aries-jax-rs-${project.version}" xmlns="http://karaf.apache.org/xmlns/features/v1.3.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://karaf.apache.org/xmlns/features/v1.3.0 http://karaf.apache.org/xmlns/features/v1.3.0">
 
-    <repository>mvn:org.apache.karaf.features/standard/[4,5)/xml/features</repository>
-
     <feature version="${project.version}" name="aries-jax-rs-whiteboard">
         <feature>http-whiteboard</feature>
         <bundle dependency="true">mvn:org.apache.aries.spec/org.apache.aries.javax.jax.rs-api/1.0.1</bundle>
