@@ -64,7 +64,7 @@
         <jettison.version>1.4.1</jettison.version>
         <json.unit.assertj.version>2.25.0</json.unit.assertj.version>
         <junit.version>4.13.2</junit.version>
-        <junit.jupiter.version>5.7.1</junit.jupiter.version>
+        <junit.jupiter.version>5.7.2</junit.jupiter.version>
         <junit.platform.version>1.7.2</junit.platform.version>
         <logback.version>1.2.3</logback.version>
         <openapi.version>2.1.9</openapi.version>
