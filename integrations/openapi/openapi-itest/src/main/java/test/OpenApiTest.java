@@ -163,15 +163,6 @@ public class OpenApiTest extends TestHelper {
 
         OpenAPI openAPI = new OpenAPI();
 
-        openAPI.info(
-            new Info()
-                .title("My Service")
-                .description("Service REST API")
-                .contact(
-                    new Contact()
-                        .email("oschweitzer@me.com"))
-        );
-
         @SuppressWarnings({"unchecked", "rawtypes", "serial"})
         ServiceRegistration<OpenAPI> serviceRegistration =
             bundleContext.registerService(
@@ -195,6 +186,9 @@ public class OpenApiTest extends TestHelper {
 
             String response = webTarget.request().get(String.class);
 
+            assertTrue(response.matches(".*\"title\":\\s*\"My Service\".*"));
+            assertTrue(response.matches(".*\"description\":\\s*\"Service REST API\".*"));
+            assertTrue(response.matches(".*\"email\":\\s*\"oschweitzer@me.com\".*"));
             assertTrue(response.contains("\"/operation\":"));
 
             webTarget = createDefaultTarget().

@@ -70,7 +70,7 @@ public class OpenApiResource extends BaseOpenApiResource {
             .ctxId(ctxId)
             .buildContext(false);
 
-        ctx.setOpenApiScanner(new JaxrsWhiteboardScanner(applicationClasses));
+        ctx.setOpenApiScanner(new JaxrsWhiteboardScanner(app, applicationClasses));
 
         ctx.init();
 
