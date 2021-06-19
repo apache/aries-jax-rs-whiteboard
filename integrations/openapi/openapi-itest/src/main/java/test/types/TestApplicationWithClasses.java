@@ -17,6 +17,10 @@
 
 package test.types;
 
+import io.swagger.v3.oas.annotations.OpenAPIDefinition;
+import io.swagger.v3.oas.annotations.info.Contact;
+import io.swagger.v3.oas.annotations.info.Info;
+
 import java.util.Collections;
 import java.util.Set;
 
@@ -25,6 +29,15 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Application;
 
+@OpenAPIDefinition(
+        info = @Info(
+                title = "My Service",
+                description = "Service REST API",
+                contact = @Contact(
+                        email = "oschweitzer@me.com"
+                )
+        )
+)
 public class TestApplicationWithClasses extends Application {
 
     @Override
