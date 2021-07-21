@@ -33,12 +33,14 @@ import org.apache.aries.jax.rs.whiteboard.internal.client.ClientBuilderFactory;
 import org.apache.aries.jax.rs.whiteboard.internal.utils.PropertyHolder;
 import org.apache.aries.component.dsl.OSGi;
 import org.apache.aries.component.dsl.OSGiResult;
+import org.apache.cxf.bus.osgi.CXFActivator;
 import org.apache.cxf.jaxrs.impl.RuntimeDelegateImpl;
 import org.apache.cxf.jaxrs.sse.client.SseEventSourceBuilderImpl;
 import org.osgi.annotation.bundle.Header;
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.Constants;
+import org.osgi.framework.FrameworkUtil;
 import org.osgi.service.http.runtime.HttpServiceRuntime;
 import org.osgi.service.jaxrs.client.SseEventSourceFactory;
 import org.slf4j.Logger;
@@ -52,6 +54,7 @@ import static org.apache.aries.jax.rs.whiteboard.internal.utils.LogUtils.debugTr
 import static org.apache.aries.jax.rs.whiteboard.internal.utils.Utils.canonicalize;
 import static org.apache.aries.jax.rs.whiteboard.internal.Whiteboard.createWhiteboard;
 import static org.apache.aries.component.dsl.OSGi.all;
+import static org.apache.aries.component.dsl.OSGi.bundles;
 import static org.apache.aries.component.dsl.OSGi.configurations;
 import static org.apache.aries.component.dsl.OSGi.effects;
 import static org.apache.aries.component.dsl.OSGi.ignore;
@@ -59,6 +62,7 @@ import static org.apache.aries.component.dsl.OSGi.just;
 import static org.apache.aries.component.dsl.OSGi.once;
 import static org.apache.aries.component.dsl.OSGi.register;
 import static org.apache.aries.component.dsl.OSGi.serviceReferences;
+import static org.osgi.framework.Bundle.ACTIVE;
 import static org.osgi.service.http.runtime.HttpServiceRuntimeConstants.HTTP_SERVICE_ENDPOINT;
 import static org.osgi.service.http.whiteboard.HttpWhiteboardConstants.HTTP_WHITEBOARD_TARGET;
 
@@ -86,29 +90,32 @@ public class CxfJaxrsBundleActivator implements BundleActivator {
         }
 
         OSGi<?> runWhiteboards =
-            all(
-                configurations("org.apache.aries.jax.rs.whiteboard"),
-                coalesce(
-                    configuration("org.apache.aries.jax.rs.whiteboard.default"),
-                    just(() -> {
-                        Dictionary<String, Object> properties =
-                            new Hashtable<>();
-
-                        properties.put(
-                            Constants.SERVICE_PID,
-                            "org.apache.aries.jax.rs.whiteboard.default");
-
-                        return properties;
-                    })
-            )
-        ).filter(
-            c -> !Objects.equals(c.get("enabled"), "false")
-        ).
-        effects(
-            debugTracking(_log, () -> "whiteboard configuration")
-        ).flatMap(configuration ->
-            runWhiteboard(bundleContext, configuration)
-        );
+        	bundles(ACTIVE)
+        	.filter(b -> b.equals(FrameworkUtil.getBundle(CXFActivator.class)))
+        	.then(
+	            all(
+	                configurations("org.apache.aries.jax.rs.whiteboard"),
+	                coalesce(
+	                    configuration("org.apache.aries.jax.rs.whiteboard.default"),
+	                    just(() -> {
+	                        Dictionary<String, Object> properties =
+	                            new Hashtable<>();
+	
+	                        properties.put(
+	                            Constants.SERVICE_PID,
+	                            "org.apache.aries.jax.rs.whiteboard.default");
+	
+	                        return properties;
+	                    })
+	            )
+	        ).filter(
+	            c -> !Objects.equals(c.get("enabled"), "false")
+	        ).
+	        effects(
+	            debugTracking(_log, () -> "whiteboard configuration")
+	        ).flatMap(configuration ->
+	            runWhiteboard(bundleContext, configuration)
+	        ));
 
         _defaultOSGiResult =
             all(
