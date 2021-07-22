@@ -1,0 +1,7 @@
+-runfw: org.eclipse.osgi
+
+-resolve.effective: resolve, active
+
+-runrequires: \
+	osgi.identity;filter:='(osgi.identity=org.apache.aries.jax.rs.whiteboard)'
+-runee: JavaSE-1.8

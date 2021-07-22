@@ -64,6 +64,36 @@
                     </bndruns>
                 </configuration>
             </plugin>
+            <plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-invoker-plugin</artifactId>
+				<version>3.2.2</version>
+				<configuration>
+					<cloneProjectsTo>${project.build.directory}/integration-test/projects</cloneProjectsTo>
+					<cloneClean>true</cloneClean>
+					<projectsDirectory>src/test/resources/integration-test</projectsDirectory>
+					<streamLogs>true</streamLogs>
+					<useLocalRepository>true</useLocalRepository>
+					<scriptVariables>
+						<bndVersion>${project.version}</bndVersion>
+					</scriptVariables>
+					<mavenOpts>${mavenOpts}</mavenOpts>
+					<goals>
+						<goal>--no-transfer-progress</goal>
+						<goal>package</goal>
+					</goals>
+					
+				</configuration>
+				<executions>
+					<execution>
+						<id>integration-test</id>
+						<goals>
+							<goal>install</goal>
+							<goal>run</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
         </plugins>
     </build>
     <dependencies>

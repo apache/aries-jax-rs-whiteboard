@@ -35,6 +35,10 @@
             <artifactId>org.apache.aries.component-dsl.component-dsl</artifactId>
         </dependency>
         <dependency>
+            <groupId>jakarta.xml.bind</groupId>
+            <artifactId>jakarta.xml.bind-api</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.apache.aries.jax.rs</groupId>
             <artifactId>org.apache.aries.jax.rs.openapi.resource</artifactId>
             <version>${project.version}</version>
