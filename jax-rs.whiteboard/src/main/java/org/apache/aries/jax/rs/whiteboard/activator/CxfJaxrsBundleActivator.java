@@ -18,6 +18,7 @@
 package org.apache.aries.jax.rs.whiteboard.activator;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Dictionary;
 import java.util.Hashtable;
 import java.util.List;
@@ -69,15 +70,25 @@ import static org.osgi.service.http.whiteboard.HttpWhiteboardConstants.HTTP_WHIT
 @Header(name = Constants.BUNDLE_ACTIVATOR, value = "${@class}")
 public class CxfJaxrsBundleActivator implements BundleActivator {
 
-    public static final List<Class<?>> INTERNALLY_REQUIRED_CLASSES = Arrays.asList(
-        com.ctc.wstx.stax.WstxInputFactory.class,
-        com.sun.xml.bind.annotation.XmlLocation.class
-    );
+    public static final List<Class<?>> INTERNALLY_REQUIRED_CLASSES; 
 
     private static final Logger _log = LoggerFactory.getLogger(
         CxfJaxrsBundleActivator.class);
 
     static {
+    	Class<?> xmlLocation;
+    	try {
+    		xmlLocation = com.sun.xml.bind.annotation.XmlLocation.class;
+    	} catch (NoClassDefFoundError e) {
+    		// Swallow it
+    		xmlLocation = null;
+    	}
+    	
+    	Class<?> wstxInputFactory = com.ctc.wstx.stax.WstxInputFactory.class;
+    	
+    	INTERNALLY_REQUIRED_CLASSES = xmlLocation == null ? Collections.singletonList(wstxInputFactory) :
+    		Arrays.asList(wstxInputFactory, xmlLocation);
+    	
         RuntimeDelegate.setInstance(new RuntimeDelegateImpl());
     }
 

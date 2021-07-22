@@ -14,3 +14,6 @@
 #    KIND, either express or implied.  See the License for the
 #    specific language governing permissions and limitations
 #    under the License.
+
+# We have a wide range for JAX-B to run on Java 8
+Import-Package: javax.xml.bind.*;version="${range;[0,+)}", *
