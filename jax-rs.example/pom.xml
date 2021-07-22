@@ -80,21 +80,55 @@
         </plugins>
     </build>
     <dependencies>
+        <!-- These compile dependencies are used directly by the example resource -->
         <dependency>
             <groupId>org.osgi</groupId>
             <artifactId>org.osgi.service.component.annotations</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.osgi</groupId>
+            <artifactId>org.osgi.service.jaxrs</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.geronimo.specs</groupId>
+            <artifactId>geronimo-jaxrs_2.1_spec</artifactId>
+        </dependency>
 
+
+        <!-- This runtime dependency is a Declarative Services implementation, 
+        used to publish the example resource as an OSGi service-->
         <dependency>
             <groupId>org.apache.felix</groupId>
             <artifactId>org.apache.felix.scr</artifactId>
             <scope>runtime</scope>
         </dependency>
+
+        <!-- This runtime dependency is the Aries JAX-RS whiteboard, used to
+        provide a JAX-RS runtime for hosting the Foo service  -->
         <dependency>
             <groupId>org.apache.aries.jax.rs</groupId>
             <artifactId>org.apache.aries.jax.rs.whiteboard</artifactId>
             <version>${project.version}</version>
-            <scope>runtime</scope>
+        </dependency>
+        
+        <!-- These runtime dependencies are needed to run the JAX-RS whiteboard,
+         * Felix Http Jetty provides an HTTP whiteboard implementation 
+         * Felix Configuration Admin provides configuration support, 
+         * Eclipse Equinox is the OSGi framework implementation 
+         
+         You can choose different implementations if you prefer.
+         -->
+        <dependency>
+            <groupId>org.apache.felix</groupId>
+            <artifactId>org.apache.felix.http.jetty</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.felix</groupId>
+            <artifactId>org.apache.felix.configadmin</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.platform</groupId>
+            <artifactId>org.eclipse.osgi</artifactId>
         </dependency>
     </dependencies>
 </project>

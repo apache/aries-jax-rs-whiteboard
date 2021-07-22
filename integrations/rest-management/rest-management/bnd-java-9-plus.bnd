@@ -15,14 +15,6 @@
 #    specific language governing permissions and limitations
 #    under the License.
 
-# Different behaviour needed on JDK 9 and higher
 Multi-Release: true
 
-# The Sun JAX-B impl is complicated because of Java 8. Optional on Java 8 as we can use the JDK version,
-# and a broad range for the JAX-B API
-Import-Package: \
-    com.sun.xml.bind.annotation;resolution:=optional, \
-    javax.xml.bind.*;version="${range;[0,+)}", \
-    *
-
-Provide-Capability: osgi.implementation;osgi.implementation="aries.jax-rs";version:Version="${Bundle-Version}"
+# No need to customise the import for JAX-B
