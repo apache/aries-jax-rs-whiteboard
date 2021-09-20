@@ -54,7 +54,7 @@ java.9.plus.reqs: \
 	org.apache.aries.spifly.auto.providers=com.sun.*
 
 -runbundles: \
-	assertj-core;version='[3.19.0,3.19.1)',\
+	assertj-core;version='[3.21.0,3.21.1)',\
 	com.fasterxml.woodstox.woodstox-core;version='[6.2.4,6.2.5)',\
 	org.apache.aries.component-dsl.component-dsl;version='[1.2.2,1.2.3)',\
 	org.apache.aries.jax.rs.itests;version='[2.0.2,2.0.3)',\

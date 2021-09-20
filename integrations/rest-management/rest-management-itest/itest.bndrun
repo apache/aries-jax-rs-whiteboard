@@ -65,7 +65,7 @@ java.9.plus.reqs: \
     org.apache.aries.spifly.auto.providers=com.sun.*
 
 -runbundles: \
-	assertj-core;version='[3.19.0,3.19.1)',\
+	assertj-core;version='[3.21.0,3.21.1)',\
 	com.fasterxml.jackson.core.jackson-annotations;version='[2.12.1,2.12.2)',\
 	com.fasterxml.jackson.core.jackson-core;version='[2.12.1,2.12.2)',\
 	com.fasterxml.jackson.core.jackson-databind;version='[2.12.1,2.12.2)',\
@@ -87,9 +87,9 @@ java.9.plus.reqs: \
 	junit-platform-commons;version='[1.7.2,1.7.3)',\
 	junit-platform-engine;version='[1.7.2,1.7.3)',\
 	junit-platform-launcher;version='[1.7.2,1.7.3)',\
-	net.javacrumbs.json-unit.json-unit-assertj;version='[2.25.0,2.25.1)',\
-	net.javacrumbs.json-unit.json-unit-core;version='[2.25.0,2.25.1)',\
-	net.javacrumbs.json-unit.json-unit-json-path;version='[2.25.0,2.25.1)',\
+	net.javacrumbs.json-unit.json-unit-assertj;version='[2.28.0,2.28.1)',\
+	net.javacrumbs.json-unit.json-unit-core;version='[2.28.0,2.28.1)',\
+	net.javacrumbs.json-unit.json-unit-json-path;version='[2.28.0,2.28.1)',\
 	net.minidev.accessors-smart;version='[1.2.0,1.2.1)',\
 	net.minidev.json-smart;version='[2.3.0,2.3.1)',\
 	org.apache.aries.component-dsl.component-dsl;version='[1.2.2,1.2.3)',\
