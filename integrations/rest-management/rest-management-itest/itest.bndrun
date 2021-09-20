@@ -93,10 +93,10 @@ java.9.plus.reqs: \
 	net.minidev.accessors-smart;version='[1.2.0,1.2.1)',\
 	net.minidev.json-smart;version='[2.3.0,2.3.1)',\
 	org.apache.aries.component-dsl.component-dsl;version='[1.2.2,1.2.3)',\
-	org.apache.aries.jax.rs.openapi.resource;version='[2.0.1,2.0.2)',\
-	org.apache.aries.jax.rs.rest.management;version='[2.0.1,2.0.2)',\
-	org.apache.aries.jax.rs.rest.management.itest;version='[2.0.1,2.0.2)',\
-	org.apache.aries.jax.rs.whiteboard;version='[2.0.1,2.0.2)',\
+	org.apache.aries.jax.rs.openapi.resource;version='[2.0.2,2.0.3)',\
+	org.apache.aries.jax.rs.rest.management;version='[2.0.2,2.0.3)',\
+	org.apache.aries.jax.rs.rest.management.itest;version='[2.0.2,2.0.3)',\
+	org.apache.aries.jax.rs.whiteboard;version='[2.0.2,2.0.3)',\
 	org.apache.aries.spifly.dynamic.framework.extension;version='[1.3.3,1.3.4)',\
 	org.apache.commons.lang3;version='[3.12.0,3.12.1)',\
 	org.apache.cxf.cxf-core;version='[3.4.3,3.4.4)',\
