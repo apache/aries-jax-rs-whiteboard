@@ -73,6 +73,7 @@
 					<cloneClean>true</cloneClean>
 					<projectsDirectory>src/test/resources/integration-test</projectsDirectory>
 					<streamLogs>true</streamLogs>
+					<localRepositoryPath>${project.build.directory}/it-repo</localRepositoryPath>
 					<useLocalRepository>true</useLocalRepository>
 					<scriptVariables>
 						<bndVersion>${project.version}</bndVersion>
