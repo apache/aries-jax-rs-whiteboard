@@ -20,27 +20,57 @@ package test;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
+import javax.ws.rs.client.ClientBuilder;
+
 import org.apache.cxf.bus.osgi.CXFActivator;
 import org.junit.Test;
 import org.osgi.framework.Bundle;
+import org.osgi.framework.BundleException;
 import org.osgi.framework.FrameworkUtil;
+import org.osgi.service.jaxrs.client.SseEventSourceFactory;
+import org.osgi.util.tracker.ServiceTracker;
 
 import test.types.TestHelper;
 
 public class WhiteboardLifecycleTest extends TestHelper {
 
     @Test
-    public void testCXFLifecycle() throws Exception {
-    	assertNotNull(_runtimeTracker.getService());
+    public void testCXFLifecycleWhiteboard() throws Exception {
+    	testTracking(_runtimeTracker);
+    }
+
+	private void testTracking(ServiceTracker<?,?> tracker) throws BundleException, InterruptedException {
+		assertNotNull(tracker.waitForService(5000));
     	
     	Bundle cxfBundle = FrameworkUtil.getBundle(CXFActivator.class);
 		cxfBundle.stop();
+		try {
+			assertNull(tracker.getService());
+		} finally {
+			cxfBundle.start();
+		}
 		
-		assertNull(_runtimeTracker.getService());
-		
-		cxfBundle.start();
-		
-		assertNotNull(_runtimeTracker.waitForService(5000));
+		assertNotNull(tracker.waitForService(5000));
+	}
+    
+    @Test
+    public void testCXFLifecycleClientBuilder() throws Exception {
+    	ServiceTracker<ClientBuilder, ClientBuilder> tracker = new ServiceTracker<>(bundleContext, ClientBuilder.class, null);
+    	tracker.open();
+    	
+    	testTracking(tracker);
+    	
+    	tracker.close();
+    }
+
+    @Test
+    public void testCXFLifecycleSseBuilderFactory() throws Exception {
+    	ServiceTracker<SseEventSourceFactory, SseEventSourceFactory> tracker = new ServiceTracker<>(bundleContext, SseEventSourceFactory.class, null);
+    	tracker.open();
+    	
+    	testTracking(tracker);
+    	
+    	tracker.close();
     }
 
 }
