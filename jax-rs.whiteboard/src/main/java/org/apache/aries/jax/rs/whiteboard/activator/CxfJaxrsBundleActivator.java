@@ -38,10 +38,13 @@ import org.apache.cxf.bus.osgi.CXFActivator;
 import org.apache.cxf.jaxrs.impl.RuntimeDelegateImpl;
 import org.apache.cxf.jaxrs.sse.client.SseEventSourceBuilderImpl;
 import org.osgi.annotation.bundle.Header;
+import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.Constants;
 import org.osgi.framework.FrameworkUtil;
+import org.osgi.framework.PrototypeServiceFactory;
+import org.osgi.framework.ServiceRegistration;
 import org.osgi.service.http.runtime.HttpServiceRuntime;
 import org.osgi.service.jaxrs.client.SseEventSourceFactory;
 import org.slf4j.Logger;
@@ -100,24 +103,21 @@ public class CxfJaxrsBundleActivator implements BundleActivator {
             _log.debug("Starting the whiteboard factory");
         }
 
-        OSGi<?> runWhiteboards =
-        	bundles(ACTIVE)
-        	.filter(b -> b.equals(FrameworkUtil.getBundle(CXFActivator.class)))
-        	.then(
-	            all(
-	                configurations("org.apache.aries.jax.rs.whiteboard"),
-	                coalesce(
-	                    configuration("org.apache.aries.jax.rs.whiteboard.default"),
-	                    just(() -> {
-	                        Dictionary<String, Object> properties =
-	                            new Hashtable<>();
+        OSGi<?> runWhiteboards = 
+	        all(
+	            configurations("org.apache.aries.jax.rs.whiteboard"),
+	            coalesce(
+	                configuration("org.apache.aries.jax.rs.whiteboard.default"),
+	                just(() -> {
+	                    Dictionary<String, Object> properties =
+	                        new Hashtable<>();
 	
-	                        properties.put(
-	                            Constants.SERVICE_PID,
-	                            "org.apache.aries.jax.rs.whiteboard.default");
+	                    properties.put(
+	                        Constants.SERVICE_PID,
+	                        "org.apache.aries.jax.rs.whiteboard.default");
 	
-	                        return properties;
-	                    })
+	                    return properties;
+	                })
 	            )
 	        ).filter(
 	            c -> !Objects.equals(c.get("enabled"), "false")
@@ -126,20 +126,30 @@ public class CxfJaxrsBundleActivator implements BundleActivator {
 	            debugTracking(_log, () -> "whiteboard configuration")
 	        ).flatMap(configuration ->
 	            runWhiteboard(bundleContext, configuration)
-	        ));
+	        );
 
         _defaultOSGiResult =
-            all(
-                ignore(registerClient()),
-                ignore(registerSseEventSourceFactory()),
-                ignore(runWhiteboards)
-            )
-        .run(bundleContext);
+        	waitForCXF().
+        	then(
+        		all(
+        			ignore(registerRuntimeDelegate()),
+        			ignore(registerClient()),
+      				ignore(registerSseEventSourceFactory()),
+        			ignore(registerSseEventSourceBuilder()),
+        			ignore(runWhiteboards)
+        		)
+        	).
+        	run(bundleContext);
 
         if (_log.isDebugEnabled()) {
             _log.debug("Whiteboard factory started");
         }
     }
+
+	private OSGi<Bundle> waitForCXF() {
+		return bundles(ACTIVE)
+		.filter(b -> b.equals(FrameworkUtil.getBundle(CXFActivator.class)));
+	}
 
     @Override
     public void stop(BundleContext context) throws Exception {
@@ -172,6 +182,16 @@ public class CxfJaxrsBundleActivator implements BundleActivator {
             targetFilter);
     }
 
+    private static OSGi<?> registerRuntimeDelegate() {
+    	return register(
+    			RuntimeDelegate.class, new RuntimeDelegateImpl(),
+    			(Map<String, Object>) null).
+    			effects(
+    					ifInfoEnabled(_log, () -> "Registered RuntimeDelegate"),
+    					ifInfoEnabled(_log, () -> "Unregistered RuntimeDelegate")
+    					);
+    }
+    
     private static OSGi<?> registerClient() {
         return register(
             ClientBuilder.class, new ClientBuilderFactory(),
@@ -200,6 +220,27 @@ public class CxfJaxrsBundleActivator implements BundleActivator {
                 ifInfoEnabled(_log, () -> "Registered SseEventSourceFactory"),
                 ifInfoEnabled(_log, () -> "Unregistered SseEventSourceFactory")
             );
+    }
+
+    private static OSGi<?> registerSseEventSourceBuilder() {
+    	return register(
+    			SseEventSource.Builder.class, new PrototypeServiceFactory<SseEventSource.Builder>() {
+
+					@Override
+					public SseEventSource.Builder getService(Bundle bundle,
+							ServiceRegistration<SseEventSource.Builder> registration) {
+						return new SseEventSourceBuilderImpl();
+					}
+
+					@Override
+					public void ungetService(Bundle bundle, ServiceRegistration<SseEventSource.Builder> registration,
+							SseEventSource.Builder service) {}
+    			},
+    			new Hashtable<>()).
+    			effects(
+    					ifInfoEnabled(_log, () -> "Registered SseEventSource.Builder"),
+    					ifInfoEnabled(_log, () -> "Unregistered SseEventSource.Builder")
+    					);
     }
 
     private static OSGi<?> runWhiteboard(

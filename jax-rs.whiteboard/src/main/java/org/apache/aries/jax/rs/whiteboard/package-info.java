@@ -33,8 +33,21 @@
     attribute = "objectClass:List<String>='javax.ws.rs.client.ClientBuilder'",
     namespace = ServiceNamespace.SERVICE_NAMESPACE,
     uses = {
-        javax.ws.rs.client.ClientBuilder.class,
-        org.osgi.service.jaxrs.client.SseEventSourceFactory.class
+        javax.ws.rs.client.ClientBuilder.class
+    }
+)
+@Capability(
+    attribute = "objectClass:List<String>='javax.ws.rs.sse.SseEventSource.Builder'",
+    namespace = ServiceNamespace.SERVICE_NAMESPACE,
+    uses = {
+            javax.ws.rs.sse.SseEventSource.Builder.class
+    }
+)
+@Capability(
+    attribute = "objectClass:List<String>='javax.ws.rs.ext.RuntimeDelegate'",
+    namespace = ServiceNamespace.SERVICE_NAMESPACE,
+    uses = {
+            javax.ws.rs.ext.RuntimeDelegate.class
     }
 )
 @Capability(
@@ -55,17 +68,25 @@
 @Capability(
     name = "javax.ws.rs.ext.RuntimeDelegate",
     namespace = "osgi.serviceloader",
+    uses = javax.ws.rs.ext.RuntimeDelegate.class,
     attribute = {
-        "register:=org.apache.cxf.jaxrs.impl.RuntimeDelegateImpl",
-        "service.scope=prototype"
+        "register:=",
+    }
+)
+@Capability(
+    name = "javax.ws.rs.client.ClientBuilder",
+    namespace = "osgi.serviceloader",
+    uses = javax.ws.rs.client.ClientBuilder.class,
+    attribute = {
+        "register:=",
     }
 )
 @Capability(
     name = "javax.ws.rs.sse.SseEventSource.Builder",
     namespace = "osgi.serviceloader",
+    uses = javax.ws.rs.sse.SseEventSource.Builder.class,
     attribute = {
-        "register:=org.apache.cxf.jaxrs.sse.client.SseEventSourceBuilderImpl",
-        "service.scope=prototype"
+        "register:=",
     }
 )
 @Export
@@ -82,7 +103,8 @@
 )
 package org.apache.aries.jax.rs.whiteboard;
 
-import static org.osgi.service.jaxrs.whiteboard.JaxrsWhiteboardConstants.*;
+import static org.osgi.service.jaxrs.whiteboard.JaxrsWhiteboardConstants.JAX_RS_WHITEBOARD_IMPLEMENTATION;
+import static org.osgi.service.jaxrs.whiteboard.JaxrsWhiteboardConstants.JAX_RS_WHITEBOARD_SPECIFICATION_VERSION;
 
 import org.osgi.annotation.bundle.Capability;
 import org.osgi.annotation.bundle.Export;
