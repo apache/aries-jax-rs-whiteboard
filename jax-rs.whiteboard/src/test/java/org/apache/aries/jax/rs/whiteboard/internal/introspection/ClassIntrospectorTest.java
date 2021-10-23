@@ -19,7 +19,7 @@ package org.apache.aries.jax.rs.whiteboard.internal.introspection;
 
 import org.apache.cxf.Bus;
 import org.apache.cxf.BusFactory;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.osgi.service.jaxrs.runtime.dto.ResourceMethodInfoDTO;
 import test.types.PlainResource;
 import test.types.PlainResourceSeveralOperations;
@@ -36,9 +36,9 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class ClassIntrospectorTest {
 
