@@ -18,6 +18,3 @@
 Bundle-Description: Integration Test bundle for the REST Management integration
 
 Test-Cases: ${classes;CONCRETE;ANNOTATED;org.junit.jupiter.api.Test}
-
-# We have a wide range for JAX-B to run on Java 8
-Import-Package: javax.xml.bind.*;version="${range;[0,+)}", *

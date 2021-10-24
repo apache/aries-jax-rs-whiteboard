@@ -22,7 +22,6 @@ Multi-Release: true
 # and a broad range for the JAX-B API
 Import-Package: \
     com.sun.xml.bind.annotation;resolution:=optional, \
-    javax.xml.bind.*;version="${range;[0,+)}", \
     *
 
 Provide-Capability: osgi.implementation;osgi.implementation="aries.jax-rs";version:Version="${Bundle-Version}"
