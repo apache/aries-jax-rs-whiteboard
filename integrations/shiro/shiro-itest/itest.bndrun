@@ -31,14 +31,14 @@
 -resolve.effective: resolve, active
 
 java.8.reqs: \
-	osgi.identity;filter:='(osgi.identity=org.apache.aries.jax.rs.shiro.itest)',\
+	osgi.identity;filter:='(osgi.identity=${project.artifactId}-tests)',\
 	osgi.identity;filter:='(osgi.identity=org.apache.felix.gogo.command)'
 
 java.9.plus.reqs: \
 	${java.8.reqs},\
 	osgi.identity;filter:='(osgi.identity=com.sun.xml.bind.jaxb-osgi)'
 
--runrequires: ${if;${is;${-runee};JavaSE-1.8};${java.8.reqs};${java.9.plus.reqs}}
+-runrequires: ${if;${is;${def;-runee};JavaSE-1.8};${java.8.reqs};${java.9.plus.reqs}}
 
 -runsystemcapabilities: ${native_capability}
 
@@ -55,7 +55,7 @@ java.9.plus.reqs: \
 	org.apache.aries.component-dsl.component-dsl;version='[1.2.2,1.2.3)',\
 	org.apache.aries.jax.rs.shiro.authc;version='[2.0.2,2.0.3)',\
 	org.apache.aries.jax.rs.shiro.authz;version='[2.0.2,2.0.3)',\
-	org.apache.aries.jax.rs.shiro.itest;version='[2.0.2,2.0.3)',\
+	org.apache.aries.jax.rs.shiro.itest-tests;version='[2.0.2,2.0.3)',\
 	org.apache.aries.jax.rs.whiteboard;version='[2.0.2,2.0.3)',\
 	org.apache.aries.spifly.dynamic.framework.extension;version='[1.3.3,1.3.4)',\
 	org.apache.cxf.cxf-core;version='[3.4.4,3.4.5)',\
@@ -75,6 +75,7 @@ java.9.plus.reqs: \
 	org.apache.servicemix.bundles.junit;version='[4.13.2,4.13.3)',\
 	org.apache.shiro.core;version='[1.7.1,1.7.2)',\
 	org.apache.shiro.lang;version='[1.7.1,1.7.2)',\
+	org.apache.shiro.web.jaxrs;version='[1.7.1,1.7.2)',\
 	org.apache.ws.xmlschema.core;version='[2.2.5,2.2.6)',\
 	org.osgi.service.jaxrs;version='[1.0.0,1.0.1)',\
 	org.osgi.util.function;version='[1.1.0,1.1.1)',\
@@ -83,7 +84,7 @@ java.9.plus.reqs: \
 
 blacklist.java.8.jaxb: osgi.identity;filter:=(osgi.identity=jakarta.xml.bind-api)
 
--runblacklist: ${if;${is;${-runee};JavaSE-1.8};${blacklist.java.8.jaxb}}
+-runblacklist: ${if;${is;${def;-runee};JavaSE-1.8};${blacklist.java.8.jaxb}}
 
 -runstartlevel: \
 	order=sortbynameversion,\

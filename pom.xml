@@ -42,7 +42,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
         <assertj.core.version>3.21.0</assertj.core.version>
-        <bnd.version>5.3.0</bnd.version>
+        <bnd.version>6.0.0</bnd.version>
         <commons.lang3.version>3.12.0</commons.lang3.version>
         <cxf.version>3.4.4</cxf.version>
         <dsl.version>1.2.2</dsl.version>
@@ -136,11 +136,13 @@
                 <groupId>junit</groupId>
                 <artifactId>junit</artifactId>
                 <version>${junit.version}</version>
+                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>net.javacrumbs.json-unit</groupId>
                 <artifactId>json-unit-assertj</artifactId>
                 <version>${json.unit.assertj.version}</version>
+                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.apache.commons</groupId>
@@ -329,6 +331,7 @@
                 <groupId>org.assertj</groupId>
                 <artifactId>assertj-core</artifactId>
                 <version>${assertj.core.version}</version>
+                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.codehaus.jettison</groupId>
@@ -345,38 +348,43 @@
                 <groupId>org.hamcrest</groupId>
                 <artifactId>hamcrest</artifactId>
                 <version>${hamcrest.version}</version>
+                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.hamcrest</groupId>
                 <artifactId>hamcrest-core</artifactId>
                 <version>${hamcrest.version}</version>
+                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.junit.jupiter</groupId>
                 <artifactId>junit-jupiter-api</artifactId>
                 <version>${junit.jupiter.version}</version>
+                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.junit.jupiter</groupId>
                 <artifactId>junit-jupiter-params</artifactId>
                 <version>${junit.jupiter.version}</version>
+                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.junit.jupiter</groupId>
                 <artifactId>junit-jupiter-engine</artifactId>
                 <version>${junit.jupiter.version}</version>
-                <scope>runtime</scope>
+                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.junit.platform</groupId>
                 <artifactId>junit-platform-commons</artifactId>
                 <version>${junit.platform.version}</version>
+                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.junit.platform</groupId>
                 <artifactId>junit-platform-launcher</artifactId>
                 <version>${junit.platform.version}</version>
-                <scope>runtime</scope>
+                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.osgi</groupId>
@@ -445,16 +453,19 @@
                 <groupId>org.osgi</groupId>
                 <artifactId>org.osgi.test.assertj.framework</artifactId>
                 <version>${osgi.test.version}</version>
+                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.osgi</groupId>
                 <artifactId>org.osgi.test.junit4</artifactId>
                 <version>${osgi.test.version}</version>
+                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.osgi</groupId>
                 <artifactId>org.osgi.test.junit5</artifactId>
                 <version>${osgi.test.version}</version>
+                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.slf4j</groupId>
@@ -465,7 +476,7 @@
                 <groupId>org.xmlunit</groupId>
                 <artifactId>xmlunit-assertj3</artifactId>
                 <version>${xmlunit.assertj3.version}</version>
-                <scope>compile</scope>
+                <scope>test</scope>
             </dependency>
 
             <dependency>
@@ -553,6 +564,9 @@
                             <goals>
                                 <goal>bnd-process</goal>
                             </goals>
+                            <configuration>
+                                <skipIfEmpty>true</skipIfEmpty>
+                            </configuration>
                         </execution>
                     </executions>
                 </plugin>
@@ -566,7 +580,7 @@
                             <goals>
                                 <goal>resolve</goal>
                             </goals>
-                            <phase>package</phase>
+                            <phase>pre-integration-test</phase>
                             <configuration>
                                 <reportOptional>false</reportOptional>
                                 <failOnChanges>false</failOnChanges>
@@ -609,6 +623,7 @@
                         <archive>
                             <manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
                         </archive>
+                        <skipIfEmpty>true</skipIfEmpty>
                     </configuration>
                 </plugin>
                 <plugin>
