@@ -50,7 +50,7 @@
         <felix.configadmin.version>1.9.22</felix.configadmin.version>
         <felix.gogo.bom.version>1.0.6</felix.gogo.bom.version>
         <felix.http.jetty.version>4.1.12</felix.http.jetty.version>
-        <felix.http.servlet-api.version>1.1.2</felix.http.servlet-api.version>
+        <felix.http.servlet-api.version>1.1.4</felix.http.servlet-api.version>
         <felix.logback.version>1.0.2</felix.logback.version>
         <felix.scr.version>2.1.26</felix.scr.version>
         <geronimo.activation.version>1.1</geronimo.activation.version>
