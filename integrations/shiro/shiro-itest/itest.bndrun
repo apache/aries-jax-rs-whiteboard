@@ -76,7 +76,7 @@ java.9.plus.reqs: \
 	org.apache.shiro.core;version='[1.8.0,1.8.1)',\
 	org.apache.shiro.web.jaxrs;version='[1.8.0,1.8.1)',\
 	org.apache.ws.xmlschema.core;version='[2.2.5,2.2.6)',\
-	org.osgi.service.jaxrs;version='[1.0.0,1.0.1)',\
+	org.osgi.service.jaxrs;version='[1.0.1,1.0.2)',\
 	org.osgi.util.function;version='[1.1.0,1.1.1)',\
 	org.osgi.util.promise;version='[1.1.1,1.1.2)',\
 	stax2-api;version='[4.2.1,4.2.2)'
