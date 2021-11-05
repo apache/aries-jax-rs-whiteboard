@@ -65,6 +65,24 @@
                         <scope>test</scope>
                     </scopes>
                 </configuration>
+                <executions>
+                    <execution>
+                        <id>rest-management</id>
+                        <configuration>
+                            <failOnChanges>false</failOnChanges>
+                            <includeDependencyManagement>true</includeDependencyManagement>
+                            <reportOptional>false</reportOptional>
+                            <bndruns>
+                                <bndrun>rest-management.bndrun</bndrun>
+                            </bndruns>
+                            <scopes>
+                                <scope>compile</scope>
+                                <scope>runtime</scope>
+                                <scope>test</scope>
+                            </scopes>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <groupId>biz.aQute.bnd</groupId>
@@ -96,6 +114,12 @@
                 </executions>
                 <configuration>
                     <bndrun>rest-management.bndrun</bndrun>
+                    <includeDependencyManagement>true</includeDependencyManagement>
+                    <scopes>
+                        <scope>compile</scope>
+                        <scope>runtime</scope>
+                        <scope>test</scope>
+                    </scopes>
                 </configuration>
             </plugin>
             <plugin>

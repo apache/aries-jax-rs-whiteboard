@@ -31,7 +31,7 @@ jaxb.export: javax.xml.bind;javax.xml.bind.annotation;javax.xml.bind.helpers;jav
     org.slf4j.helpers;version=${slf4j.version},\
     org.slf4j.spi;version=${slf4j.version},\
     com.sun.net.httpserver,\
-    ${if;${is;${-runee};JavaSE-1.8};${jaxb.export}}
+    ${if;${is;${def;-runee};JavaSE-1.8};${jaxb.export}}
 
 -runfw: org.eclipse.osgi
 
