@@ -79,7 +79,7 @@
         <osgi.service.http.whiteboard.version>1.0.0</osgi.service.http.whiteboard.version>
         <osgi.service.jaxrs.version>1.0.1</osgi.service.jaxrs.version>
         <osgi.util.function.version>1.1.0</osgi.util.function.version>
-        <osgi.util.promise.version>1.1.1</osgi.util.promise.version>
+        <osgi.util.promise.version>1.2.0</osgi.util.promise.version>
         <osgi.test.version>1.0.1</osgi.test.version>
         <shiro.version>1.8.0</shiro.version>
         <slf4j.version>1.7.32</slf4j.version>
