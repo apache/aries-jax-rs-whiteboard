@@ -95,14 +95,16 @@ public class TestUtil {
     }
 
     protected URI runtimeURI(String... parts) {
-        String[] runtimes = canonicalize(
+        Object jaxRSServiceEndpointProperty =
             jaxrsServiceRuntimeAware.getServiceReference().getProperty(
-                JAX_RS_SERVICE_ENDPOINT));
+                JAX_RS_SERVICE_ENDPOINT);
+
+        String[] runtimes = canonicalize(jaxRSServiceEndpointProperty);
 
         if (runtimes.length == 0) {
             throw new IllegalStateException(
                 "No runtimes could be found on \"osgi.jaxrs.endpoint\" " +
-                    "runtime service property ");
+                    "runtime service property " + jaxRSServiceEndpointProperty);
         }
 
         String uriString = runtimes[0];
