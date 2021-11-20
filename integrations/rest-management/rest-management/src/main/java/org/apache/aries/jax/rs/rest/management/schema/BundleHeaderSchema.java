@@ -23,7 +23,6 @@ import java.util.Map;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 
-@SuppressWarnings("serial")
 @XmlRootElement(name = "bundleHeader")
 @XmlJavaTypeAdapter(BundleHeaderAdapter.class)
 public class BundleHeaderSchema extends LinkedHashMap<String, String> {

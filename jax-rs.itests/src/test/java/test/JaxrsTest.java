@@ -494,7 +494,6 @@ public class JaxrsTest extends TestHelper {
         testCase.run();
     }
 
-    @SuppressWarnings("serial")
     @Test
     public void testApplicationRebase() {
         assertEquals(0, getRuntimeDTO().applicationDTOs.length);
@@ -1091,7 +1090,6 @@ public class JaxrsTest extends TestHelper {
         assertEquals(
             101, failedApplicationDTOs[0].failureReason);
 
-        @SuppressWarnings("serial")
         ServiceRegistration<ServletContextHelper> context =
             bundleContext.registerService(
                 ServletContextHelper.class, new ServletContextHelper() {},
@@ -1136,7 +1134,6 @@ public class JaxrsTest extends TestHelper {
                 new TestApplication(), JAX_RS_APPLICATION_BASE,
                 "/context/test-application", "service.ranking", 10);
 
-        @SuppressWarnings("serial")
         ServiceRegistration<ServletContextHelper> context =
             bundleContext.registerService(
                 ServletContextHelper.class, new ServletContextHelper() {},
@@ -2676,7 +2673,6 @@ public class JaxrsTest extends TestHelper {
             String.format(
                 "(%s=%s)", JAX_RS_APPLICATION_BASE, "/test-application"));
 
-        @SuppressWarnings("serial")
         ServiceRegistration<?> extensionRegistration =
             bundleContext.registerService(
                 new String[]{

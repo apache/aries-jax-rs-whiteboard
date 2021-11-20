@@ -23,7 +23,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Response;
 
-import org.junit.jupiter.api.Test;
 import org.osgi.framework.dto.FrameworkDTO;
 import org.xmlunit.assertj3.XmlAssert;
 

@@ -369,7 +369,6 @@ public class CxfJaxrsServiceRegistrator {
     private ArrayList<ServiceTuple<?>> _erroredProviders;
     private ArrayList<ResourceProvider> _erroredServices;
 
-    @SuppressWarnings("serial")
     private synchronized void doRewire(
         Collection<ServiceTuple<?>> providers,
         Collection<ResourceProvider> services) {

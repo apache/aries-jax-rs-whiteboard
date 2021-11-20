@@ -47,7 +47,6 @@ public class CaseInsensitiveMap<T> extends AbstractMap<String, T> {
      * @throws IllegalArgumentException If {@code dictionary} contains case
      *             variants of the same key name.
      */
-    @SuppressWarnings("serial")
     public CaseInsensitiveMap(final Dictionary<String, T> dictionary) {
         this(() -> {
             Set<Map.Entry<String, T>> entries = new HashSet<>(dictionary.size());

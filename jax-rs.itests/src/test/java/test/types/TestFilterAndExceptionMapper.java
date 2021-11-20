@@ -45,7 +45,6 @@ public class TestFilterAndExceptionMapper implements
         return Response.ok().entity("This is fine").build();
     }
 
-    @SuppressWarnings("serial")
 	public static class MyException extends RuntimeException {
 
     }

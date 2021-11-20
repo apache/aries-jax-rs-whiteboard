@@ -78,7 +78,6 @@ public class JaxbJsonBundleActivator implements BundleActivator {
     }
     private OSGiResult _result;
 
-    @SuppressWarnings("serial")
     private Map<String, ?> getRegistrationProperties(
         Dictionary<String, ?> properties) {
 

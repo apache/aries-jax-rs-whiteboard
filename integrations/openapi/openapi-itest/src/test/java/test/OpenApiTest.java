@@ -163,7 +163,7 @@ public class OpenApiTest extends TestHelper {
 
         OpenAPI openAPI = new OpenAPI();
 
-        @SuppressWarnings({"unchecked", "rawtypes", "serial"})
+        @SuppressWarnings({"unchecked", "rawtypes"})
         ServiceRegistration<OpenAPI> serviceRegistration =
             bundleContext.registerService(
                 OpenAPI.class, openAPI, new Hashtable() {{

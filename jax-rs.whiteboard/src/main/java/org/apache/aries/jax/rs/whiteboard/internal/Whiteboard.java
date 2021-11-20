@@ -1267,7 +1267,6 @@ public class Whiteboard {
     }
 
     private static CXFNonSpringServlet createCXFServlet(Bus bus) {
-        @SuppressWarnings("serial")
         CXFNonSpringServlet cxfNonSpringServlet = new CXFNonSpringServlet() {
 
             @Override
