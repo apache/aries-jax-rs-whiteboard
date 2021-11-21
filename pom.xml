@@ -714,6 +714,17 @@
         </plugins>
     </build>
 
+    <profiles>
+        <profile>
+            <activation>
+                <jdk>[9,)</jdk>
+            </activation>
+            <properties>
+                <maven.compiler.release>${java.specification.version}</maven.compiler.release>
+            </properties>
+        </profile>
+    </profiles>
+
     <reporting>
         <plugins>
             <plugin>
