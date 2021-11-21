@@ -52,4 +52,11 @@ public class ResourceMethodInfoDTOWrapper
             Arrays.equals(nameBindings, that.nameBindings);
     }
 
+    @Override
+    public int hashCode() {
+        return Objects.hash(
+            path, method, Arrays.hashCode(consumingMimeType),
+            Arrays.hashCode(producingMimeType), Arrays.hashCode(nameBindings));
+    }
+
 }
