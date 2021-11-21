@@ -57,7 +57,7 @@ public class TestUtil {
     public ClientBuilder clientBuilder;
 
     @InjectService(
-        filter = "(%s=*)",
+        filter = "(%s=http*)",
         filterArguments = JAX_RS_SERVICE_ENDPOINT,
         timeout = 2000l
     )
