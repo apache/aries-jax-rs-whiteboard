@@ -35,6 +35,8 @@ jaxb.export: javax.xml.bind;javax.xml.bind.annotation;javax.xml.bind.helpers;jav
 
 -runfw: org.eclipse.osgi
 
+-runee: JavaSE-${java.specification.version}
+
 #-runjdb: 8000
 #-runtrace: true
 

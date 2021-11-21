@@ -31,6 +31,8 @@
 
 -runfw: org.eclipse.osgi
 
+-runee: JavaSE-${java.specification.version}
+
 -resolve.effective: resolve, active
 
 java.8.reqs: \

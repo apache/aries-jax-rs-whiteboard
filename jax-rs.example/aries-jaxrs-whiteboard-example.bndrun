@@ -28,6 +28,8 @@
 
 -runfw: org.eclipse.osgi
 
+-runee: JavaSE-${java.specification.version}
+
 #-runjdb: 8000
 #-runtrace: true
 
