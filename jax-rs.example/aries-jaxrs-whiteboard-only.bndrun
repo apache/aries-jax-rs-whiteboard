@@ -35,8 +35,14 @@
 
 -resolve.effective: resolve, active
 
--runrequires: \
+java.8.reqs: \
 	osgi.identity;filter:='(osgi.identity=org.apache.aries.jax.rs.whiteboard)'
+
+java.9.plus.reqs: \
+	${java.8.reqs},\
+	osgi.identity;filter:='(osgi.identity=com.sun.xml.bind.jaxb-osgi)'
+
+-runrequires: ${if;${is;${def;-runee};JavaSE-1.8};${java.8.reqs};${java.9.plus.reqs}}
 
 -runsystemcapabilities: ${native_capability}
 -runproperties: \
