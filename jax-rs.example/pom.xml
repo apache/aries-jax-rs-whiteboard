@@ -75,6 +75,12 @@
                             <bndrun>aries-jaxrs-whiteboard-example.bndrun</bndrun>
                         </configuration>
                     </execution>
+                    <execution>
+                        <id>whiteboard-only</id>
+                        <configuration>
+                            <bndrun>aries-jaxrs-whiteboard-only.bndrun</bndrun>
+                        </configuration>
+                    </execution>
               </executions>
             </plugin>
         </plugins>
