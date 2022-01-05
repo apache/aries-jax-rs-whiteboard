@@ -47,10 +47,10 @@
         <commons.lang3.version>3.12.0</commons.lang3.version>
         <cxf.version>3.5.1</cxf.version>
         <dsl.version>1.2.2</dsl.version>
-        <eclipse.osgi.version>3.17.0</eclipse.osgi.version>
+        <eclipse.osgi.version>3.17.100</eclipse.osgi.version>
         <felix.configadmin.version>1.9.22</felix.configadmin.version>
         <felix.gogo.bom.version>1.0.6</felix.gogo.bom.version>
-        <felix.http.jetty.version>4.1.12</felix.http.jetty.version>
+        <felix.http.jetty.version>4.1.14</felix.http.jetty.version>
         <felix.http.servlet-api.version>1.1.4</felix.http.servlet-api.version>
         <felix.logback.version>1.0.6</felix.logback.version>
         <felix.scr.version>2.2.0</felix.scr.version>
