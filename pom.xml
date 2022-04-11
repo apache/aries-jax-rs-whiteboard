@@ -43,7 +43,7 @@
         <project.build.outputTimestamp>10</project.build.outputTimestamp>
 
         <assertj.core.version>3.22.0</assertj.core.version>
-        <bnd.version>6.1.0</bnd.version>
+        <bnd.version>6.2.0</bnd.version>
         <commons.lang3.version>3.12.0</commons.lang3.version>
         <cxf.version>3.5.1</cxf.version>
         <dsl.version>1.2.2</dsl.version>
@@ -559,11 +559,21 @@
                     <groupId>biz.aQute.bnd</groupId>
                     <artifactId>bnd-maven-plugin</artifactId>
                     <version>${bnd.version}</version>
+                    <extensions>true</extensions>
                     <executions>
                         <execution>
-                            <id>bnd-process</id>
+                            <id>jar</id>
                             <goals>
-                                <goal>bnd-process</goal>
+                                <goal>jar</goal>
+                            </goals>
+                            <configuration>
+                                <skipIfEmpty>true</skipIfEmpty>
+                            </configuration>
+                        </execution>
+                        <execution>
+                            <id>test-jar</id>
+                            <goals>
+                                <goal>test-jar</goal>
                             </goals>
                             <configuration>
                                 <skipIfEmpty>true</skipIfEmpty>
@@ -615,17 +625,6 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>
                     <version>3.8.1</version>
-                </plugin>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-jar-plugin</artifactId>
-                    <version>3.2.0</version>
-                    <configuration>
-                        <archive>
-                            <manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
-                        </archive>
-                        <skipIfEmpty>true</skipIfEmpty>
-                    </configuration>
                 </plugin>
                 <plugin>
                     <groupId>org.eclipse.m2e</groupId>
