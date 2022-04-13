@@ -90,9 +90,9 @@ java.9.plus.reqs: \
 	junit-platform-commons;version='[1.8.2,1.8.3)',\
 	junit-platform-engine;version='[1.8.2,1.8.3)',\
 	junit-platform-launcher;version='[1.8.2,1.8.3)',\
-	net.javacrumbs.json-unit.json-unit-assertj;version='[2.28.0,2.28.1)',\
-	net.javacrumbs.json-unit.json-unit-core;version='[2.28.0,2.28.1)',\
-	net.javacrumbs.json-unit.json-unit-json-path;version='[2.28.0,2.28.1)',\
+	net.javacrumbs.json-unit.json-unit-assertj;version='[2.34.0,2.34.1)',\
+	net.javacrumbs.json-unit.json-unit-core;version='[2.34.0,2.34.1)',\
+	net.javacrumbs.json-unit.json-unit-json-path;version='[2.34.0,2.34.1)',\
 	net.minidev.accessors-smart;version='[1.2.0,1.2.1)',\
 	net.minidev.json-smart;version='[2.3.0,2.3.1)',\
 	org.apache.aries.component-dsl.component-dsl;version='[1.2.2,1.2.3)',\
