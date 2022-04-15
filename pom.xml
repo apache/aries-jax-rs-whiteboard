@@ -45,7 +45,7 @@
         <assertj.core.version>3.22.0</assertj.core.version>
         <bnd.version>6.2.0</bnd.version>
         <commons.lang3.version>3.12.0</commons.lang3.version>
-        <cxf.version>3.5.1</cxf.version>
+        <cxf.version>3.5.2</cxf.version>
         <dsl.version>1.2.2</dsl.version>
         <eclipse.osgi.version>3.17.200</eclipse.osgi.version>
         <felix.configadmin.version>1.9.24</felix.configadmin.version>
