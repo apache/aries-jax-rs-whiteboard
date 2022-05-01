@@ -591,7 +591,7 @@
                             <goals>
                                 <goal>resolve</goal>
                             </goals>
-                            <phase>pre-integration-test</phase>
+                            <phase>package</phase>
                             <configuration>
                                 <reportOptional>false</reportOptional>
                                 <failOnChanges>false</failOnChanges>

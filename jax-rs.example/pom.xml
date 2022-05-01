@@ -100,7 +100,6 @@
             <artifactId>geronimo-jaxrs_2.1_spec</artifactId>
         </dependency>
 
-
         <!-- This runtime dependency is a Declarative Services implementation,
         used to publish the example resource as an OSGi service-->
         <dependency>
