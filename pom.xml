@@ -43,7 +43,7 @@
         <project.build.outputTimestamp>10</project.build.outputTimestamp>
 
         <assertj.core.version>3.22.0</assertj.core.version>
-        <bnd.version>6.2.0</bnd.version>
+        <bnd.version>6.3.0-RC1</bnd.version>
         <commons.lang3.version>3.12.0</commons.lang3.version>
         <cxf.version>3.5.2</cxf.version>
         <dsl.version>1.2.2</dsl.version>
@@ -339,12 +339,27 @@
                 <artifactId>jettison</artifactId>
                 <version>${jettison.version}</version>
             </dependency>
+
+            <dependency>
+                <groupId>org.apache.felix.atomos</groupId>
+                <artifactId>osgi.core</artifactId>
+                <classifier>AtomosEquinox</classifier>
+                <version>8.0.0</version>
+                <scope>runtime</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.felix</groupId>
+                <artifactId>org.apache.felix.atomos</artifactId>
+                <version>1.0.0</version>
+                <scope>runtime</scope>
+            </dependency>
             <dependency>
                 <groupId>org.eclipse.platform</groupId>
                 <artifactId>org.eclipse.osgi</artifactId>
                 <version>${eclipse.osgi.version}</version>
                 <scope>runtime</scope>
             </dependency>
+
             <dependency>
                 <groupId>org.hamcrest</groupId>
                 <artifactId>hamcrest</artifactId>
@@ -755,11 +770,31 @@
             <snapshots><enabled>true</enabled></snapshots>
         </repository>
         <repository>
-            <id>bndtools-snapshots</id>
-            <url>https://bndtools.jfrog.io/artifactory/libs-snapshot-local</url>
+            <id>bnd-snapshots</id>
+            <url>https://bndtools.jfrog.io/bndtools/libs-snapshot/</url>
             <releases><enabled>false</enabled></releases>
             <snapshots><enabled>true</enabled></snapshots>
         </repository>
+        <repository>
+            <id>bnd-release</id>
+            <url>https://bndtools.jfrog.io/bndtools/libs-release/</url>
+            <layout>default</layout>
+        </repository>
     </repositories>
 
+    <pluginRepositories>
+        <pluginRepository>
+            <id>bnd-snapshots</id>
+            <url>https://bndtools.jfrog.io/bndtools/libs-snapshot/</url>
+            <layout>default</layout>
+            <releases>
+                <enabled>false</enabled>
+            </releases>
+        </pluginRepository>
+        <pluginRepository>
+            <id>bnd-release</id>
+            <url>https://bndtools.jfrog.io/bndtools/libs-release/</url>
+            <layout>default</layout>
+        </pluginRepository>
+    </pluginRepositories>
 </project>

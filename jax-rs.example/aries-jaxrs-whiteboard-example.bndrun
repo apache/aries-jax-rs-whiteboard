@@ -15,6 +15,11 @@
 #    specific language governing permissions and limitations
 #    under the License.
 
+-jpms-module-info: \
+	${project.artifactId};\
+		version=${project.version};\
+		ee=JavaSE-${java.specification.version}
+
 -runpath: \
 	ch.qos.logback.classic,\
 	ch.qos.logback.core,\
