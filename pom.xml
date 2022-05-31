@@ -42,7 +42,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.build.outputTimestamp>10</project.build.outputTimestamp>
 
-        <assertj.core.version>3.22.0</assertj.core.version>
+        <assertj.core.version>3.23.0</assertj.core.version>
         <bnd.version>6.3.0-RC1</bnd.version>
         <commons.lang3.version>3.12.0</commons.lang3.version>
         <cxf.version>3.5.2</cxf.version>
