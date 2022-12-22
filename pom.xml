@@ -98,9 +98,9 @@
     <modules>
         <module>jax-rs.whiteboard</module>
         <module>jax-rs.itests</module>
-        <module>jax-rs.features</module>
         <module>jax-rs.example</module>
         <module>integrations</module>
+        <module>jax-rs.features</module>
     </modules>
 
     <dependencyManagement>

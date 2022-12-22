@@ -32,6 +32,20 @@
     <name>Apache Aries JAX-RS Whiteboard Karaf Features</name>
     <packaging>pom</packaging>
 
+    <properties>
+        <karaf.version>4.4.2</karaf.version>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.apache.karaf.features</groupId>
+            <artifactId>framework</artifactId>
+            <version>${karaf.version}</version>
+            <type>kar</type>
+            <scope>provided</scope>
+        </dependency>
+    </dependencies>
+
     <build>
         <resources>
             <resource>
@@ -53,6 +67,41 @@
                 </executions>
             </plugin>
             <plugin>
+                <groupId>org.apache.karaf.tooling</groupId>
+                <artifactId>karaf-maven-plugin</artifactId>
+                <version>${karaf.version}</version>
+                <executions>
+                    <execution>
+                        <id>verify</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>verify</goal>
+                        </goals>
+                        <configuration>
+                            <descriptors>
+                                <descriptor>file:${project.build.directory}/feature/feature.xml</descriptor>
+                                <descriptor>mvn:org.apache.karaf.features/framework/${karaf.version}/xml/features</descriptor>
+                                <descriptor>mvn:org.apache.karaf.features/standard/${karaf.version}/xml/features</descriptor>
+                                <descriptor>mvn:org.apache.cxf.karaf/apache-cxf/${cxf.version}/xml/features</descriptor>
+                            </descriptors>
+                            <distribution>org.apache.karaf.features:framework</distribution>
+                            <javase>9</javase>
+                            <framework>
+                                <feature>framework</feature>
+                            </framework>
+                            <features>
+                                <feature>aries-jax-rs-whiteboard</feature>
+                                <feature>aries-jax-rs-whiteboard-jackson</feature>
+                                <feature>aries-jax-rs-whiteboard-jettison</feature>
+                                <feature>aries-jax-rs-whiteboard-openapi</feature>
+                                <feature>aries-jax-rs-whiteboard-rest-management</feature>
+                                <feature>aries-jax-rs-whiteboard-shiro</feature>
+                            </features>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>build-helper-maven-plugin</artifactId>
                 <version>3.3.0</version>
@@ -66,7 +115,7 @@
                         <configuration>
                             <artifacts>
                                 <artifact>
-                                    <file>target/feature/feature.xml</file>
+                                    <file>${project.build.directory}/feature/feature.xml</file>
                                     <type>xml</type>
                                 </artifact>
                             </artifacts>
