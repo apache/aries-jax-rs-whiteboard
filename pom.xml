@@ -63,7 +63,7 @@
         <jackson.version>2.14.1</jackson.version>
         <jaxb.version>2.3.3</jaxb.version>
         <jaxws.version>2.3.3</jaxws.version>
-        <jettison.version>1.4.1</jettison.version>
+        <jettison.version>1.5.3</jettison.version>
         <json.unit.assertj.version>2.36.0</json.unit.assertj.version>
         <junit.version>4.13.2</junit.version>
         <junit.jupiter.version>5.8.2</junit.jupiter.version>
