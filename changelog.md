@@ -1,3 +1,32 @@
+## org.apache.aries.jax.rs-2.0.2
+
+### Bug
+
+* [ARIES-1967] - JAXRS Resource doesn't register anymore
+* [ARIES-1969] - Aries JAX-RS Whiteboard causes ClassCastException for bundles where CXF is used
+* [ARIES-1970] - ClassCastException in Karaf ITests when using CXF JAX-RS WebClient and Whiteboard
+* [ARIES-2079] - jax-rs-whiteboard karaf feature should install stax 6.2.0 bundle
+* [ARIES-2090] - Verify and improve Aries JAXRS Whiteboard Karaf features repository
+* [ARIES-2095] - Fix HttpWhiteboardCoexistenceTest tests
+
+### Improvement
+
+* [ARIES-2031] - Update JAXRS Karaf features to reference CXF
+
+### Dependency upgrade
+
+* [ARIES-2091] - Upgrade to CXF 3.5.5
+* [ARIES-2092] - Upgrade to jackson 2.14.1
+* [ARIES-2093] - Upgrade to bnd 6.4.0
+* [ARIES-2094] - Upgrade to Jettison 1.5.3
+* [ARIES-2096] - Upgrade to json-unit-assertj 2.36.0
+* [ARIES-2097] - Upgrade to spifly 1.3.6
+* [ARIES-2098] - Upgrade to Felix ConfigAdmin 1.9.26
+* [ARIES-2100] - Upgrade to johnzon 1.2.19
+* [ARIES-2101] - Upgrade to assertj 3.23.1
+* [ARIES-2103] - Upgrade to shiro 1.10.1
+* [ARIES-2104] - Upgrade to flatten-maven-plugin 1.3.0
+
 ## org.apache.aries.jax.rs-1.1.0
 
 Carlos Sierra Andrés (3):
