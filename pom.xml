@@ -53,7 +53,7 @@
         <felix.http.jetty.version>4.2.0</felix.http.jetty.version>
         <felix.http.servlet-api.version>1.2.0</felix.http.servlet-api.version>
         <felix.logback.version>1.0.6</felix.logback.version>
-        <felix.scr.version>2.2.0</felix.scr.version>
+        <felix.scr.version>2.2.6</felix.scr.version>
         <geronimo.activation.version>1.1</geronimo.activation.version>
         <geronimo.annotation.version>1.3</geronimo.annotation.version>
         <geronimo.jaxrs.version>1.1</geronimo.jaxrs.version>
