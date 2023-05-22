@@ -64,7 +64,7 @@
         <jaxb.version>2.3.3</jaxb.version>
         <jaxws.version>2.3.3</jaxws.version>
         <jettison.version>1.5.3</jettison.version>
-        <json.unit.assertj.version>2.36.0</json.unit.assertj.version>
+        <json.unit.assertj.version>2.38.0</json.unit.assertj.version>
         <junit.version>4.13.2</junit.version>
         <junit.jupiter.version>5.8.2</junit.jupiter.version>
         <junit.platform.version>1.8.2</junit.platform.version>
