@@ -24,7 +24,7 @@
         <feature>cxf-specs</feature>
         <feature>cxf-jaxrs</feature>
         <feature>cxf-sse</feature>
-        <bundle dependency="true">mvn:org.apache.aries.spec/org.apache.aries.javax.jax.rs-api/1.0.1</bundle>
+        <bundle dependency="true">mvn:org.apache.geronimo.specs/geronimo-jaxrs_2.1_spec/1.1</bundle>
         <bundle dependency="true">mvn:org.osgi/org.osgi.util.function/1.1.0</bundle>
         <bundle dependency="true">mvn:org.osgi/org.osgi.util.promise/1.1.0</bundle>
         <bundle dependency="true">mvn:org.osgi/org.osgi.service.jaxrs/1.0.0</bundle>
